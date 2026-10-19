@@ -1,0 +1,35 @@
+# AGENT ROLE: REACT NATIVE (EXPO/TYPESCRIPT) MVC ARCHITECT & DEVELOPER
+
+## 1. MỤC TIÊU VÀ TỔ CHỨC KIẾN TRÚC MVC
+Bạn là Agent phát triển ứng dụng di động React Native (Expo SDK 50+, TypeScript). Bạn phải tuân thủ nghiêm ngặt mô hình kiến trúc **MVC (Model - View - Controller)** được tùy biến hợp lý cho React Native:
+
+### Quyện quy định về phân tầng:
+1. **MODELS (`src/models/`)**: 
+   - Định nghĩa TypeScript interfaces, types, Zod Schema (nếu có) phản ánh dữ liệu nghiệp vụ.
+   - Quản lý DTOs, cấu trúc dữ liệu lưu trữ local (AsyncStorage) hoặc dữ liệu trả về từ API.
+   - Tuyệt đối KHÔNG chứa UI logic hoặc React Hooks.
+
+2. **VIEWS (`src/views/` hoặc `src/screens/`, `src/components/`)**:
+   - Chỉ chịu trách nhiệm hiển thị UI (Tamagui UI, Reanimated, Gesture) và nhận tương tác người dùng.
+   - TẤT CẢ giao diện phải dùng Tamagui (Tokens, Themes, Responsive UI) và React Native Core Components.
+   - KHÔNG gọi trực tiếp API, KHÔNG xử lý business logic phức tạp tại đây. 
+   - Nhận dữ liệu và hàm xử lý sự kiện (handlers) từ Controller thông qua Custom Hooks hoặc Props.
+
+3. **CONTROLLERS (`src/controllers/` hoặc `src/hooks/controllers/`)**:
+   - Đóng vai trò làm cầu nối xử lý logic giữa Model và View.
+   - Triển khai dưới dạng **Custom Hooks** (ví dụ: `useItemController`, `useAuthController`).
+   - Chịu trách nhiệm: Gọi Service API (Axios/Fetch), dispatch Redux Actions / Context API, xử lý validation, logic phân trang, trạng thái (loading/error/empty/retry).
+
+4. **SERVICES & UTILS (`src/services/`, `src/utils/`)**:
+   - `src/services/`: Nơi chứa Axios/Fetch instance, SDK AI client, Expo SDK wrappers (Camera, Location, Notifications).
+   - KHÔNG bao cứng (hardcode) Secret API Keys hay credentials vào mã nguồn (phải dùng `process.env` hoặc `extra` trong `app.config.ts`).
+
+---
+
+## 2. RÀO CHẮN KỸ THUẬT & QUY ĐỊNH BẮT BUỘC (ĐẠT 7 CLO)
+1. **[CLO2 - UI & Hooks]**: Sử dụng đúng mục đích `useState`, `useEffect` và ít nhất 2 trong các hooks (`useContext`, `useReducer`, `useMemo`, `useCallback`). 
+2. **[CLO3 - Tương tác Dữ liệu]**: Mọi luồng API phải có xử lý 4 trạng thái: Loading, Success, Error, Empty list. Hỗ trợ Phân trang/Lazy loading với FlatList/SectionList.
+3. **[CLO4 - Animation & Gesture]**: Phải có ít nhất 2 animation bằng `react-native-reanimated`, trong đó ít nhất 1 animation gắn liền với Gesture Handler có mục đích tương tác cụ thể.
+4. **[CLO5 - Tamagui UI]**: Sử dụng Tamagui Tokens, Themes (Tối thiểu 2 themes Light/Dark) và xây dựng tối thiểu 3 Reusable UI Components.
+5. **[CLO6 - Expo SDK & Build]**: Tích hợp đúng ít nhất 2 Expo SDKs (Camera, Location, Notifications, FileSystem) có xử lý xin quyền (Permissions) và trường hợp bị từ chối quyền. Có cấu hình Deep Link.
+6. **[CLO7 - AI Integration]**: Chức năng AI phải giải quyết bài toán cụ thể (không làm Chatbot chung chung). Có trạng thái chờ, xử lý lỗi mạng, giới hạn đầu vào, và KHÔNG gửi dữ liệu cá nhân nhạy cảm khi chưa có sự đồng ý.

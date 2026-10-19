@@ -1,0 +1,53 @@
+# Nhom 18 Item Exchange Network
+
+Ung dung React Native Expo/TypeScript cho phep sinh vien trao doi, tang va tim
+do dung hoc tap trong truong.
+
+## Kien truc MVC
+
+Code nghiep vu nam trong `src/` va duoc tach thanh cac tang:
+
+- `src/models`: interfaces, types va DTO cua domain.
+- `src/views`: man hinh va component giao dien.
+- `src/controllers`: custom hooks dieu phoi state, validation va service.
+- `src/services`: API client, mock API va cac wrapper ben ngoai.
+- `src/utils`: ham dung chung khong phu thuoc UI.
+
+`App.tsx` la entry point hien tai cua Expo. Khi mo rong ung dung, View khong
+goi API truc tiep; Controller se truyen du lieu va event handlers vao View.
+
+## Cai dat va chay du an
+
+Yeu cau Node.js 18 tro len va Expo SDK 55.
+
+```bash
+npm install
+npx expo start
+```
+
+Lenh kiem tra truoc khi tao pull request:
+
+```bash
+npm run lint
+npx tsc --noEmit
+```
+
+## Quy trinh Git
+
+- `main`: ban on dinh, san sang phat hanh.
+- `develop`: nhanh tich hop phat trien.
+- `feature/<ten-chuc-nang>`: nhanh cho mot tinh nang cu the, tao tu `develop`.
+
+Moi thay doi can duoc review qua pull request. Commit dung Conventional
+Commits, vi du:
+
+- `feat: add item pagination`
+- `fix: handle missing item`
+- `docs: update setup guide`
+- `refactor: extract item service`
+
+## Mo phong API
+
+`src/services/api/itemService.ts` cung cap mock API co delay 500 ms, phan trang
+va loi khi item khong ton tai. Du lieu mau nam trong `mockData.ts` de co the
+thay the bang backend that ma khong doi Model hoac Controller.
