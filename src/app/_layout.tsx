@@ -8,6 +8,7 @@
  * CLO2: dùng useMemo, useCallback (+ useColorScheme từ React Native)
  * CLO5: TamaguiProvider với theme light/dark, không ghi cứng màu.
  */
+/**f */
 
 import { useCallback, useMemo } from 'react';
 import { useColorScheme } from 'react-native';
