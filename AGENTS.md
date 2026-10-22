@@ -1,33 +1,48 @@
+This is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
 
-# AI AGENT CODING STANDARDS & RULEThis is an Expo/React Native mobile application. Prioritize mobile-first patterns, performance, and cross-platform compatibility.
+## Expo has changed — do not trust your training data
 
-## 1. TECH STACK & STRICT UI RULES (CRITICAL)
-- **Framework:** React Native with Expo SDK
-- **Language:** TypeScript (Strict typing required)
-- **UI & Styling:** Tamagui (STRICT REQUIREMENT)
-  - **TAMAGUI ONLY:** You MUST use Tamagui components for all UI construction (`YStack`, `XStack`, `Text`, `Button`, `Card`, `Image`, `Input`).
-  - **FORBIDDEN:** NEVER use `StyleSheet.create` or inline CSS styles (`style={{...}}`).
-  - **FORBIDDEN:** Do NOT import UI components from `react-native` (like `View`, `Text`, `TouchableOpacity`). Always use Tamagui equivalents.
-  - **Tokens:** Always utilize Tamagui design tokens (e.g., `$primary`, `$background`, padding `$4`).
-- **Animations:** Use `react-native-reanimated` & `react-native-gesture-handler`.
+Expo ships breaking changes every SDK release. APIs you remember are likely renamed, moved, or removed. Before writing any code that touches an Expo, EAS, or React Native API:
 
-## 2. ARCHITECTURE (MVC PATTERN)
-Maintain strict separation of concerns. Do NOT use Expo Router (`src/app/`).
-- **`src/models/`**: TypeScript interfaces, types, schemas. No UI logic.
-- **`src/views/`**: Contains `screens/` and `components/`. Responsible ONLY for rendering UI using Tamagui. No complex business logic.
-- **`src/controllers/` (or custom hooks):** Handles state management, validation, and bridging Views with Services.
-- **`src/services/`**: API requests, mock data, external SDKs.
+1. Read the major version of the `expo` package in `package.json`.
+2. Fetch the matching versioned docs: `https://docs.expo.dev/versions/v<major>.0.0/`
+3. For anything else, fetch https://docs.expo.dev/llms.txt — an index of all Expo docs with corrections to common LLM misconceptions. Follow its links to the specific page you need; never answer from memory.
 
-## 3. NAVIGATION & ROUTING
-- We use **React Navigation** (`@react-navigation/native-stack`), NOT Expo Router.
-- The entry point and main Stack Navigator are defined in `App.tsx`.
-- All screens live inside `src/views/screens/`.
+## Commands
 
-## 4. COMMANDS & EXPO RULES
-- Expo ships breaking changes every SDK release. APIs you remember are likely renamed or removed.
-- `npx expo install <package>` - ALWAYS use instead of npm/yarn/bun add to resolve SDK-compatible versions.
-- `npx expo start -c` - Start dev server and clear cache (crucial for Tamagui config changes).
+Use `bunx` instead of `npx` if the project uses bun (`bun.lock` present).
 
-## 5. WORKFLOW
-- Read the existing code in `App.tsx` and `tamagui.config.ts` to understand the current configuration before adding new screens.
-- Prioritize using existing components in `src/views/components/` before building new ones.
+```bash
+npx expo install <package>  # ALWAYS use instead of npm/yarn/pnpm/bun add — resolves SDK-compatible versions
+npx expo start              # start the dev server
+npx expo lint               # lint
+npx tsc --noEmit            # typecheck
+npx expo-doctor             # diagnose dependency and config issues
+npx expo install --fix      # fix incompatible package versions
+```
+
+Run lint and typecheck before declaring any task done.
+
+## Navigation & Routing
+
+- Use **Expo Router** for all navigation. Routes live in `src/app/` — every file there is a screen, `_layout.tsx` files define navigators. Keep non-route code (components, hooks, utils) outside `src/app/`.
+- Import `Link`, `router`, and `useLocalSearchParams` from `expo-router`.
+- Docs: https://docs.expo.dev/router/introduction.md
+
+## Building with EAS
+
+Use EAS to build, sign, and submit the app in the cloud (`eas build`, `eas submit`) and to ship over-the-air updates (`eas update`) — no local Xcode or Android Studio required. Run EAS CLI as `bunx eas-cli <command>` in Bun projects, or `npx eas-cli@latest <command>` otherwise; substitute that for bare `eas` in docs examples.
+Docs: https://docs.expo.dev/eas/index.md
+
+## Rules
+
+- If `ios/` and `android/` directories do not exist, they are generated (Continuous Native Generation). Never create or edit them by hand — configure native behavior in `app.json` and config plugins.
+- Expo Go only includes its bundled native modules. After adding a library with native code, the app needs a development build: `npx expo run:ios|android` locally, or `eas build --profile development`.
+- Prefer recommended Expo modules over third-party libraries, and check your available skills before adding dependencies. Docs: https://docs.expo.dev/versions/latest/index.md
+
+## Protected project instructions
+
+Do not edit, delete, or move `root/PROJECT_INSTRUCTIONS.md` unless maintainer
+@ThaiSon23641341 has approved the change. Use an issue or pull request to
+propose edits. GitHub branch protection must require Code Owner review for this
+path; CODEOWNERS does not block local edits by itself.
