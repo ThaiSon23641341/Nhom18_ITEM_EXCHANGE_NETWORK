@@ -1,17 +1,28 @@
+import { NavigationContainer } from '@react-navigation/native';
+import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { StatusBar } from 'expo-status-bar';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { TamaguiProvider, Theme, YStack, Text } from 'tamagui';
+import { TamaguiProvider, Theme } from 'tamagui';
 import { config } from './tamagui.config';
+import { LoginScreen } from './src/views/screens/LoginScreen';
+
+type RootStackParamList = {
+  Login: undefined;
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <TamaguiProvider config={config} defaultTheme="light">
         <Theme name="light">
-          <YStack flex={1} backgroundColor="background" items="center" justify="center">
-            <Text color="color">Open up App.tsx to start working on your app!</Text>
-            <StatusBar style="auto" />
-          </YStack>
+          <NavigationContainer>
+            <Stack.Navigator screenOptions={{ headerShown: false }}>
+              <Stack.Screen name="Login" component={LoginScreen} />
+            </Stack.Navigator>
+          </NavigationContainer>
+          <StatusBar style="auto" />
         </Theme>
       </TamaguiProvider>
     </GestureHandlerRootView>
