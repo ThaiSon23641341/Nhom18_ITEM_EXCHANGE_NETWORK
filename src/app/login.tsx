@@ -6,13 +6,8 @@
  * File này chỉ import và re-export màn hình thật từ src/views/screens.
  */
 
-import { PlaceholderScreen } from '../views/screens/PlaceholderScreen';
+import { LoginScreen } from '../views/screens/LoginScreen';
 
 export default function LoginRoute() {
-  return (
-    <PlaceholderScreen
-      title="Đăng nhập"
-      note="Giao diện: B (B08) · Xử lý đăng nhập: A (B09)"
-    />
-  );
+  return <LoginScreen />;
 }
