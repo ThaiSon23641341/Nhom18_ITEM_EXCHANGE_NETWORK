@@ -8,17 +8,23 @@ import { LoginScreen } from './src/views/screens/LoginScreen';
 
 type RootStackParamList = {
   Login: undefined;
+  Main: undefined;
 };
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
 
 export default function App() {
+  const isLoggedIn = false;
+
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <TamaguiProvider config={config} defaultTheme="light">
         <Theme name="light">
           <NavigationContainer>
-            <Stack.Navigator screenOptions={{ headerShown: false }}>
+            <Stack.Navigator
+              initialRouteName={isLoggedIn ? 'Main' : 'Login'}
+              screenOptions={{ headerShown: false }}
+            >
               <Stack.Screen name="Login" component={LoginScreen} />
             </Stack.Navigator>
           </NavigationContainer>
