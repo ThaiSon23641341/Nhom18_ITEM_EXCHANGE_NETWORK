@@ -18,19 +18,25 @@ goi API truc tiep; Controller se truyen du lieu va event handlers vao View.
 
 ## Cai dat va chay du an
 
-Yeu cau Node.js 18 tro len va Expo SDK 55.
+Yeu cau Node.js 20 tro len va Expo SDK 55.
 
 ```bash
 npm install
 npx expo start
 ```
 
-Lenh kiem tra truoc khi tao pull request:
+## Kiem tra va test
+
+Chay cac lenh sau truoc khi tao pull request:
 
 ```bash
 npm run lint
 npx tsc --noEmit
+npm test -- --ci
 ```
+
+Test dung Jest voi preset `jest-expo`; test nam canh service/model voi hau to
+`.test.ts` hoac `.test.tsx`. Dung `npm run test:watch` khi phat trien.
 
 ## Quy trinh Git
 
@@ -51,3 +57,14 @@ Commits, vi du:
 `src/services/api/itemService.ts` cung cap mock API co delay 500 ms, phan trang
 va loi khi item khong ton tai. Du lieu mau nam trong `mockData.ts` de co the
 thay the bang backend that ma khong doi Model hoac Controller.
+
+## Bao cao vi pham
+
+Tu man hinh chi tiet mon do, chon **Bao cao vi pham** de chon ly do va gui ghi
+chu toi da 500 ky tu. Route `/moderation/reports` hien thi hang doi, phan trang
+va cho phep danh dau report la `actioned` hoac `dismissed`.
+
+`src/services/api/reportService.ts` mo phong tao report, truy van hang doi va
+cap nhat trang thai `pending`, `actioned` hoac `dismissed`. Du lieu chi nam
+trong bo nho cua tien trinh app; chua co backend hoac phan quyen moderator.
+Man hinh kiem duyet chi phuc vu demo, khong an toan cho production.

@@ -10,7 +10,7 @@
  * Chỉ dùng Tamagui, không ghi cứng màu hex (CLO5).
  */
 
-import { router, useLocalSearchParams } from 'expo-router';
+import { Link, router, useLocalSearchParams } from 'expo-router';
 import { YStack, Text, Separator } from 'tamagui';
 import { CustomButton } from '../components/CustomButton';
 
@@ -33,6 +33,13 @@ export function ItemDetailScreen() {
       <Text fontSize="3" color="color" text="center" opacity={0.6}>
         Giao diện thật sẽ do B làm (B22)
       </Text>
+      {id ? (
+        <Link href={{ pathname: '/item/[id]/report', params: { id } }} asChild>
+          <CustomButton accessibilityLabel="Báo cáo vi phạm bài đăng">
+            Báo cáo vi phạm
+          </CustomButton>
+        </Link>
+      ) : null}
       <CustomButton onPress={() => router.back()}>
         Quay lại
       </CustomButton>
