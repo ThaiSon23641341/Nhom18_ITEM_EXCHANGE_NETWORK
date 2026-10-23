@@ -6,8 +6,8 @@ const tokens = createTokens({
   ...defaultConfig.tokens,
   color: {
     ...defaultConfig.tokens.color,
-    primary: '#2563EB',
-    secondary: '#0F766E',
+    primary: '#16815D',
+    secondary: '#0D6247',
   },
 });
 
@@ -20,15 +20,15 @@ export const config = createTamagui({
       ...defaultConfig.themes.light,
       background: '#FFFFFF',
       color: '#172033',
-      primary: '#2563EB',
-      secondary: '#0F766E',
+      primary: '#16815D',
+      secondary: '#0D6247',
     },
     dark: {
       ...defaultConfig.themes.dark,
       background: '#101827',
       color: '#F3F4F6',
-      primary: '#60A5FA',
-      secondary: '#5EEAD4',
+      primary: '#4ADE80',
+      secondary: '#34D399',
     },
   },
 });
