@@ -55,10 +55,13 @@ export const createItem = async (itemData: CreateItemInput): Promise<Item> => {
     throw new MockApiError('Title and ownerId are required.', 'BAD_REQUEST');
   }
 
+  const now = new Date().toISOString();
   const item: Item = {
     ...itemData,
     id: `item-${String(items.length + 1).padStart(3, '0')}`,
-    createdAt: new Date().toISOString(),
+    status: 'available',
+    createdAt: now,
+    updatedAt: now,
   };
   items = [item, ...items];
   return cloneItem(item);
@@ -71,7 +74,11 @@ export const updateItem = async (id: string, itemData: UpdateItemInput): Promise
     throw new MockApiError(`Item ${id} was not found.`, 'NOT_FOUND');
   }
 
-  items[index] = { ...items[index], ...itemData };
+  items[index] = {
+    ...items[index],
+    ...itemData,
+    updatedAt: new Date().toISOString(),
+  };
   return cloneItem(items[index]);
 };
 

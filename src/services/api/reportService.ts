@@ -47,6 +47,7 @@ export const createItemReport = async (
     );
   }
 
+  const now = new Date().toISOString();
   const report: ItemReport = {
     id: `report-${String(nextReportId).padStart(4, '0')}`,
     itemId,
@@ -54,7 +55,8 @@ export const createItemReport = async (
     reason: input.reason,
     details,
     status: 'pending',
-    createdAt: new Date().toISOString(),
+    createdAt: now,
+    updatedAt: now,
   };
 
   nextReportId += 1;
@@ -96,7 +98,11 @@ export const updateItemReportStatus = async (
     throw new ReportServiceError(`Report ${reportId} was not found.`, 'NOT_FOUND');
   }
 
-  reports[index] = { ...reports[index], status };
+  reports[index] = {
+    ...reports[index],
+    status,
+    updatedAt: new Date().toISOString(),
+  };
   return cloneReport(reports[index]);
 };
 

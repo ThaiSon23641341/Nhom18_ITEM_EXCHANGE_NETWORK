@@ -2,23 +2,28 @@ import { Item } from '../../models';
 
 const IMAGE_URL = 'https://images.unsplash.com/photo-1517842645767-c639042777db';
 
-export const MOCK_ITEMS: Item[] = [
-  { id: 'item-001', title: 'Giao trinh Lap trinh C', description: 'Sach dung tot, co ghi chu o mot vai trang.', category: 'Giao trinh', condition: 'Tot', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-001', createdAt: '2026-09-01T08:00:00.000Z' },
-  { id: 'item-002', title: 'May tinh Casio FX-580VN X', description: 'May tinh hoat dong on dinh, kem vo bao ve.', category: 'Dung cu hoc tap', condition: 'Tot', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-002', createdAt: '2026-09-02T08:00:00.000Z' },
-  { id: 'item-003', title: 'Tai nghe Bluetooth', description: 'Pin su dung khoang 8 gio, am thanh ro.', category: 'Thiet bi dien tu', condition: 'Kha', imageUrl: IMAGE_URL, status: 'reserved', ownerId: 'user-003', createdAt: '2026-09-03T08:00:00.000Z' },
-  { id: 'item-004', title: 'Vo ghi chu A5', description: 'Vo 200 trang, con moi va chua su dung.', category: 'Dung cu hoc tap', condition: 'Moi', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-004', createdAt: '2026-09-04T08:00:00.000Z' },
-  { id: 'item-005', title: 'Giao trinh Co so du lieu', description: 'An ban moi, khong rach trang.', category: 'Giao trinh', condition: 'Tot', imageUrl: IMAGE_URL, status: 'exchanged', ownerId: 'user-005', createdAt: '2026-09-05T08:00:00.000Z' },
-  { id: 'item-006', title: 'Ban phim co', description: 'Ban phim layout 87 phim, ket noi USB.', category: 'Thiet bi dien tu', condition: 'Kha', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-006', createdAt: '2026-09-06T08:00:00.000Z' },
-  { id: 'item-007', title: 'Den ban hoc tap', description: 'Den LED ba muc sang, co cong sac USB.', category: 'Thiet bi dien tu', condition: 'Tot', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-007', createdAt: '2026-09-07T08:00:00.000Z' },
-  { id: 'item-008', title: 'But highlight bo 6 mau', description: 'Bo but con moi, mau muc deu.', category: 'Dung cu hoc tap', condition: 'Moi', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-008', createdAt: '2026-09-08T08:00:00.000Z' },
-  { id: 'item-009', title: 'USB 64GB', description: 'USB toc do cao, da kiem tra doc ghi.', category: 'Thiet bi dien tu', condition: 'Tot', imageUrl: IMAGE_URL, status: 'reserved', ownerId: 'user-009', createdAt: '2026-09-09T08:00:00.000Z' },
-  { id: 'item-010', title: 'Giao trinh Kinh te vi mo', description: 'Sach co mot vai dong gach chan.', category: 'Giao trinh', condition: 'Kha', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-010', createdAt: '2026-09-10T08:00:00.000Z' },
-  { id: 'item-011', title: 'Ba lo laptop 15 inch', description: 'Ba lo chong nuoc, nhieu ngan dung.', category: 'Phu kien', condition: 'Tot', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-001', createdAt: '2026-09-11T08:00:00.000Z' },
-  { id: 'item-012', title: 'Chuot khong day', description: 'Chuot ket noi Bluetooth, kem pin sac.', category: 'Thiet bi dien tu', condition: 'Tot', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-002', createdAt: '2026-09-12T08:00:00.000Z' },
-  { id: 'item-013', title: 'Gia do dien thoai', description: 'Gia do gap gon bang nhua cung.', category: 'Phu kien', condition: 'Kha', imageUrl: IMAGE_URL, status: 'exchanged', ownerId: 'user-003', createdAt: '2026-09-13T08:00:00.000Z' },
-  { id: 'item-014', title: 'Tap giay A4', description: 'Tap giay 500 to, phu hop in tai lieu.', category: 'Dung cu hoc tap', condition: 'Moi', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-004', createdAt: '2026-09-14T08:00:00.000Z' },
-  { id: 'item-015', title: 'Giao trinh Mang may tinh', description: 'Sach day du phu luc va bai tap.', category: 'Giao trinh', condition: 'Tot', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-005', createdAt: '2026-09-15T08:00:00.000Z' },
-  { id: 'item-016', title: 'Webcam hoc truc tuyen', description: 'Do phan giai 1080p, co mic tich hop.', category: 'Thiet bi dien tu', condition: 'Tot', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-006', createdAt: '2026-09-16T08:00:00.000Z' },
-  { id: 'item-017', title: 'Bo thuoc ke hoc sinh', description: 'Bo thuoc ke 4 mon, hop con nguyen.', category: 'Dung cu hoc tap', condition: 'Tot', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-007', createdAt: '2026-09-17T08:00:00.000Z' },
-  { id: 'item-018', title: 'Sac du phong 10000mAh', description: 'Sac nhanh, dung tot cho dien thoai.', category: 'Thiet bi dien tu', condition: 'Kha', imageUrl: IMAGE_URL, status: 'reserved', ownerId: 'user-008', createdAt: '2026-09-18T08:00:00.000Z' },
+const seededItems: Omit<Item, 'updatedAt'>[] = [
+  { id: 'item-001', title: 'Giao trinh Lap trinh C', description: 'Sach dung tot, co ghi chu o mot vai trang.', category: 'Giao trinh', condition: 'good', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-001', createdAt: '2026-09-01T08:00:00.000Z' },
+  { id: 'item-002', title: 'May tinh Casio FX-580VN X', description: 'May tinh hoat dong on dinh, kem vo bao ve.', category: 'Dung cu hoc tap', condition: 'good', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-002', createdAt: '2026-09-02T08:00:00.000Z' },
+  { id: 'item-003', title: 'Tai nghe Bluetooth', description: 'Pin su dung khoang 8 gio, am thanh ro.', category: 'Thiet bi dien tu', condition: 'fair', imageUrl: IMAGE_URL, status: 'reserved', ownerId: 'user-003', createdAt: '2026-09-03T08:00:00.000Z' },
+  { id: 'item-004', title: 'Vo ghi chu A5', description: 'Vo 200 trang, con moi va chua su dung.', category: 'Dung cu hoc tap', condition: 'new', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-004', createdAt: '2026-09-04T08:00:00.000Z' },
+  { id: 'item-005', title: 'Giao trinh Co so du lieu', description: 'An ban moi, khong rach trang.', category: 'Giao trinh', condition: 'good', imageUrl: IMAGE_URL, status: 'exchanged', ownerId: 'user-005', createdAt: '2026-09-05T08:00:00.000Z' },
+  { id: 'item-006', title: 'Ban phim co', description: 'Ban phim layout 87 phim, ket noi USB.', category: 'Thiet bi dien tu', condition: 'fair', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-006', createdAt: '2026-09-06T08:00:00.000Z' },
+  { id: 'item-007', title: 'Den ban hoc tap', description: 'Den LED ba muc sang, co cong sac USB.', category: 'Thiet bi dien tu', condition: 'good', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-007', createdAt: '2026-09-07T08:00:00.000Z' },
+  { id: 'item-008', title: 'But highlight bo 6 mau', description: 'Bo but con moi, mau muc deu.', category: 'Dung cu hoc tap', condition: 'new', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-008', createdAt: '2026-09-08T08:00:00.000Z' },
+  { id: 'item-009', title: 'USB 64GB', description: 'USB toc do cao, da kiem tra doc ghi.', category: 'Thiet bi dien tu', condition: 'good', imageUrl: IMAGE_URL, status: 'reserved', ownerId: 'user-009', createdAt: '2026-09-09T08:00:00.000Z' },
+  { id: 'item-010', title: 'Giao trinh Kinh te vi mo', description: 'Sach co mot vai dong gach chan.', category: 'Giao trinh', condition: 'fair', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-010', createdAt: '2026-09-10T08:00:00.000Z' },
+  { id: 'item-011', title: 'Ba lo laptop 15 inch', description: 'Ba lo chong nuoc, nhieu ngan dung.', category: 'Phu kien', condition: 'good', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-001', createdAt: '2026-09-11T08:00:00.000Z' },
+  { id: 'item-012', title: 'Chuot khong day', description: 'Chuot ket noi Bluetooth, kem pin sac.', category: 'Thiet bi dien tu', condition: 'good', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-002', createdAt: '2026-09-12T08:00:00.000Z' },
+  { id: 'item-013', title: 'Gia do dien thoai', description: 'Gia do gap gon bang nhua cung.', category: 'Phu kien', condition: 'fair', imageUrl: IMAGE_URL, status: 'exchanged', ownerId: 'user-003', createdAt: '2026-09-13T08:00:00.000Z' },
+  { id: 'item-014', title: 'Tap giay A4', description: 'Tap giay 500 to, phu hop in tai lieu.', category: 'Dung cu hoc tap', condition: 'new', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-004', createdAt: '2026-09-14T08:00:00.000Z' },
+  { id: 'item-015', title: 'Giao trinh Mang may tinh', description: 'Sach day du phu luc va bai tap.', category: 'Giao trinh', condition: 'good', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-005', createdAt: '2026-09-15T08:00:00.000Z' },
+  { id: 'item-016', title: 'Webcam hoc truc tuyen', description: 'Do phan giai 1080p, co mic tich hop.', category: 'Thiet bi dien tu', condition: 'good', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-006', createdAt: '2026-09-16T08:00:00.000Z' },
+  { id: 'item-017', title: 'Bo thuoc ke hoc sinh', description: 'Bo thuoc ke 4 mon, hop con nguyen.', category: 'Dung cu hoc tap', condition: 'good', imageUrl: IMAGE_URL, status: 'available', ownerId: 'user-007', createdAt: '2026-09-17T08:00:00.000Z' },
+  { id: 'item-018', title: 'Sac du phong 10000mAh', description: 'Sac nhanh, dung tot cho dien thoai.', category: 'Thiet bi dien tu', condition: 'fair', imageUrl: IMAGE_URL, status: 'reserved', ownerId: 'user-008', createdAt: '2026-09-18T08:00:00.000Z' },
 ];
+
+export const MOCK_ITEMS: Item[] = seededItems.map((item) => ({
+  ...item,
+  updatedAt: item.createdAt,
+}));
