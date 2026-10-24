@@ -9,13 +9,20 @@
  * Controller (MVC): chỉ chứa logic + trạng thái, không có JSX.
  */
 
-import { useMemo } from 'react';
+import { useCallback, useSyncExternalStore } from 'react';
 import type { User } from '../models/userModel';
-import { MOCK_USER, USE_MOCK_USER } from '../utils/constants';
+import {
+  getCurrentUser,
+  signInWithEmail,
+  signOut,
+  subscribeToAuth,
+} from '../services/authService';
 
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  login: (email: string) => void;
+  logout: () => void;
 }
 
 /**
@@ -24,13 +31,13 @@ export interface AuthState {
  * View (index.tsx) đọc isAuthenticated rồi dùng <Redirect> của Expo Router.
  */
 export function useAuthController(): AuthState {
-  // useMemo: tránh tạo lại object mỗi lần render (CLO2)
-  const state = useMemo<AuthState>((): AuthState => {
-    if (USE_MOCK_USER) {
-      return { user: MOCK_USER, isAuthenticated: true };
-    }
-    return { user: null, isAuthenticated: false };
+  const user = useSyncExternalStore(subscribeToAuth, getCurrentUser, getCurrentUser);
+  const login = useCallback((email: string) => {
+    signInWithEmail(email);
+  }, []);
+  const logout = useCallback(() => {
+    signOut();
   }, []);
 
-  return state;
+  return { user, isAuthenticated: user !== null, login, logout };
 }
