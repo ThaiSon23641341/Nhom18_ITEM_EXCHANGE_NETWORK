@@ -47,10 +47,10 @@ export function LoginScreen({
           >
             <Leaf size={29} color="#FFFFFF" strokeWidth={2.4} />
           </YStack>
-          <Text color="primary" fontSize="8" fontWeight="800" textAlign="center">
+          <Text color="primary" fontSize="8" fontWeight="800" text="center">
             Trao Đổi IUH
           </Text>
-          <Text color="#718078" fontSize="3" textAlign="center">
+          <Text color="#718078" fontSize="3" text="center">
             Kết nối sinh viên • Chia sẻ giá trị
           </Text>
         </YStack>

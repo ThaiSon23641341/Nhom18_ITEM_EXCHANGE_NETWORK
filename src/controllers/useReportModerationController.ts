@@ -37,9 +37,12 @@ export function useReportModerationController() {
     }
   }, []);
 
+  // Initial data loading is intentionally triggered by the route lifecycle.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     void loadReports(1);
   }, [loadReports]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const resolveReport = useCallback(
     async (reportId: string, status: ReportResolutionStatus) => {

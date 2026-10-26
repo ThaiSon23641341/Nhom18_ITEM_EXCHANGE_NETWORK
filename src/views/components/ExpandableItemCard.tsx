@@ -36,9 +36,12 @@ export function ExpandableItemCard({
   const toggleExpanded = useCallback(() => {
     const nextExpanded = !isExpanded;
     setIsExpanded(nextExpanded);
+    // Reanimated shared values are mutable by design.
+    // eslint-disable-next-line react-hooks/immutability
     animatedHeight.value = withTiming(nextExpanded ? expandedHeight : 0, {
       duration: ANIMATION_DURATION_MS,
     });
+    // eslint-disable-next-line react-hooks/immutability
     animatedOpacity.value = withTiming(nextExpanded ? 1 : 0, {
       duration: ANIMATION_DURATION_MS,
     });

@@ -19,18 +19,18 @@ export function ItemDetailScreen() {
 
   return (
     <YStack flex={1} backgroundColor="background" items="center" justify="center" p="6" gap="4">
-      <Text fontSize="8" fontWeight="700" color="color" textAlign="center">
+      <Text fontSize="8" fontWeight="700" color="color" text="center">
         Chi tiết Món đồ
       </Text>
       <Separator />
-      <Text fontSize="5" color="color" textAlign="center" opacity={0.7}>
+      <Text fontSize="5" color="color" text="center" opacity={0.7}>
         ID món đồ:
       </Text>
-      <Text fontSize="6" fontWeight="700" color="color" textAlign="center">
+      <Text fontSize="6" fontWeight="700" color="color" text="center">
         {id ?? '(không có id)'}
       </Text>
       <Separator />
-      <Text fontSize="3" color="color" textAlign="center" opacity={0.6}>
+      <Text fontSize="3" color="color" text="center" opacity={0.6}>
         Giao diện thật sẽ do B làm (B22)
       </Text>
       {id ? (
