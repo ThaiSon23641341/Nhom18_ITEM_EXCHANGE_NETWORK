@@ -102,7 +102,7 @@ export function ReportModerationScreen() {
 
         {result && result.totalPages > 1 ? (
           <YStack gap="2">
-            <Text color="color" text="center">
+            <Text color="color" textAlign="center">
               Trang {page}/{result.totalPages}
             </Text>
             <Button

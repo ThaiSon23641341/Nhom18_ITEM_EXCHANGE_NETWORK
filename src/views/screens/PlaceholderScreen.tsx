@@ -19,12 +19,12 @@ interface PlaceholderScreenProps extends PropsWithChildren {
 export function PlaceholderScreen({ title, note, children }: PlaceholderScreenProps) {
   return (
     <YStack flex={1} backgroundColor="background" items="center" justify="center" p="6" gap="4">
-      <Text fontSize="8" fontWeight="700" color="color" text="center">
+      <Text fontSize="8" fontWeight="700" color="color" textAlign="center">
         {title}
       </Text>
       <Separator />
       {note ? (
-        <Text fontSize="4" color="color" text="center" opacity={0.7}>
+        <Text fontSize="4" color="color" textAlign="center" opacity={0.7}>
           {note}
         </Text>
       ) : null}

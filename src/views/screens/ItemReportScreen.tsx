@@ -51,7 +51,7 @@ export function ItemReportScreen() {
         <Text color="color" fontSize="6" fontWeight="700">
           Đã gửi báo cáo
         </Text>
-        <Text color="color" text="center">
+        <Text color="color" textAlign="center">
           Báo cáo cho “{item.title}” đã được ghi nhận để xem xét.
         </Text>
         <Button onPress={() => router.back()}>Quay lại bài đăng</Button>

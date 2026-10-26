@@ -16,11 +16,11 @@ export default function NotFoundRoute() {
       <Text fontSize="9" fontWeight="700" color="color">
         404
       </Text>
-      <Text fontSize="6" fontWeight="700" color="color" text="center">
+      <Text fontSize="6" fontWeight="700" color="color" textAlign="center">
         Trang không tồn tại
       </Text>
       <Separator />
-      <Text fontSize="4" color="color" text="center" opacity={0.7}>
+      <Text fontSize="4" color="color" textAlign="center" opacity={0.7}>
         Đường dẫn bạn truy cập không hợp lệ.
       </Text>
       <Link href="/(tabs)" asChild>

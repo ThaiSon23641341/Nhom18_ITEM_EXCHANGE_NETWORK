@@ -16,9 +16,6 @@ export interface LoginScreenProps {
   isSubmitting?: boolean;
 }
 
-const HERO_IMAGE_URI =
-  'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1200&q=85';
-
 export function LoginScreen({
   email,
   onEmailChange,
@@ -47,14 +44,13 @@ export function LoginScreen({
             backgroundColor="primary"
             items="center"
             justify="center"
-            accessibilityLabel="Biểu tượng lá xanh"
           >
             <Leaf size={29} color="#FFFFFF" strokeWidth={2.4} />
           </YStack>
-          <Text color="primary" fontSize="8" fontWeight="800" text="center">
+          <Text color="primary" fontSize="8" fontWeight="800" textAlign="center">
             Trao Đổi IUH
           </Text>
-          <Text color="#718078" fontSize="3" text="center">
+          <Text color="#718078" fontSize="3" textAlign="center">
             Kết nối sinh viên • Chia sẻ giá trị
           </Text>
         </YStack>
@@ -68,7 +64,6 @@ export function LoginScreen({
               objectFit="cover"
               alt="Minh họa khuôn viên trường học"
               accessible
-              accessibilityLabel="Minh họa khuôn viên trường học"
             />
           </YStack>
 
@@ -112,7 +107,6 @@ export function LoginScreen({
                 px={0}
                 color="#153D30"
                 fontSize="3"
-                accessibilityLabel="Email sinh viên"
               />
             </XStack>
             <CustomButton
@@ -121,7 +115,6 @@ export function LoginScreen({
               opacity={isSubmitting ? 0.7 : undefined}
               h={56}
               rounded="4"
-              accessibilityRole="button"
             >
               {isSubmitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
             </CustomButton>
