@@ -1,25 +1,14 @@
 /**
  * src/app/item/[id]/edit.tsx
- *
- * Route "/item/[id]/edit" — màn hình chỉnh sửa món đồ.
- * Màn hình tạm cho B (B17).
+ * Route mỏng chỉnh sửa món đồ.
  */
 
-import { router, useLocalSearchParams } from 'expo-router';
-import { PlaceholderScreen } from '../../../views/screens/PlaceholderScreen';
-import { CustomButton } from '../../../views/components/CustomButton';
+import { useLocalSearchParams } from 'expo-router';
+import { ItemFormScreen } from '../../../views/screens/ItemFormScreen';
 
 export default function ItemEditRoute() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const params = useLocalSearchParams<{ id: string | string[] }>();
+  const itemId = Array.isArray(params.id) ? params.id[0] : params.id;
 
-  return (
-    <PlaceholderScreen
-      title="Chỉnh sửa Món đồ"
-      note={`ID: ${id ?? ''} · Màn hình tạm — B làm giao diện và logic (B17)`}
-    >
-      <CustomButton onPress={() => router.back()}>
-        Quay lại
-      </CustomButton>
-    </PlaceholderScreen>
-  );
+  return <ItemFormScreen mode="edit" itemId={itemId} />;
 }
