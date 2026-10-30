@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Initial async data loading is synchronized with controller state. */
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { getItemById, createItem, updateItem } from '../services/api/itemService';
 import { useAuthController } from './useAuthController';

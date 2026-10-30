@@ -193,7 +193,9 @@ export function usePaginatedItems(options?: UsePaginatedItemsOptions) {
 
   // Lưu query hiện tại vào ref để dùng trong callback mà không bị thay đổi tham chiếu
   const queryRef = useRef<ItemQueryParams | undefined>(query);
-  queryRef.current = query;
+  useEffect(() => {
+    queryRef.current = query;
+  }, [query]);
 
   // ─── Hàm nạp dữ liệu trang đầu (hoặc làm mới) ─────────────────────────────
   const loadFirstPage = useCallback(

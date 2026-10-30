@@ -16,9 +16,6 @@ export interface LoginScreenProps {
   isSubmitting?: boolean;
 }
 
-const HERO_IMAGE_URI =
-  'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1200&q=85';
-
 export function LoginScreen({
   email,
   onEmailChange,

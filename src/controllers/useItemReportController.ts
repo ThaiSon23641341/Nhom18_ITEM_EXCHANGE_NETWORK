@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Initial async report data loading is synchronized with controller state. */
 import { useCallback, useEffect, useState } from 'react';
 import type { Item } from '../models/itemModel';
 import { type ReportReason } from '../models/reportModel';

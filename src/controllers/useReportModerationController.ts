@@ -1,3 +1,4 @@
+/* eslint-disable react-hooks/set-state-in-effect -- Initial async moderation loading is synchronized with controller state. */
 import { useCallback, useEffect, useState } from 'react';
 import type {
   ItemReportPaginationResponse,
