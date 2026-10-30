@@ -1,15 +1,17 @@
 export type ItemStatus = 'available' | 'reserved' | 'exchanged';
+export type ItemCondition = 'new' | 'good' | 'fair';
 
 export interface Item {
   id: string;
   title: string;
   description: string;
   category: string;
-  condition: string;
+  condition: ItemCondition;
   imageUrl: string;
   status: ItemStatus;
   ownerId: string;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface ItemPaginationResponse {
@@ -21,5 +23,13 @@ export interface ItemPaginationResponse {
   hasMore: boolean;
 }
 
-export type CreateItemInput = Omit<Item, 'id' | 'createdAt'>;
-export type UpdateItemInput = Partial<CreateItemInput>;
+export type CreateItemInput = Pick<
+  Item,
+  'title' | 'description' | 'category' | 'condition' | 'imageUrl' | 'ownerId'
+>;
+export type UpdateItemInput = Partial<
+  Pick<
+    Item,
+    'title' | 'description' | 'category' | 'condition' | 'imageUrl' | 'status'
+  >
+>;

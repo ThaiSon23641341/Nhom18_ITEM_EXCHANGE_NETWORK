@@ -18,6 +18,7 @@ export interface ItemReport {
   details: string;
   status: ReportStatus;
   createdAt: string;
+  updatedAt: string;
 }
 
 export type CreateItemReportInput = Pick<

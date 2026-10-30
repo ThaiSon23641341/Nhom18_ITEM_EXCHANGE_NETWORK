@@ -78,5 +78,13 @@ va cho phep danh dau report la `actioned` hoac `dismissed`.
 
 `src/services/api/reportService.ts` mo phong tao report, truy van hang doi va
 cap nhat trang thai `pending`, `actioned` hoac `dismissed`. Du lieu chi nam
-trong bo nho cua tien trinh app; chua co backend hoac phan quyen moderator.
-Man hinh kiem duyet chi phuc vu demo, khong an toan cho production.
+trong bo nho cua tien trinh app va chua duoc noi voi backend mau. Chua co xac
+thuc hoac phan quyen moderator; man hinh kiem duyet chi phuc vu demo.
+
+## Backend API demo
+
+Backend mau doc lap nam trong `backend/`. API su dung du lieu seed trong bo nho,
+khong ket noi MongoDB hoac database nao; khoi dong lai server se reset du lieu.
+Xem `backend/README.md` de chay API, xem endpoint va thiet ke collection/index
+MongoDB du kien. API demo chua co authentication/authorization, khong deploy nhu
+backend production va chua duoc ket noi voi ung dung Expo.
