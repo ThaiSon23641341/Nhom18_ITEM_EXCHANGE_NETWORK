@@ -46,7 +46,7 @@ export function LoginScreen({
             backgroundColor="primary"
             items="center"
             justify="center"
-            accessibilityLabel="Biểu tượng lá xanh"
+            aria-label="Biểu tượng lá xanh"
           >
             <Leaf size={29} color="#FFFFFF" strokeWidth={2.4} />
           </YStack>
@@ -66,8 +66,7 @@ export function LoginScreen({
               height={190}
               objectFit="cover"
               alt="Minh họa khuôn viên trường học"
-              accessible
-              accessibilityLabel="Minh họa khuôn viên trường học"
+              aria-label="Minh họa khuôn viên trường học"
             />
           </YStack>
 
@@ -111,12 +110,12 @@ export function LoginScreen({
                 px={0}
                 color="#153D30"
                 fontSize="3"
-                accessibilityLabel="Email sinh viên"
-                accessibilityState={{ disabled: isSubmitting }}
+                aria-label="Email sinh viên"
+                disabled={isSubmitting}
               />
             </XStack>
             {error ? (
-              <Text color="#B42318" fontSize="2" accessibilityRole="alert">
+              <Text color="#B42318" fontSize="2" role="alert">
                 {error}
               </Text>
             ) : null}
@@ -129,7 +128,7 @@ export function LoginScreen({
               opacity={isSubmitting ? 0.7 : undefined}
               h={56}
               rounded="4"
-              accessibilityRole="button"
+              aria-busy={isSubmitting}
             >
               {isSubmitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
             </CustomButton>

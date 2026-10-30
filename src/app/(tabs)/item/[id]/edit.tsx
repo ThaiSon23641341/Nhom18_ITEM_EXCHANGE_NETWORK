@@ -1,13 +1,6 @@
-/**
- * src/app/item/[id]/edit.tsx
- *
- * Route "/item/[id]/edit" — màn hình chỉnh sửa món đồ.
- * Màn hình tạm cho B (B17).
- */
-
 import { router, useLocalSearchParams } from 'expo-router';
-import { PlaceholderScreen } from '../../../views/screens/PlaceholderScreen';
-import { CustomButton } from '../../../views/components/CustomButton';
+import { CustomButton } from '../../../../views/components/CustomButton';
+import { PlaceholderScreen } from '../../../../views/screens/PlaceholderScreen';
 
 export default function ItemEditRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
