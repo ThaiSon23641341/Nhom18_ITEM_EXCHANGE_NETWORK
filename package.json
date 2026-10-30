@@ -46,7 +46,11 @@
     "typescript": "~6.0.3"
   },
   "jest": {
-    "preset": "jest-expo"
+    "preset": "jest-expo",
+    "moduleDirectories": [
+      "node_modules",
+      "<rootDir>/node_modules/expo/node_modules"
+    ]
   },
   "private": true
 }
