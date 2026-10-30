@@ -25,9 +25,33 @@ export function signInWithEmail(email: string): User {
     throw new Error('Vui lòng nhập email hợp lệ.');
   }
 
+  const demoAccounts: Record<string, Pick<User, 'id' | 'fullName' | 'studentId'>> = {
+    'sinhvien001@student.iuh.edu.vn': {
+      id: 'user-001',
+      fullName: 'Nguyen Minh Anh',
+      studentId: '21036001',
+    },
+    'sinhvien002@student.iuh.edu.vn': {
+      id: 'user-002',
+      fullName: 'Tran Gia Bao',
+      studentId: '21036002',
+    },
+    'moderator@student.iuh.edu.vn': {
+      id: 'user-003',
+      fullName: 'Demo Moderator',
+      studentId: '21036003',
+    },
+  };
+  const account = demoAccounts[normalizedEmail] ?? {
+    id: MOCK_USER.id,
+    fullName: MOCK_USER.fullName,
+    studentId: MOCK_USER.studentId,
+  };
+
   currentUser = {
     ...MOCK_USER,
     email: normalizedEmail,
+    ...account,
   };
   notify();
   return currentUser;

@@ -70,6 +70,8 @@ export interface Appointment {
   date: string;
   time: string;
   location: string;
+  scheduledAt?: string;
+  note?: string;
   status: AppointmentStatus;
   createdAt: string;
   updatedAt: string;
@@ -77,7 +79,7 @@ export interface Appointment {
 
 export type CreateAppointmentInput = Pick<
   Appointment,
-  'itemId' | 'requesterId' | 'date' | 'time' | 'location'
+  'itemId' | 'requesterId' | 'date' | 'time' | 'location' | 'scheduledAt' | 'note'
 >;
 
 export interface ItemReport {

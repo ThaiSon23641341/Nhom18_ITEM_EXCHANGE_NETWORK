@@ -13,6 +13,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthController } from '../../controllers/useAuthController';
 import { createItem } from '../../services/api/itemService';
 import { pickImageFromLibrary, type DeviceImage } from '../../services/device';
@@ -94,8 +95,9 @@ export default function ItemCreateRoute() {
   };
 
   return (
-    <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
-      <Text style={styles.heading}>Đăng đồ dùng mới</Text>
+    <SafeAreaView style={styles.safeArea} edges={['top', 'bottom']}>
+      <ScrollView contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
+        <Text style={styles.heading}>Đăng đồ dùng mới</Text>
       <Text style={styles.label}>Ảnh đồ dùng</Text>
       {image ? (
         <Image source={{ uri: image.uri }} style={styles.preview} accessibilityLabel="Ảnh đồ dùng đã chọn" />
@@ -128,22 +130,24 @@ export default function ItemCreateRoute() {
         <Text style={styles.secondaryText}>Quay lại</Text>
       </Pressable>
 
-      <Modal visible={cameraVisible} animationType="slide" onRequestClose={() => setCameraVisible(false)}>
-        <View style={styles.cameraContainer}>
-          <CameraView ref={cameraRef} style={styles.camera} facing="back" />
-          <View style={styles.cameraControls}>
-            <Pressable style={styles.closeButton} onPress={() => setCameraVisible(false)}>
-              <Text style={styles.cameraText}>Đóng</Text>
-            </Pressable>
-            <Pressable style={styles.captureButton} onPress={takePhoto} accessibilityLabel="Chụp ảnh" />
-          </View>
-        </View>
-      </Modal>
-    </ScrollView>
+        <Modal visible={cameraVisible} animationType="slide" onRequestClose={() => setCameraVisible(false)}>
+          <SafeAreaView style={styles.cameraContainer} edges={['top', 'bottom']}>
+            <CameraView ref={cameraRef} style={styles.camera} facing="back" />
+            <View style={styles.cameraControls}>
+              <Pressable style={styles.closeButton} onPress={() => setCameraVisible(false)}>
+                <Text style={styles.cameraText}>Đóng</Text>
+              </Pressable>
+              <Pressable style={styles.captureButton} onPress={takePhoto} accessibilityLabel="Chụp ảnh" />
+            </View>
+          </SafeAreaView>
+        </Modal>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
+  safeArea: { flex: 1, backgroundColor: '#fff' },
   content: { padding: 20, gap: 12 },
   heading: { fontSize: 26, fontWeight: '700', marginBottom: 8 },
   label: { fontSize: 16, fontWeight: '600', marginTop: 8 },

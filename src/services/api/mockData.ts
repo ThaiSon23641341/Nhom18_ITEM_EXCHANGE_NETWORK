@@ -1,4 +1,4 @@
-import { Item } from '../../models';
+import { Item } from '../../models'; 
 
 const IMAGE_URL = 'https://images.unsplash.com/photo-1517842645767-c639042777db';
 

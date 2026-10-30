@@ -1,93 +1,122 @@
-import { CreateItemInput, Item, ItemPaginationResponse, UpdateItemInput } from '../../models';
-import { MOCK_ITEMS } from './mockData';
+import type { CreateItemInput, Item, ItemPaginationResponse, UpdateItemInput } from '../../models';
 
-const API_DELAY_MS = 500;
-let items = MOCK_ITEMS.map((item) => ({ ...item }));
+const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:4000/api/v1';
 
-export class MockApiError extends Error {
-  constructor(message: string, public readonly code: 'BAD_REQUEST' | 'NOT_FOUND') {
+export class ItemApiError extends Error {
+  constructor(message: string, public readonly code: 'BAD_REQUEST' | 'NOT_FOUND' | 'NETWORK') {
     super(message);
-    this.name = 'MockApiError';
+    this.name = 'ItemApiError';
   }
 }
 
-const wait = async (): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, API_DELAY_MS));
+export const MockApiError = ItemApiError;
+
+const getApiErrorMessage = (payload: unknown): string => {
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'error' in payload &&
+    typeof payload.error === 'object' &&
+    payload.error !== null &&
+    'message' in payload.error &&
+    typeof payload.error.message === 'string'
+  ) {
+    return payload.error.message;
+  }
+  return 'Không thể kết nối máy chủ. Vui lòng thử lại.';
 };
 
-const cloneItem = (item: Item): Item => ({ ...item });
+const getApiErrorCode = (payload: unknown): ItemApiError['code'] => {
+  if (
+    typeof payload === 'object' &&
+    payload !== null &&
+    'error' in payload &&
+    typeof payload.error === 'object' &&
+    payload.error !== null &&
+    'code' in payload.error
+  ) {
+    if (payload.error.code === 'NOT_FOUND') return 'NOT_FOUND';
+    if (payload.error.code === 'BAD_REQUEST') return 'BAD_REQUEST';
+  }
+  return 'NETWORK';
+};
 
-export const getItems = async (page: number, limit: number): Promise<ItemPaginationResponse> => {
-  await wait();
-
-  if (!Number.isInteger(page) || !Number.isInteger(limit) || page < 1 || limit < 1) {
-    throw new MockApiError('Page and limit must be positive integers.', 'BAD_REQUEST');
+async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  let response: Response;
+  try {
+    response = await fetch(`${API_BASE_URL}${path}`, {
+      ...init,
+      headers: { 'Content-Type': 'application/json', ...(init?.headers ?? {}) },
+    });
+  } catch (error: unknown) {
+    console.warn('Không thể kết nối API món đồ:', error);
+    throw new ItemApiError(
+      'Không thể kết nối máy chủ. Hãy khởi động backend và kiểm tra EXPO_PUBLIC_API_URL.',
+      'NETWORK',
+    );
   }
 
-  const total = items.length;
-  const totalPages = Math.ceil(total / limit);
-  const start = (page - 1) * limit;
-
-  return {
-    data: items.slice(start, start + limit).map(cloneItem),
-    page,
-    limit,
-    total,
-    totalPages,
-    hasMore: page < totalPages,
-  };
-};
-
-export const getItemById = async (id: string): Promise<Item> => {
-  await wait();
-  const item = items.find((candidate) => candidate.id === id);
-
-  if (!item) {
-    throw new MockApiError(`Item ${id} was not found.`, 'NOT_FOUND');
+  const payload: unknown = response.status === 204 ? undefined : await response.json();
+  if (!response.ok) {
+    throw new ItemApiError(getApiErrorMessage(payload), getApiErrorCode(payload));
   }
+  return payload as T;
+}
 
-  return cloneItem(item);
-};
+function isItemResponse(value: unknown): value is { data: Item } {
+  return typeof value === 'object' && value !== null && 'data' in value && typeof value.data === 'object' && value.data !== null;
+}
 
-export const createItem = async (itemData: CreateItemInput): Promise<Item> => {
-  await wait();
-  if (!itemData.title.trim() || !itemData.ownerId.trim()) {
-    throw new MockApiError('Title and ownerId are required.', 'BAD_REQUEST');
+function isPaginationResponse(value: unknown): value is ItemPaginationResponse {
+  return (
+    isItemResponse(value) &&
+    Array.isArray(value.data) &&
+    'page' in value &&
+    'limit' in value &&
+    'total' in value &&
+    'totalPages' in value &&
+    'hasMore' in value
+  );
+}
+
+export async function getItems(page: number, limit: number): Promise<ItemPaginationResponse> {
+  const payload = await request<unknown>(`/items?page=${page}&limit=${limit}`);
+  if (!isPaginationResponse(payload)) {
+    throw new ItemApiError('Dữ liệu món đồ từ máy chủ không hợp lệ.', 'NETWORK');
   }
+  return payload;
+}
 
-  const now = new Date().toISOString();
-  const item: Item = {
-    ...itemData,
-    id: `item-${String(items.length + 1).padStart(3, '0')}`,
-    status: 'available',
-    createdAt: now,
-    updatedAt: now,
-  };
-  items = [item, ...items];
-  return cloneItem(item);
-};
-
-export const updateItem = async (id: string, itemData: UpdateItemInput): Promise<Item> => {
-  await wait();
-  const index = items.findIndex((candidate) => candidate.id === id);
-  if (index === -1) {
-    throw new MockApiError(`Item ${id} was not found.`, 'NOT_FOUND');
+export async function getItemById(id: string): Promise<Item> {
+  const payload = await request<unknown>(`/items/${encodeURIComponent(id)}`);
+  if (!isItemResponse(payload)) {
+    throw new ItemApiError('Dữ liệu món đồ từ máy chủ không hợp lệ.', 'NETWORK');
   }
+  return payload.data;
+}
 
-  items[index] = {
-    ...items[index],
-    ...itemData,
-    updatedAt: new Date().toISOString(),
-  };
-  return cloneItem(items[index]);
-};
-
-export const deleteItem = async (id: string): Promise<void> => {
-  await wait();
-  const exists = items.some((item) => item.id === id);
-  if (!exists) {
-    throw new MockApiError(`Item ${id} was not found.`, 'NOT_FOUND');
+export async function createItem(itemData: CreateItemInput): Promise<Item> {
+  const payload = await request<unknown>('/items', {
+    method: 'POST',
+    body: JSON.stringify(itemData),
+  });
+  if (!isItemResponse(payload)) {
+    throw new ItemApiError('Dữ liệu món đồ từ máy chủ không hợp lệ.', 'NETWORK');
   }
+  return payload.data;
+}
 
-  items = items.filter((item) => item.id !== id);
-};
+export async function updateItem(id: string, itemData: UpdateItemInput): Promise<Item> {
+  const payload = await request<unknown>(`/items/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(itemData),
+  });
+  if (!isItemResponse(payload)) {
+    throw new ItemApiError('Dữ liệu món đồ từ máy chủ không hợp lệ.', 'NETWORK');
+  }
+  return payload.data;
+}
+
+export async function deleteItem(id: string): Promise<void> {
+  await request<void>(`/items/${encodeURIComponent(id)}`, { method: 'DELETE' });
+}

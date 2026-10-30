@@ -10,13 +10,15 @@
  */
 /**f */
 
-import { useCallback, useMemo } from 'react';
-import { useColorScheme } from 'react-native';
+import { useCallback, useEffect, useMemo } from 'react';
+import { Platform, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { Stack } from 'expo-router';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { Stack, router } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { TamaguiProvider, Theme } from 'tamagui';
 import { config } from '../../tamagui.config';
+import * as Notifications from 'expo-notifications';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -35,14 +37,31 @@ export default function RootLayout() {
     [],
   );
 
+  useEffect(() => {
+    if (Platform.OS === 'web') return undefined;
+    const handleResponse = (response: Notifications.NotificationResponse) => {
+      const appointmentId = response.notification.request.content.data?.appointmentId;
+      if (typeof appointmentId === 'string') {
+        router.replace({ pathname: '/(tabs)/appointments', params: { appointmentId } });
+      }
+    };
+    const subscription = Notifications.addNotificationResponseReceivedListener(handleResponse);
+    void Notifications.getLastNotificationResponseAsync().then((response) => {
+      if (response) handleResponse(response);
+    });
+    return () => subscription.remove();
+  }, []);
+
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
-      <TamaguiProvider config={config} defaultTheme={tamaguiTheme}>
-        <Theme name={tamaguiTheme}>
-          <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-          <Stack screenOptions={screenOptions()} />
-        </Theme>
-      </TamaguiProvider>
-    </GestureHandlerRootView>
+    <SafeAreaProvider>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <TamaguiProvider config={config} defaultTheme={tamaguiTheme}>
+          <Theme name={tamaguiTheme}>
+            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+            <Stack screenOptions={screenOptions()} />
+          </Theme>
+        </TamaguiProvider>
+      </GestureHandlerRootView>
+    </SafeAreaProvider>
   );
 }
