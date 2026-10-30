@@ -2,6 +2,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   Image,
   KeyboardAvoidingView,
   Modal,
@@ -145,7 +146,15 @@ export default function AppointmentCreateRoute() {
 
   const continueToConfirmation = () => {
     const appointmentDate = combineAppointmentDate(date, time);
-    if (!appointmentDate || !isAppointmentDateInFuture(appointmentDate)) {
+    if (!appointmentDate) {
+      Alert.alert('Thời gian chưa hợp lệ', 'Vui lòng nhập ngày và giờ đúng định dạng.');
+      return;
+    }
+    if (!isAppointmentDateInFuture(appointmentDate)) {
+      Alert.alert(
+        'Không thể đặt lịch',
+        'Ngày và giờ nhận đồ không được ở trong quá khứ. Vui lòng chọn thời gian khác.',
+      );
       return;
     }
     router.push({
@@ -161,7 +170,11 @@ export default function AppointmentCreateRoute() {
       },
     });
   };
-  const canContinue = Boolean(combineAppointmentDate(date, time) && location.trim());
+  const appointmentDateForForm = combineAppointmentDate(date, time);
+  const isPastAppointment = Boolean(
+    appointmentDateForForm && !isAppointmentDateInFuture(appointmentDateForForm),
+  );
+  const canContinue = Boolean(date && time && location.trim());
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
@@ -221,6 +234,11 @@ export default function AppointmentCreateRoute() {
           ) : (
             <Text color="color" opacity={0.75} fontSize="3">Vui lòng chọn ngày và giờ nhận.</Text>
           )}
+          {isPastAppointment ? (
+            <Text color="red" fontSize="3" fontWeight="700">
+              Ngày và giờ nhận đồ đã qua. Vui lòng chọn thời gian khác.
+            </Text>
+          ) : null}
           <Text color="primary" fontWeight="700" fontSize="5">Địa điểm nhận đồ</Text>
           <Input
             h={40}
