@@ -17,6 +17,8 @@ export function useItemReportController(itemId: string | undefined) {
 
   useEffect(() => {
     let isActive = true;
+    // Reset form state when the route's item id changes.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setIsLoading(true);
     setLoadError(null);
     setItem(null);

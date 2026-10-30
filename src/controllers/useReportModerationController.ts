@@ -38,6 +38,8 @@ export function useReportModerationController() {
   }, []);
 
   useEffect(() => {
+    // Kick off the initial queue load when the screen mounts.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadReports(1);
   }, [loadReports]);
 

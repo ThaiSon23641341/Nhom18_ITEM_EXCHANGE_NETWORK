@@ -6,18 +6,8 @@
  */
 
 import { router } from 'expo-router';
-import { PlaceholderScreen } from '../../views/screens/PlaceholderScreen';
-import { CustomButton } from '../../views/components/CustomButton';
+import { CreateItemScreen } from '../../views/screens/CreateItemScreen';
 
 export default function ItemCreateRoute() {
-  return (
-    <PlaceholderScreen
-      title="Đăng đồ dùng mới"
-      note="Màn hình tạm — B làm giao diện và logic (B15)"
-    >
-      <CustomButton onPress={() => router.back()}>
-        Quay lại
-      </CustomButton>
-    </PlaceholderScreen>
-  );
+  return <CreateItemScreen onBack={() => router.back()} />;
 }

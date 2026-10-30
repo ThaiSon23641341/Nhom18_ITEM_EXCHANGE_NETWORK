@@ -25,6 +25,18 @@ npm install
 npx expo start
 ```
 
+## Kiểm thử đăng nhập
+
+Ở màn hình đăng nhập, nhập email theo mẫu
+`21036001.nguyen@student.iuh.edu.vn` rồi nhấn **Đăng nhập**. Email hợp lệ sẽ
+đưa bạn vào các tab chính; email sai định dạng sẽ hiển thị thông báo lỗi. Mẫu
+được kiểm tra là đúng 8 chữ số, dấu chấm, tên gồm chữ cái (có thể ngăn cách
+bằng dấu chấm hoặc gạch nối), sau đó là `@student.iuh.edu.vn`.
+
+Đây chỉ là đăng nhập mô phỏng để kiểm tra form và điều hướng, không xác minh
+mật khẩu hay tài khoản với máy chủ. Phiên đăng nhập chỉ tồn tại trong bộ nhớ
+khi app đang chạy.
+
 ## Kiem tra va test
 
 Chay cac lenh sau truoc khi tao pull request:
