@@ -15,6 +15,8 @@ export function useItemReportController(itemId: string | undefined) {
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
+  // The effect resets the form whenever the route item changes.
+  /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     let isActive = true;
     // Reset form state when the route's item id changes.
@@ -55,6 +57,7 @@ export function useItemReportController(itemId: string | undefined) {
       isActive = false;
     };
   }, [itemId]);
+  /* eslint-enable react-hooks/set-state-in-effect */
 
   const setReason = useCallback((nextReason: ReportReason) => {
     setSelectedReason(nextReason);

@@ -29,6 +29,7 @@ export type CreateItemFormData = {
 
 export interface CreateItemScreenProps {
   onBack?: () => void;
+  onTakePhoto?: () => Promise<string | null>;
   onSubmit?: (data: CreateItemFormData) => Promise<void>;
 }
 
@@ -79,6 +80,7 @@ function ChipGroup<T extends string>({
 
 export function CreateItemScreen({
   onBack,
+  onTakePhoto,
   onSubmit,
 }: CreateItemScreenProps) {
   const theme = useTheme();
@@ -118,6 +120,23 @@ export function CreateItemScreen({
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Không xác định';
       setImageError(`Không thể mở thư viện ảnh: ${message}`);
+    }
+  };
+
+  const handleTakePhoto = async () => {
+    if (images.length >= 5) {
+      setImageError('Bạn chỉ có thể chọn tối đa 5 ảnh.');
+      return;
+    }
+
+    setImageError('');
+    try {
+      const uri = await onTakePhoto?.();
+      if (uri) {
+        setImages((current) => [...current, uri].slice(0, 5));
+      }
+    } catch (error) {
+      setImageError(error instanceof Error ? error.message : 'Không thể chụp ảnh.');
     }
   };
 
@@ -171,6 +190,18 @@ export function CreateItemScreen({
         >
           <ArrowLeft size={20} color={theme.color?.val as string} />
         </Button>
+        {onTakePhoto ? (
+          <Button
+            minH={44}
+            borderWidth={1}
+            borderColor="border-color"
+            backgroundColor="background"
+            onPress={handleTakePhoto}
+            aria-label="Chụp ảnh đồ dùng"
+          >
+            <Button.Text color="primary">Chụp ảnh bằng camera</Button.Text>
+          </Button>
+        ) : null}
         <Text
           flex={1}
           color="color"

@@ -10,7 +10,9 @@ export interface Appointment {
   requesterId: string;
   date: string;
   time: string;
+  scheduledAt?: string;
   location: string;
+  note?: string;
   status: AppointmentStatus;
   createdAt: string;
   updatedAt: string;

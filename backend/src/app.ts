@@ -227,6 +227,8 @@ const parseCreateAppointment = (
   const date = text(body.date);
   const time = text(body.time);
   const location = text(body.location);
+  const scheduledAt = text(body.scheduledAt);
+  const note = text(body.note) ?? '';
 
   if (
     !itemId ||
@@ -238,6 +240,8 @@ const parseCreateAppointment = (
     !isValidDate(date) ||
     !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(time) ||
     !store.userExists(requesterId)
+    || note.length > 500
+    || (scheduledAt !== undefined && Number.isNaN(Date.parse(scheduledAt)))
   ) {
     throw new ApiError('Appointment fields are invalid.', 400, 'BAD_REQUEST');
   }
@@ -249,7 +253,7 @@ const parseCreateAppointment = (
   if (item.status !== 'available') {
     throw new ApiError('Item is not available for appointment.', 409, 'CONFLICT');
   }
-  return { itemId, requesterId, date, time, location };
+  return { itemId, requesterId, date, time, location, scheduledAt, note };
 };
 
 const parseCreateReport = (
@@ -292,6 +296,16 @@ const sendError = (response: Response, error: unknown): void => {
 
 export const createApp = (store: DemoStore = demoStore) => {
   const app = express();
+  app.use((_request, response, next) => {
+    response.setHeader('Access-Control-Allow-Origin', '*');
+    response.setHeader('Access-Control-Allow-Methods', 'GET,POST,PATCH,DELETE,OPTIONS');
+    response.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (_request.method === 'OPTIONS') {
+      response.status(204).end();
+      return;
+    }
+    next();
+  });
   app.use(express.json({ limit: '100kb' }));
 
   app.get(`${API_PREFIX}/health`, (_request, response) => {

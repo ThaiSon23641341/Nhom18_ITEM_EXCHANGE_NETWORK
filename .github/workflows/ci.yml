@@ -24,11 +24,19 @@ jobs:
         run: npm ci
 
       - name: Install backend dependencies
-        if: hashFiles('backend/package-lock.json') != ''
-        run: npm ci --prefix backend
+        working-directory: backend
+        run: npm ci
 
       - name: TypeScript typecheck
         run: npx tsc --noEmit
+
+      - name: Backend TypeScript build
+        working-directory: backend
+        run: npm run build
+
+      - name: Backend API tests
+        working-directory: backend
+        run: npm test
 
       - name: ESLint check
         run: npm run lint

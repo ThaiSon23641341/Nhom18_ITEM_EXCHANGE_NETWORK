@@ -13,10 +13,11 @@ import {
   UserRound,
 } from 'lucide-react-native';
 import { useState } from 'react';
-import { Share } from 'react-native';
+import { Alert } from 'react-native';
 import { Button, Image, ScrollView, Text, XStack, YStack } from 'tamagui';
 import { useAuthController } from '../../controllers/useAuthController';
 import { useItemDetailController } from '../../controllers/useItemDetailController';
+import { shareItem } from '../../services/shareService';
 
 const CONDITION_LABELS = {
   new: 'Còn mới',
@@ -50,13 +51,6 @@ export function ItemDetailScreen() {
       ? [item.imageUrl]
       : [];
   const canBookItem = item?.status === 'available' && item.ownerId !== user?.id;
-  const shareItem = async () => {
-    if (!item) return;
-    await Share.share({
-      message: `${item.title} - ${formatPrice(item.priceVnd)}${item.location ? ` tại ${item.location}` : ''}`,
-      title: item.title,
-    });
-  };
 
   if (isLoading) {
     return (
@@ -83,7 +77,23 @@ export function ItemDetailScreen() {
           <ArrowLeft size={21} color="#145B45" />
         </Button>
         <Text color="secondary" fontSize="5" fontWeight="800">Chi tiết đồ dùng</Text>
-        <Button w={40} h={40} circular backgroundColor="#E8F5EF" borderWidth={0} aria-label="Chia sẻ đồ dùng" onPress={shareItem}>
+        <Button
+          w={40}
+          h={40}
+          circular
+          backgroundColor="#E8F5EF"
+          borderWidth={0}
+          aria-label="Chia sẻ đồ dùng"
+          onPress={() => {
+            if (!item) return;
+            void shareItem(item.id, item.title).catch((error: unknown) => {
+              Alert.alert(
+                'Không thể chia sẻ',
+                error instanceof Error ? error.message : 'Vui lòng thử lại.',
+              );
+            });
+          }}
+        >
           <Share2 size={20} color="#145B45" />
         </Button>
       </XStack>
@@ -210,9 +220,10 @@ export function ItemDetailScreen() {
           disabled={!canBookItem}
           opacity={canBookItem ? 1 : 0.6}
           icon={<CalendarDays size={20} color="#FFFFFF" />}
-          onPress={() => {
-            router.push({ pathname: '/item/[id]/book', params: { id: item.id } });
-          }}
+          onPress={() => router.push({
+            pathname: '/appointment/create',
+            params: { itemId: item.id },
+          })}
           aria-disabled={!canBookItem}
         >
           <Button.Text color="white" fontSize="3" fontWeight="700">
