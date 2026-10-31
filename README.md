@@ -18,12 +18,24 @@ goi API truc tiep; Controller se truyen du lieu va event handlers vao View.
 
 ## Cai dat va chay du an
 
-Yeu cau Node.js 20 tro len va Expo SDK 55.
+Yeu cau Node.js 20 tro len va Expo SDK 58.
 
 ```bash
 npm install
 npx expo start
 ```
+
+## Kiểm thử đăng nhập
+
+Ở màn hình đăng nhập, nhập email theo mẫu
+`21036001.nguyen@student.iuh.edu.vn` rồi nhấn **Đăng nhập**. Email hợp lệ sẽ
+đưa bạn vào các tab chính; email sai định dạng sẽ hiển thị thông báo lỗi. Mẫu
+được kiểm tra là đúng 8 chữ số, dấu chấm, tên gồm chữ cái (có thể ngăn cách
+bằng dấu chấm hoặc gạch nối), sau đó là `@student.iuh.edu.vn`.
+
+Đây chỉ là đăng nhập mô phỏng bằng email để kiểm tra form và điều hướng, không
+xác minh mật khẩu hay tài khoản với máy chủ. Phiên đăng nhập chỉ tồn tại trong
+bộ nhớ khi app đang chạy.
 
 ## Kiem tra va test
 
@@ -54,9 +66,18 @@ Commits, vi du:
 
 ## Mo phong API
 
-`src/services/api/itemService.ts` cung cap mock API co delay 500 ms, phan trang
-va loi khi item khong ton tai. Du lieu mau nam trong `mockData.ts` de co the
-thay the bang backend that ma khong doi Model hoac Controller.
+`src/services/api/itemService.ts` cung cap mock API co delay 500 ms, phan trang,
+tao/cap nhat/xoa bai dang va loi khi item khong ton tai. Khám phá đọc từ cùng
+mock store để bài đăng mới xuất hiện trong danh sách và trang chi tiết; tìm
+kiếm, danh mục, bộ lọc và sắp xếp được xử lý trên dữ liệu đó. Lịch hẹn cũng
+được lưu trong mock store trong phiên chạy. Từ chi tiết một đồ dùng còn hàng
+của người khác, người dùng có thể chọn ngày, giờ, địa điểm nhận; yêu cầu sẽ
+xuất hiện trong tab **Lịch hẹn**.
+
+Các dữ liệu này chỉ tồn tại trong bộ nhớ của ứng dụng và sẽ mất khi khởi động
+lại. Ảnh chọn từ thiết bị hiện lưu bằng URI cục bộ, chưa được tải lên backend.
+Đăng nhập cũng chưa có API xác thực. Muốn phát hành thật cần backend xác thực,
+lưu trữ cơ sở dữ liệu và endpoint tải ảnh.
 
 ## Bao cao vi pham
 
