@@ -16,6 +16,7 @@ import {
   APPOINTMENT_REMINDER_MINUTES,
   scheduleAppointmentReminder,
 } from '../../services/device/notificationService';
+import { goBackOrReplace } from '../../utils/navigation';
 
 export default function AppointmentConfirmRoute() {
   const params = useLocalSearchParams<{
@@ -34,6 +35,9 @@ export default function AppointmentConfirmRoute() {
   const scheduledAt = typeof params.scheduledAt === 'string' ? params.scheduledAt : '';
   const location = typeof params.location === 'string' ? params.location : '';
   const note = typeof params.note === 'string' ? params.note : '';
+  const backToAppointmentForm = () => goBackOrReplace(
+    itemId ? { pathname: '/appointment/create', params: { itemId } } : '/(tabs)',
+  );
   const [item, setItem] = useState<Item | null>(null);
   const [loadingItem, setLoadingItem] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -93,14 +97,14 @@ export default function AppointmentConfirmRoute() {
   if (!itemId) {
     return <YStack flex={1} backgroundColor="background" items="center" justify="center" p="6" gap="4">
       <Text color="color" text="center">Thiếu thông tin món đồ được chọn.</Text>
-      <CustomButton onPress={() => router.back()}>Quay lại chỉnh sửa</CustomButton>
+      <CustomButton onPress={backToAppointmentForm}>Quay lại chỉnh sửa</CustomButton>
     </YStack>;
   }
   if (loadingItem) return <YStack flex={1} backgroundColor="background" items="center" justify="center"><ActivityIndicator /></YStack>;
   if (!item || !isValid) {
     return <YStack flex={1} backgroundColor="background" items="center" justify="center" p="6" gap="4">
       <Text color="color" text="center">Thông tin món đồ hoặc thời gian nhận không hợp lệ.</Text>
-      <CustomButton onPress={() => router.back()}>Quay lại chỉnh sửa</CustomButton>
+      <CustomButton onPress={backToAppointmentForm}>Quay lại chỉnh sửa</CustomButton>
     </YStack>;
   }
 
@@ -121,7 +125,7 @@ export default function AppointmentConfirmRoute() {
           <Text color="color">{location}</Text>
           {note ? <><Text color="color" fontWeight="700">Ghi chú</Text><Text color="color">{note}</Text></> : null}
         </YStack>
-        <CustomButton disabled={submitting} onPress={() => router.back()}>Quay lại chỉnh sửa</CustomButton>
+        <CustomButton disabled={submitting} onPress={backToAppointmentForm}>Quay lại chỉnh sửa</CustomButton>
         <CustomButton disabled={submitting} onPress={() => void submit()}>
           {submitting ? 'Đang tạo lịch...' : 'Xác nhận đặt lịch'}
         </CustomButton>

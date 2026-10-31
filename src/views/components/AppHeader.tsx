@@ -1,12 +1,16 @@
 import { Link } from 'expo-router';
 import { BookOpen, UserRound } from 'lucide-react-native';
-import { Pressable } from 'react-native';
+import { Platform, Pressable } from 'react-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
 
 export function AppHeaderBrand() {
   return (
     <Link href="/(tabs)" asChild>
-      <Pressable accessibilityRole="link" accessibilityLabel="Trao Đổi IUH - về Khám phá">
+      <Pressable
+        {...(Platform.OS === 'web'
+          ? { 'aria-label': 'Trao Đổi IUH - về Khám phá' }
+          : { accessibilityRole: 'link' as const, accessibilityLabel: 'Trao Đổi IUH - về Khám phá' })}
+      >
         <XStack items="center" gap="2">
           <YStack
             w={40}

@@ -3,9 +3,10 @@ import type { Item } from '../models/itemModel';
 import { type ReportReason } from '../models/reportModel';
 import { createItemReport, ReportServiceError } from '../services/api/reportService';
 import { getItemById, MockApiError } from '../services/api/itemService';
-import { MOCK_USER } from '../utils/constants';
+import { useAuthController } from './useAuthController';
 
 export function useItemReportController(itemId: string | undefined) {
+  const { user } = useAuthController();
   const [item, setItem] = useState<Item | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [loadError, setLoadError] = useState<string | null>(null);
@@ -27,6 +28,13 @@ export function useItemReportController(itemId: string | undefined) {
     setSelectedReason(null);
     setDetails('');
     setSubmitError(null);
+    if (!user) {
+      setLoadError('Bạn cần đăng nhập để báo cáo bài đăng.');
+      setIsLoading(false);
+      return () => {
+        isActive = false;
+      };
+    }
 
     if (!itemId) {
       setLoadError('Không tìm thấy mã bài đăng cần báo cáo.');
@@ -55,7 +63,7 @@ export function useItemReportController(itemId: string | undefined) {
     return () => {
       isActive = false;
     };
-  }, [itemId]);
+  }, [itemId, user]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   const setReason = useCallback((nextReason: ReportReason) => {
@@ -64,8 +72,8 @@ export function useItemReportController(itemId: string | undefined) {
   }, []);
 
   const submitReport = useCallback(async () => {
-    if (!itemId || !reason) {
-      setSubmitError('Vui lòng chọn lý do báo cáo.');
+    if (!itemId || !reason || !user) {
+      setSubmitError(user ? 'Vui lòng chọn lý do báo cáo.' : 'Bạn cần đăng nhập để gửi báo cáo.');
       return;
     }
 
@@ -74,7 +82,7 @@ export function useItemReportController(itemId: string | undefined) {
     try {
       await createItemReport({
         itemId,
-        reporterId: MOCK_USER.id,
+        reporterId: user.id,
         reason,
         details,
       });
@@ -88,7 +96,7 @@ export function useItemReportController(itemId: string | undefined) {
     } finally {
       setIsSubmitting(false);
     }
-  }, [details, itemId, reason]);
+  }, [details, itemId, reason, user]);
 
   return {
     item,

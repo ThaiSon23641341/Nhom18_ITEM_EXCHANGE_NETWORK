@@ -19,6 +19,8 @@ import { StatusBar } from 'expo-status-bar';
 import { TamaguiProvider, Theme } from 'tamagui';
 import { config } from '../../tamagui.config';
 import * as Notifications from 'expo-notifications';
+import { Provider } from 'react-redux';
+import { store } from '../store';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -53,15 +55,17 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <SafeAreaProvider>
-      <GestureHandlerRootView style={{ flex: 1 }}>
-        <TamaguiProvider config={config} defaultTheme={tamaguiTheme}>
-          <Theme name={tamaguiTheme}>
-            <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-            <Stack screenOptions={screenOptions()} />
-          </Theme>
-        </TamaguiProvider>
-      </GestureHandlerRootView>
-    </SafeAreaProvider>
+    <Provider store={store}>
+      <SafeAreaProvider>
+        <GestureHandlerRootView style={{ flex: 1 }}>
+          <TamaguiProvider config={config} defaultTheme={tamaguiTheme}>
+            <Theme name={tamaguiTheme}>
+              <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
+              <Stack screenOptions={screenOptions()} />
+            </Theme>
+          </TamaguiProvider>
+        </GestureHandlerRootView>
+      </SafeAreaProvider>
+    </Provider>
   );
 }

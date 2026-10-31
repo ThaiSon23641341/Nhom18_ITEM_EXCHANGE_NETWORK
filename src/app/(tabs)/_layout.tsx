@@ -10,7 +10,7 @@
  */
 
 import { router, Tabs } from 'expo-router';
-import { Pressable, useColorScheme, View } from 'react-native';
+import { Platform, Pressable, useColorScheme, View } from 'react-native';
 import { useTheme } from 'tamagui';
 import { CalendarClock, Compass, Package, Plus, User } from 'lucide-react-native';
 import { AppHeaderBrand, AppHeaderProfileAction } from '../../views/components/AppHeader';
@@ -133,9 +133,13 @@ export default function TabsLayout() {
           tabBarShowLabel: false,
           tabBarButton: (props) => (
             <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Đăng bài"
-              accessibilityState={props.accessibilityState}
+              {...(Platform.OS === 'web'
+                ? { 'aria-label': 'Đăng bài' }
+                : {
+                    accessibilityRole: 'button' as const,
+                    accessibilityLabel: 'Đăng bài',
+                    accessibilityState: props.accessibilityState,
+                  })}
               testID={props.testID}
               onLongPress={props.onLongPress}
               onPress={() => router.push('/item/create')}

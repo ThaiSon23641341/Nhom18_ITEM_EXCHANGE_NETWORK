@@ -19,6 +19,7 @@ import {
   getConditionLabel,
   getStatusLabel,
 } from '../../utils/itemOptions';
+import { getAccessibilityProps } from '../../utils/accessibility';
 
 export interface ItemListRowProps {
   item: Item;
@@ -50,8 +51,7 @@ export const ItemListRow = memo(function ItemListRow({
       scale="press:0.99"
       opacity="press:0.85"
       onPress={onPress ? () => onPress(item) : undefined}
-      accessibilityRole="button"
-      accessibilityLabel={accessibilityText}
+      {...getAccessibilityProps({ role: 'button', label: accessibilityText })}
     >
       <XStack gap="3" items="flex-start">
         {/* Khung ảnh thumbnail hoặc placeholder khi ảnh lỗi/rỗng */}
@@ -61,7 +61,7 @@ export const ItemListRow = memo(function ItemListRow({
             style={{ width: 76, height: 76, borderRadius: 8 }}
             resizeMode="cover"
             onError={() => setImageError(true)}
-            accessibilityLabel={`Hình ảnh của ${item.title}`}
+            {...getAccessibilityProps({ label: `Hình ảnh của ${item.title}` })}
           />
         ) : (
           <YStack
@@ -71,7 +71,7 @@ export const ItemListRow = memo(function ItemListRow({
             items="center"
             justify="center"
             opacity={0.6}
-            accessibilityLabel="Ảnh mặc định"
+            {...getAccessibilityProps({ label: 'Ảnh mặc định' })}
           >
             <Text color="color" fontSize="2" fontWeight="700">
               IUH

@@ -18,6 +18,7 @@ import type { Item } from '../../models/itemModel';
 import { getItemById } from '../../services/api/itemService';
 import { combineAppointmentDate, isAppointmentDateInFuture } from '../../controllers/useAppointmentController';
 import { CustomButton } from '../../views/components/CustomButton';
+import { goBackOrReplace } from '../../utils/navigation';
 
 const pad = (value: number) => value.toString().padStart(2, '0');
 const formatDate = (value: Date) => `${pad(value.getDate())}/${pad(value.getMonth() + 1)}/${value.getFullYear()}`;
@@ -116,6 +117,9 @@ const styles = StyleSheet.create({
 export default function AppointmentCreateRoute() {
   const { itemId: rawItemId } = useLocalSearchParams<{ itemId?: string }>();
   const itemId = typeof rawItemId === 'string' ? rawItemId : undefined;
+  const backToItem = () => goBackOrReplace(
+    itemId ? { pathname: '/item/[id]', params: { id: itemId } } : '/(tabs)',
+  );
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState('');
@@ -134,12 +138,12 @@ export default function AppointmentCreateRoute() {
 
   if (!itemId) {
     return <YStack flex={1} backgroundColor="background" items="center" justify="center" p="6" gap="4">
-      <Text color="color">Không tìm thấy món đồ đã chọn.</Text><CustomButton onPress={() => router.back()}>Quay lại</CustomButton>
+      <Text color="color">Không tìm thấy món đồ đã chọn.</Text><CustomButton onPress={backToItem}>Quay lại</CustomButton>
     </YStack>;
   }
   if (!item && !loading) {
     return <YStack flex={1} backgroundColor="background" items="center" justify="center" p="6" gap="4">
-      <Text color="color">Không thể tải món đồ đã chọn.</Text><CustomButton onPress={() => router.back()}>Quay lại</CustomButton>
+      <Text color="color">Không thể tải món đồ đã chọn.</Text><CustomButton onPress={backToItem}>Quay lại</CustomButton>
     </YStack>;
   }
   if (loading || !item) return <YStack flex={1} backgroundColor="background" items="center" justify="center"><ActivityIndicator /></YStack>;
@@ -249,7 +253,7 @@ export default function AppointmentCreateRoute() {
           />
           <TextArea value={note} onChangeText={setNote} placeholder="Ghi chú (không bắt buộc)" height={58} />
           <CustomButton disabled={!canContinue} onPress={continueToConfirmation}>Xác nhận lịch hẹn →</CustomButton>
-          <CustomButton onPress={() => router.back()}>Quay lại</CustomButton>
+          <CustomButton onPress={backToItem}>Quay lại</CustomButton>
           </YStack>
         </ScrollView>
         <DatePicker

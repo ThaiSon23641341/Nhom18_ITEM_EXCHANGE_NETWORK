@@ -8,6 +8,8 @@ import { CATEGORY_OPTIONS, CONDITION_OPTIONS } from '../../utils/itemOptions';
 import { useItemFormController } from '../../controllers/useItemFormController';
 import { CustomButton } from '../components/CustomButton';
 import { pickImagesFromLibrary } from '../../services/device/imagePickerService';
+import { getAccessibilityProps } from '../../utils/accessibility';
+import { goBackOrReplace } from '../../utils/navigation';
 
 interface ItemFormScreenProps {
   mode: 'create' | 'edit';
@@ -22,7 +24,7 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
       if (mode === 'create') {
         router.replace({ pathname: '/item/[id]', params: { id: item.id } });
       }
-      else router.back();
+      else goBackOrReplace('/(tabs)/my-items');
     },
   });
   const cameraRef = useRef<CameraViewComponent>(null);
@@ -91,16 +93,16 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
 
   if (controller.loadError) return (
     <YStack flex={1} backgroundColor="background" items="center" justify="center" p="4" gap="3">
-      <Text color="color" accessibilityRole="alert">{controller.loadError}</Text>
+      <Text color="color" {...getAccessibilityProps({ role: 'alert' })}>{controller.loadError}</Text>
       <Button onPress={controller.retryLoad}>Thử lại</Button>
-      <Button onPress={() => router.back()}>Quay lại</Button>
+      <Button onPress={() => goBackOrReplace('/(tabs)/my-items')}>Quay lại</Button>
     </YStack>
   );
 
   if (controller.permissionError) return (
     <YStack flex={1} backgroundColor="background" items="center" justify="center" p="4" gap="3">
       <Text color="color" fontSize="5" fontWeight="700" text="center">{controller.permissionError}</Text>
-      <Button onPress={() => router.back()}>Quay lại</Button>
+      <Button onPress={() => goBackOrReplace('/(tabs)/my-items')}>Quay lại</Button>
     </YStack>
   );
 
@@ -111,13 +113,13 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
       <RNScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
         <YStack flex={1} backgroundColor="background" p="4" gap="4">
           <XStack items="center" justify="space-between">
-            <Button onPress={() => router.back()} accessibilityLabel="Quay lại">Quay lại</Button>
+            <Button onPress={() => goBackOrReplace('/(tabs)/my-items')} {...getAccessibilityProps({ label: 'Quay lại' })}>Quay lại</Button>
             <Text color="color" fontSize="6" fontWeight="700">{isEdit ? 'Chỉnh sửa bài đăng' : 'Đăng đồ dùng'}</Text>
             <YStack />
           </XStack>
 
           {isEdit && controller.item?.status === 'reserved' ? (
-            <Text color="color" accessibilityRole="alert">Món đang giữ: bài đăng đã có người đặt lịch.</Text>
+            <Text color="color" {...getAccessibilityProps({ role: 'alert' })}>Món đang giữ: bài đăng đã có người đặt lịch.</Text>
           ) : null}
 
           <YStack gap="2">
@@ -128,9 +130,9 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
               onBlur={() => controller.blurField('title')}
               maxLength={120}
               placeholder="Ví dụ: Giáo trình Lập trình C"
-              accessibilityLabel="Tên món đồ"
+              {...getAccessibilityProps({ label: 'Tên món đồ' })}
             />
-            {controller.errors.title ? <Text color="color" fontSize="2" accessibilityRole="alert">{controller.errors.title}</Text> : null}
+            {controller.errors.title ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.title}</Text> : null}
           </YStack>
 
           <YStack gap="2">
@@ -142,10 +144,10 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
               maxLength={2000}
               height={120}
               placeholder="Mô tả tình trạng, nguồn gốc hoặc thông tin trao đổi"
-              accessibilityLabel="Mô tả món đồ"
+              {...getAccessibilityProps({ label: 'Mô tả món đồ' })}
             />
             <Text color="color" opacity={0.7} fontSize="2" text="right">{controller.values.description.length}/2000</Text>
-            {controller.errors.description ? <Text color="color" fontSize="2" accessibilityRole="alert">{controller.errors.description}</Text> : null}
+            {controller.errors.description ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.description}</Text> : null}
           </YStack>
 
           <YStack gap="2">
@@ -155,7 +157,7 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
                 <Button key={option.value} theme={controller.values.category === option.value ? 'active' : undefined} onPress={() => controller.setField('category', option.value)}>{option.label}</Button>
               ))}
             </XStack>
-            {controller.errors.category ? <Text color="color" fontSize="2" accessibilityRole="alert">{controller.errors.category}</Text> : null}
+            {controller.errors.category ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.category}</Text> : null}
           </YStack>
 
           <YStack gap="2">
@@ -165,7 +167,7 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
                 <Button key={option.value} theme={controller.values.condition === option.value ? 'active' : undefined} onPress={() => controller.setField('condition', option.value as ItemCondition)}>{option.label}</Button>
               ))}
             </XStack>
-            {controller.errors.condition ? <Text color="color" fontSize="2" accessibilityRole="alert">{controller.errors.condition}</Text> : null}
+            {controller.errors.condition ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.condition}</Text> : null}
           </YStack>
 
           <YStack gap="2">
@@ -177,9 +179,9 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
               keyboardType="number-pad"
               maxLength={15}
               placeholder="Để trống nếu muốn trao đổi/cho tặng"
-              accessibilityLabel="Giá tiền, đơn vị Việt Nam đồng"
+              {...getAccessibilityProps({ label: 'Giá tiền, đơn vị Việt Nam đồng' })}
             />
-            {controller.errors.price ? <Text color="color" fontSize="2" accessibilityRole="alert">{controller.errors.price}</Text> : null}
+            {controller.errors.price ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.price}</Text> : null}
           </YStack>
 
           <YStack gap="2">
@@ -190,9 +192,9 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
               onBlur={() => controller.blurField('location')}
               maxLength={200}
               placeholder="Ví dụ: Sảnh thư viện IUH"
-              accessibilityLabel="Địa điểm giao dịch"
+              {...getAccessibilityProps({ label: 'Địa điểm giao dịch' })}
             />
-            {controller.errors.location ? <Text color="color" fontSize="2" accessibilityRole="alert">{controller.errors.location}</Text> : null}
+            {controller.errors.location ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.location}</Text> : null}
           </YStack>
 
           <YStack gap="2" p="3" borderWidth={1} borderColor="border-color" rounded="3">
@@ -202,8 +204,8 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
                 <XStack gap="2">
                   {controller.values.imageUrls.map((uri, index) => (
                     <YStack key={`${uri}-${index}`} gap="1">
-                      <Image source={{ uri }} style={styles.thumbnail} accessibilityLabel={`Ảnh ${index + 1} của món đồ`} />
-                      <Button px="2" py="1" onPress={() => removeImage(uri)} accessibilityLabel={`Xóa ảnh ${index + 1}`}>
+                      <Image source={{ uri }} style={styles.thumbnail} {...getAccessibilityProps({ label: `Ảnh ${index + 1} của món đồ` })} />
+                      <Button px="2" py="1" onPress={() => removeImage(uri)} {...getAccessibilityProps({ label: `Xóa ảnh ${index + 1}` })}>
                         Xóa ảnh
                       </Button>
                     </YStack>
@@ -219,10 +221,10 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
                 {isPickingImage ? 'Đang chọn...' : 'Chọn từ thư viện'}
               </Button>
             </XStack>
-            {controller.errors.imageUrls ? <Text color="color" accessibilityRole="alert">{controller.errors.imageUrls}</Text> : null}
+            {controller.errors.imageUrls ? <Text color="color" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.imageUrls}</Text> : null}
           </YStack>
 
-          {controller.submitError ? <Text color="color" accessibilityRole="alert">{controller.submitError}</Text> : null}
+          {controller.submitError ? <Text color="color" {...getAccessibilityProps({ role: 'alert' })}>{controller.submitError}</Text> : null}
 
           <CustomButton theme="active" disabled={!controller.canSubmit} onPress={() => { void controller.submit(); }}>
             {controller.isSubmitting ? 'Đang lưu...' : isEdit ? 'Lưu thay đổi' : 'Đăng món đồ'}
@@ -236,7 +238,7 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
             <Pressable style={styles.closeButton} onPress={() => setCameraVisible(false)}>
               <Text color="white" fontSize={5} fontWeight="700">Đóng</Text>
             </Pressable>
-            <Pressable style={styles.captureButton} onPress={() => { void takePhoto(); }} accessibilityLabel="Chụp ảnh" />
+            <Pressable style={styles.captureButton} onPress={() => { void takePhoto(); }} {...getAccessibilityProps({ label: 'Chụp ảnh' })} />
           </View>
         </View>
       </Modal>

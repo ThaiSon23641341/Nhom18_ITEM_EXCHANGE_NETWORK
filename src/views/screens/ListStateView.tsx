@@ -12,6 +12,7 @@
  */
 
 import { Button, Spinner, Text, YStack } from 'tamagui';
+import { getAccessibilityProps } from '../../utils/accessibility';
 
 export type ListStateType = 'loading' | 'error' | 'empty' | 'loadingMore' | 'loadMoreError';
 
@@ -36,8 +37,7 @@ export function ListStateView({
         justify="center"
         p="6"
         gap="3"
-        accessibilityRole="progressbar"
-        accessibilityLabel="Đang tải danh sách đồ dùng"
+        {...getAccessibilityProps({ role: 'progressbar', label: 'Đang tải danh sách đồ dùng' })}
       >
         <Spinner size="large" color="primary" />
         <Text color="color" opacity={0.8} fontSize="3">
@@ -55,7 +55,7 @@ export function ListStateView({
         justify="center"
         p="6"
         gap="3"
-        accessibilityRole="alert"
+        {...getAccessibilityProps({ role: 'alert' })}
       >
         <Text color="color" fontSize="5" fontWeight="700">
           Không thể tải dữ liệu
@@ -67,8 +67,7 @@ export function ListStateView({
           <Button
             theme="active"
             onPress={onRetry}
-            accessibilityRole="button"
-            accessibilityLabel={retryLabel}
+            {...getAccessibilityProps({ role: 'button', label: retryLabel })}
           >
             {retryLabel}
           </Button>
@@ -85,7 +84,7 @@ export function ListStateView({
         justify="center"
         p="6"
         gap="3"
-        accessibilityLabel="Danh sách trống"
+        {...getAccessibilityProps({ label: 'Danh sách trống' })}
       >
         <Text color="color" fontSize="5" fontWeight="700">
           Chưa có món đồ nào
@@ -96,8 +95,7 @@ export function ListStateView({
         {onRetry ? (
           <Button
             onPress={onRetry}
-            accessibilityRole="button"
-            accessibilityLabel={retryLabel}
+            {...getAccessibilityProps({ role: 'button', label: retryLabel })}
           >
             {retryLabel}
           </Button>
@@ -113,8 +111,7 @@ export function ListStateView({
         justify="center"
         py="4"
         gap="2"
-        accessibilityRole="progressbar"
-        accessibilityLabel="Đang tải thêm dữ liệu"
+        {...getAccessibilityProps({ role: 'progressbar', label: 'Đang tải thêm dữ liệu' })}
       >
         <Spinner size="small" color="primary" />
         <Text color="color" opacity={0.7} fontSize="2">
@@ -131,7 +128,7 @@ export function ListStateView({
         justify="center"
         py="4"
         gap="2"
-        accessibilityRole="alert"
+        {...getAccessibilityProps({ role: 'alert' })}
       >
         <Text color="color" opacity={0.8} fontSize="2">
           {message ?? 'Không thể tải thêm dữ liệu.'}
@@ -141,8 +138,7 @@ export function ListStateView({
             py="1"
             px="2.5"
             onPress={onRetry}
-            accessibilityRole="button"
-            accessibilityLabel={retryLabel}
+            {...getAccessibilityProps({ role: 'button', label: retryLabel })}
           >
             {retryLabel}
           </Button>

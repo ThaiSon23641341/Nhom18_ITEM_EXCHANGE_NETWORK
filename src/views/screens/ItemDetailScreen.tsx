@@ -18,6 +18,7 @@ import { Button, Image, ScrollView, Text, XStack, YStack } from 'tamagui';
 import { useAuthController } from '../../controllers/useAuthController';
 import { useItemDetailController } from '../../controllers/useItemDetailController';
 import { shareItem } from '../../services/shareService';
+import { goBackOrReplace } from '../../utils/navigation';
 
 const CONDITION_LABELS = {
   new: 'Còn mới',
@@ -65,7 +66,7 @@ export function ItemDetailScreen() {
       <YStack flex={1} backgroundColor="background" items="center" justify="center" p="5" gap="3">
         <Text color="color" fontSize="4" text="center">{loadError ?? 'Không tìm thấy đồ dùng.'}</Text>
         <Button onPress={retry} theme="active">Thử lại</Button>
-        <Button onPress={() => router.back()}>Quay lại</Button>
+        <Button onPress={() => goBackOrReplace('/(tabs)')}>Quay lại</Button>
       </YStack>
     );
   }
@@ -73,7 +74,7 @@ export function ItemDetailScreen() {
   return (
     <YStack flex={1} backgroundColor="background">
       <XStack h={52} px="4" items="center" justify="space-between">
-        <Button w={40} h={40} circular backgroundColor="#E8F5EF" borderWidth={0} aria-label="Quay lại" onPress={() => router.back()}>
+        <Button w={40} h={40} circular backgroundColor="#E8F5EF" borderWidth={0} aria-label="Quay lại" onPress={() => goBackOrReplace('/(tabs)')}>
           <ArrowLeft size={21} color="#145B45" />
         </Button>
         <Text color="secondary" fontSize="5" fontWeight="800">Chi tiết đồ dùng</Text>

@@ -11,13 +11,19 @@ import { useAuthController } from '../controllers/useAuthController';
 import { LoginScreen } from '../views/screens/LoginScreen';
 
 export default function LoginRoute() {
-  const { login, loginError } = useAuthController();
+  const { login, loginError, isSubmitting } = useAuthController();
 
-  const handleLogin = (email: string) => {
-    if (login(email)) {
+  const handleLogin = async (email: string) => {
+    if (await login(email)) {
       router.replace('/(tabs)');
     }
   };
 
-  return <LoginScreen onLoginPress={handleLogin} error={loginError} />;
+  return (
+    <LoginScreen
+      onLoginPress={(email) => { void handleLogin(email); }}
+      error={loginError}
+      isSubmitting={isSubmitting}
+    />
+  );
 }

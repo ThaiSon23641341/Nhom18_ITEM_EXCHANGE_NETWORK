@@ -7,6 +7,7 @@ import { useMyItemsController } from '../../controllers/useMyItemsController';
 import { showConfirmDialog } from '../components/ConfirmDialog';
 import { ItemListRow } from './ItemListRow';
 import { ListStateView } from './ListStateView';
+import { getAccessibilityProps } from '../../utils/accessibility';
 
 export function MyItemsScreen() {
   const controller = useMyItemsController();
@@ -65,7 +66,7 @@ export function MyItemsScreen() {
         <Button theme="active" onPress={controller.openCreate}>Đăng đồ mới</Button>
       </XStack>
 
-      {controller.deleteError ? <Text color="color" mb="2" accessibilityRole="alert">{controller.deleteError}</Text> : null}
+      {controller.deleteError ? <Text color="color" mb="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.deleteError}</Text> : null}
 
       <FlatList
         data={items}

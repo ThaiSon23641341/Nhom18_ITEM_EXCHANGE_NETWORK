@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { ItemCard } from './ItemCard';
+import { getAccessibilityProps } from '../../utils/accessibility';
 
 export interface ExpandableItemCardProps {
   title: string;
@@ -52,9 +53,11 @@ export function ExpandableItemCard({
         title={title}
         description={description}
         onPress={toggleExpanded}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: isExpanded }}
-        accessibilityLabel={`${title}, ${isExpanded ? 'collapse' : 'expand'} details`}
+        {...getAccessibilityProps({
+          role: 'button',
+          expanded: isExpanded,
+          label: `${title}, ${isExpanded ? 'collapse' : 'expand'} details`,
+        })}
       />
       <Animated.View
         style={detailStyle}

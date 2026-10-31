@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Pressable } from 'react-native';
+import { Platform, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { Heart, MapPin, Tag, UserRound } from 'lucide-react-native';
 import { Button, Card, Image, Text, XStack, YStack } from 'tamagui';
@@ -24,8 +24,9 @@ export function ProductCard({ itemId, title, category, location, distance, price
 
   return (
     <Pressable
-      accessibilityRole="link"
-      accessibilityLabel={`Xem chi tiết ${title}`}
+      {...(Platform.OS === 'web'
+        ? { 'aria-label': `Xem chi tiết ${title}` }
+        : { accessibilityRole: 'link' as const, accessibilityLabel: `Xem chi tiết ${title}` })}
       onPress={() => router.push({ pathname: '/item/[id]', params: { id: itemId } })}
       style={{ width: '48%', marginBottom: 12 }}
     >

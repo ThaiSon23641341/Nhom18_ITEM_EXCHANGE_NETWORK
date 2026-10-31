@@ -4,6 +4,7 @@ import { useAuthController } from '../../../../controllers/useAuthController';
 import { useItemDetailController } from '../../../../controllers/useItemDetailController';
 import { createAppointment } from '../../../../services/api/appointmentService';
 import { BookAppointmentScreen } from '../../../../views/screens/BookAppointmentScreen';
+import { goBackOrReplace } from '../../../../utils/navigation';
 
 export default function BookAppointmentRoute() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -26,7 +27,7 @@ export default function BookAppointmentRoute() {
       <YStack flex={1} items="center" justify="center" gap="3" p="4">
         <Text color="red">{loadError ?? 'Không tìm thấy đồ dùng này.'}</Text>
         <Button onPress={retry}>Thử lại</Button>
-        <Button onPress={() => router.back()}>Quay lại</Button>
+        <Button onPress={() => goBackOrReplace('/(tabs)')}>Quay lại</Button>
       </YStack>
     );
   }
@@ -34,7 +35,7 @@ export default function BookAppointmentRoute() {
   return (
     <BookAppointmentScreen
       item={item}
-      onBack={() => router.back()}
+      onBack={() => goBackOrReplace('/(tabs)')}
       onSubmit={async (date, time, location) => {
         await createAppointment({
           itemId: item.id,

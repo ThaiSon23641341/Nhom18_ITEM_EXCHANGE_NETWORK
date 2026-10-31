@@ -22,20 +22,33 @@ Yeu cau Node.js 20 tro len va Expo SDK 58.
 
 ```bash
 npm install
+npm --prefix server install
+npm run server
+```
+
+In another terminal:
+
+```bash
 npx expo start
 ```
+
+The app's default API address is `http://localhost:3001`. Copy `.env.example`
+to `.env.local` and set `EXPO_PUBLIC_API_URL` for the target device if needed:
+Android emulator uses `http://10.0.2.2:3001`; a physical phone uses the computer's
+LAN IP. See [server/README.md](./server/README.md).
 
 ## Kiểm thử đăng nhập
 
 Ở màn hình đăng nhập, nhập email theo mẫu
 `21036001.nguyen@student.iuh.edu.vn` rồi nhấn **Đăng nhập**. Email hợp lệ sẽ
-đưa bạn vào các tab chính; email sai định dạng sẽ hiển thị thông báo lỗi. Mẫu
+được tra hoặc tạo thành hồ sơ demo trong JSON Server; email sai định dạng hoặc
+server không chạy sẽ hiển thị thông báo lỗi. Mẫu
 được kiểm tra là đúng 8 chữ số, dấu chấm, tên gồm chữ cái (có thể ngăn cách
 bằng dấu chấm hoặc gạch nối), sau đó là `@student.iuh.edu.vn`.
 
-Đây chỉ là đăng nhập mô phỏng bằng email để kiểm tra form và điều hướng, không
-xác minh mật khẩu hay tài khoản với máy chủ. Phiên đăng nhập chỉ tồn tại trong
-bộ nhớ khi app đang chạy.
+Đây chỉ là đăng nhập demo không mật khẩu, không xác minh quyền sở hữu email và
+không an toàn để dùng production. Phiên Redux chỉ tồn tại trong bộ nhớ của app;
+tải lại app sẽ yêu cầu đăng nhập lại. Chỉ dùng dữ liệu giả.
 
 ## Kiem tra va test
 
@@ -45,6 +58,7 @@ Chay cac lenh sau truoc khi tao pull request:
 npm run lint
 npx tsc --noEmit
 npm test -- --ci
+npm run server:test
 ```
 
 Test dung Jest voi preset `jest-expo`; test nam canh service/model voi hau to
@@ -64,20 +78,19 @@ Commits, vi du:
 - `docs: update setup guide`
 - `refactor: extract item service`
 
-## Mo phong API
+## JSON Server cho kiểm thử app
 
-`src/services/api/itemService.ts` cung cap mock API co delay 500 ms, phan trang,
-tao/cap nhat/xoa bai dang va loi khi item khong ton tai. Khám phá đọc từ cùng
-mock store để bài đăng mới xuất hiện trong danh sách và trang chi tiết; tìm
-kiếm, danh mục, bộ lọc và sắp xếp được xử lý trên dữ liệu đó. Lịch hẹn cũng
-được lưu trong mock store trong phiên chạy. Từ chi tiết một đồ dùng còn hàng
-của người khác, người dùng có thể chọn ngày, giờ, địa điểm nhận; yêu cầu sẽ
-xuất hiện trong tab **Lịch hẹn**.
+`server/` chạy JSON Server với dữ liệu mẫu trong `server/db.json`. Danh sách,
+chi tiết, tạo/cập nhật/xóa bài đăng, báo cáo, hồ sơ demo và tra cứu public
+profile dùng REST API tại port 3001. Dữ liệu JSON Server được lưu xuống file và
+giữ lại sau khi restart; khôi phục `server/db.json` từ Git để reset dữ liệu.
+Redux Toolkit giữ trạng thái phiên đăng nhập trong bộ nhớ ứng dụng.
 
-Các dữ liệu này chỉ tồn tại trong bộ nhớ của ứng dụng và sẽ mất khi khởi động
-lại. Ảnh chọn từ thiết bị hiện lưu bằng URI cục bộ, chưa được tải lên backend.
-Đăng nhập cũng chưa có API xác thực. Muốn phát hành thật cần backend xác thực,
-lưu trữ cơ sở dữ liệu và endpoint tải ảnh.
+Luồng lịch hẹn vẫn dùng service demo trong bộ nhớ riêng và chưa đồng bộ với
+JSON Server. Ảnh chọn từ thiết bị hiện lưu bằng URI cục bộ, chưa được tải lên
+server. JSON Server không cung cấp xác thực/phân quyền hoặc bảo vệ quyền sở
+hữu; API chỉ dùng trên mạng tin cậy với dữ liệu giả. Muốn phát hành thật cần
+backend có xác thực, phân quyền và cơ sở dữ liệu phù hợp.
 
 ## Bao cao vi pham
 
@@ -85,15 +98,13 @@ Tu man hinh chi tiet mon do, chon **Bao cao vi pham** de chon ly do va gui ghi
 chu toi da 500 ky tu. Route `/moderation/reports` hien thi hang doi, phan trang
 va cho phep danh dau report la `actioned` hoac `dismissed`.
 
-`src/services/api/reportService.ts` mo phong tao report, truy van hang doi va
-cap nhat trang thai `pending`, `actioned` hoac `dismissed`. Du lieu chi nam
-trong bo nho cua tien trinh app va chua duoc noi voi backend mau. Chua co xac
-thuc hoac phan quyen moderator; man hinh kiem duyet chi phuc vu demo.
+`src/services/api/reportService.ts` tạo report, truy vấn hàng chờ và cập nhật
+trạng thái `pending`, `actioned` hoặc `dismissed` qua JSON Server. Chưa có xác
+thực/phân quyền moderator; màn hình kiểm duyệt chỉ phục vụ demo.
 
 ## Backend API demo
 
-Backend mau doc lap nam trong `backend/`. API su dung du lieu seed trong bo nho,
-khong ket noi MongoDB hoac database nao; khoi dong lai server se reset du lieu.
-Xem `backend/README.md` de chay API, xem endpoint va thiet ke collection/index
-MongoDB du kien. API demo chua co authentication/authorization, khong deploy nhu
-backend production va chua duoc ket noi voi ung dung Expo.
+Backend Express mẫu độc lập nằm trong `backend/`; đây là API để kiểm thử contract,
+không phải nguồn dữ liệu được app Expo sử dụng. Xem `backend/README.md` để chạy
+API và đọc thiết kế MongoDB dự kiến. Cả backend này và JSON Server đều không có
+authentication/authorization đầy đủ, không deploy như backend production.

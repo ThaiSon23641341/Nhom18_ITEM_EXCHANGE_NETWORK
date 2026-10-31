@@ -10,8 +10,17 @@
  */
 
 import { Button, Input, ScrollView, Text, XStack, YStack } from 'tamagui';
+import { Platform } from 'react-native';
 import type { ItemCondition } from '../../models/itemModel';
 import { CATEGORY_OPTIONS, CONDITION_OPTIONS } from '../../utils/itemOptions';
+
+const accessibilityLabelProps = (label: string) =>
+  Platform.OS === 'web' ? { 'aria-label': label } : { accessibilityLabel: label };
+
+const filterOptionAccessibilityProps = (label: string, checked: boolean) =>
+  Platform.OS === 'web'
+    ? { 'aria-label': label, 'aria-pressed': checked }
+    : { accessibilityLabel: label, accessibilityRole: 'radio' as const, accessibilityState: { checked } };
 
 export interface ItemFilterBarProps {
   keyword: string;
@@ -45,7 +54,7 @@ export function ItemFilterBar({
           value={keyword}
           onChangeText={onKeywordChange}
           placeholder="Tìm theo tên món đồ..."
-          accessibilityLabel="Ô tìm kiếm theo tên món đồ"
+          {...accessibilityLabelProps('Ô tìm kiếm theo tên món đồ')}
           returnKeyType="search"
           clearButtonMode="while-editing"
         />
@@ -54,8 +63,7 @@ export function ItemFilterBar({
             px="3"
             py="2"
             onPress={() => onKeywordChange('')}
-            accessibilityLabel="Xóa từ khóa tìm kiếm"
-            accessibilityRole="button"
+            {...accessibilityLabelProps('Xóa từ khóa tìm kiếm')}
           >
             ✕
           </Button>
@@ -77,9 +85,7 @@ export function ItemFilterBar({
             py="1.5"
             theme={!selectedCategory ? 'active' : undefined}
             onPress={() => onSelectCategory(undefined)}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: !selectedCategory }}
-            accessibilityLabel="Chọn tất cả danh mục"
+            {...filterOptionAccessibilityProps('Chọn tất cả danh mục', !selectedCategory)}
           >
             Tất cả
           </Button>
@@ -92,9 +98,7 @@ export function ItemFilterBar({
                 py="1.5"
                 theme={isSelected ? 'active' : undefined}
                 onPress={() => onSelectCategory(isSelected ? undefined : opt.value)}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: isSelected }}
-                accessibilityLabel={`Lọc danh mục ${opt.label}`}
+                {...filterOptionAccessibilityProps(`Lọc danh mục ${opt.label}`, isSelected)}
               >
                 {opt.label}
               </Button>
@@ -118,9 +122,7 @@ export function ItemFilterBar({
             py="1.5"
             theme={!selectedCondition ? 'active' : undefined}
             onPress={() => onSelectCondition(undefined)}
-            accessibilityRole="radio"
-            accessibilityState={{ checked: !selectedCondition }}
-            accessibilityLabel="Chọn tất cả tình trạng"
+            {...filterOptionAccessibilityProps('Chọn tất cả tình trạng', !selectedCondition)}
           >
             Tất cả
           </Button>
@@ -133,9 +135,7 @@ export function ItemFilterBar({
                 py="1.5"
                 theme={isSelected ? 'active' : undefined}
                 onPress={() => onSelectCondition(isSelected ? undefined : opt.value)}
-                accessibilityRole="radio"
-                accessibilityState={{ checked: isSelected }}
-                accessibilityLabel={`Lọc tình trạng ${opt.label}`}
+                {...filterOptionAccessibilityProps(`Lọc tình trạng ${opt.label}`, isSelected)}
               >
                 {opt.label}
               </Button>
@@ -154,8 +154,7 @@ export function ItemFilterBar({
             px="2.5"
             py="1"
             onPress={onClearFilters}
-            accessibilityLabel="Xóa toàn bộ bộ lọc"
-            accessibilityRole="button"
+            {...accessibilityLabelProps('Xóa toàn bộ bộ lọc')}
           >
             Xóa bộ lọc
           </Button>
