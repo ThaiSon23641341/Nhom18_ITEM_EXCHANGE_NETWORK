@@ -6,6 +6,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { ItemCard } from './ItemCard';
+import { getAccessibilityProps } from '../../utils/accessibility';
 
 export interface ExpandableItemCardProps {
   title: string;
@@ -36,9 +37,11 @@ export function ExpandableItemCard({
   const toggleExpanded = useCallback(() => {
     const nextExpanded = !isExpanded;
     setIsExpanded(nextExpanded);
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared values are intentionally mutated in event handlers.
     animatedHeight.value = withTiming(nextExpanded ? expandedHeight : 0, {
       duration: ANIMATION_DURATION_MS,
     });
+    // eslint-disable-next-line react-hooks/immutability -- Reanimated shared values are intentionally mutated in event handlers.
     animatedOpacity.value = withTiming(nextExpanded ? 1 : 0, {
       duration: ANIMATION_DURATION_MS,
     });
@@ -50,9 +53,11 @@ export function ExpandableItemCard({
         title={title}
         description={description}
         onPress={toggleExpanded}
-        accessibilityRole="button"
-        accessibilityState={{ expanded: isExpanded }}
-        accessibilityLabel={`${title}, ${isExpanded ? 'collapse' : 'expand'} details`}
+        {...getAccessibilityProps({
+          role: 'button',
+          expanded: isExpanded,
+          label: `${title}, ${isExpanded ? 'collapse' : 'expand'} details`,
+        })}
       />
       <Animated.View
         style={detailStyle}

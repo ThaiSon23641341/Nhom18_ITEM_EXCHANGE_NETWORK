@@ -6,8 +6,24 @@
  * File này chỉ import và re-export màn hình thật từ src/views/screens.
  */
 
+import { router } from 'expo-router';
+import { useAuthController } from '../controllers/useAuthController';
 import { LoginScreen } from '../views/screens/LoginScreen';
 
 export default function LoginRoute() {
-  return <LoginScreen />;
+  const { login, loginError, isSubmitting } = useAuthController();
+
+  const handleLogin = async (email: string) => {
+    if (await login(email)) {
+      router.replace('/(tabs)');
+    }
+  };
+
+  return (
+    <LoginScreen
+      onLoginPress={(email) => { void handleLogin(email); }}
+      error={loginError}
+      isSubmitting={isSubmitting}
+    />
+  );
 }

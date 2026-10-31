@@ -1,33 +1,104 @@
-import { CreateItemInput, Item, ItemPaginationResponse, UpdateItemInput } from '../../models';
-import { MOCK_ITEMS } from './mockData';
-
-const API_DELAY_MS = 500;
-let items = MOCK_ITEMS.map((item) => ({ ...item }));
+import type { CreateItemInput, Item, ItemPaginationResponse, UpdateItemInput } from '../../models';
+import { ApiClientError, apiRequest } from './apiClient';
+const itemChangeListeners = new Set<() => void>();
 
 export class MockApiError extends Error {
-  constructor(message: string, public readonly code: 'BAD_REQUEST' | 'NOT_FOUND') {
+  constructor(
+    message: string,
+    public readonly code: 'BAD_REQUEST' | 'NOT_FOUND' | 'NETWORK_ERROR' | 'CONFLICT',
+  ) {
     super(message);
     this.name = 'MockApiError';
   }
 }
 
-const wait = async (): Promise<void> => {
-  await new Promise((resolve) => setTimeout(resolve, API_DELAY_MS));
+const cloneItem = (item: Item): Item => ({
+  ...item,
+  ...(item.imageUrls ? { imageUrls: [...item.imageUrls] } : {}),
+});
+
+const toMockApiError = (error: unknown): MockApiError => {
+  if (error instanceof ApiClientError) {
+    const code = error.code === 'NOT_FOUND'
+      ? 'NOT_FOUND'
+      : error.code === 'CONFLICT'
+        ? 'CONFLICT'
+        : error.code === 'NETWORK_ERROR'
+          ? 'NETWORK_ERROR'
+          : 'BAD_REQUEST';
+    return new MockApiError(error.message, code);
+  }
+  if (error instanceof Error) {
+    return new MockApiError(error.message, 'BAD_REQUEST');
+  }
+  return new MockApiError('Yêu cầu bài đăng không thành công.', 'BAD_REQUEST');
 };
 
-const cloneItem = (item: Item): Item => ({ ...item });
+const request = async <T>(path: string, init?: RequestInit): Promise<T> => {
+  try {
+    return await apiRequest<T>(path, init);
+  } catch (error) {
+    throw toMockApiError(error);
+  }
+};
+
+const makeItemId = (): string =>
+  `item-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+
+const validateItem = (itemData: CreateItemInput): void => {
+  if (
+    !itemData.title.trim()
+    || !itemData.ownerId.trim()
+    || !itemData.description.trim()
+    || !itemData.category.trim()
+  ) {
+    throw new MockApiError(
+      'Title, description, category, and owner are required.',
+      'BAD_REQUEST',
+    );
+  }
+  if (
+    itemData.title.trim().length > 120
+    || itemData.description.trim().length > 2000
+    || itemData.category.trim().length > 80
+    || (itemData.location?.trim().length ?? 0) > 200
+  ) {
+    throw new MockApiError('Item details exceed the allowed length.', 'BAD_REQUEST');
+  }
+  if (
+    itemData.priceVnd !== undefined
+    && (!Number.isSafeInteger(itemData.priceVnd) || itemData.priceVnd < 0)
+  ) {
+    throw new MockApiError('Price must be a non-negative integer.', 'BAD_REQUEST');
+  }
+  if (
+    (itemData.imageUrls?.length ?? 0) > 5
+    || itemData.imageUrls?.some((imageUrl) => imageUrl.length > 2048)
+  ) {
+    throw new MockApiError('An item can have at most 5 valid images.', 'BAD_REQUEST');
+  }
+};
+
+const notifyItemChanges = (): void => {
+  itemChangeListeners.forEach((listener) => listener());
+};
+
+export const subscribeToItemChanges = (listener: () => void): (() => void) => {
+  itemChangeListeners.add(listener);
+  return () => {
+    itemChangeListeners.delete(listener);
+  };
+};
 
 export const getItems = async (page: number, limit: number): Promise<ItemPaginationResponse> => {
-  await wait();
-
   if (!Number.isInteger(page) || !Number.isInteger(limit) || page < 1 || limit < 1) {
     throw new MockApiError('Page and limit must be positive integers.', 'BAD_REQUEST');
   }
 
+  const items = await request<Item[]>('/items?_sort=createdAt&_order=desc');
   const total = items.length;
   const totalPages = Math.ceil(total / limit);
   const start = (page - 1) * limit;
-
   return {
     data: items.slice(start, start + limit).map(cloneItem),
     page,
@@ -39,55 +110,39 @@ export const getItems = async (page: number, limit: number): Promise<ItemPaginat
 };
 
 export const getItemById = async (id: string): Promise<Item> => {
-  await wait();
-  const item = items.find((candidate) => candidate.id === id);
-
-  if (!item) {
-    throw new MockApiError(`Item ${id} was not found.`, 'NOT_FOUND');
-  }
-
-  return cloneItem(item);
+  return cloneItem(await request<Item>(`/items/${encodeURIComponent(id)}`));
 };
 
 export const createItem = async (itemData: CreateItemInput): Promise<Item> => {
-  await wait();
-  if (!itemData.title.trim() || !itemData.ownerId.trim()) {
-    throw new MockApiError('Title and ownerId are required.', 'BAD_REQUEST');
-  }
-
-  const now = new Date().toISOString();
-  const item: Item = {
-    ...itemData,
-    id: `item-${String(items.length + 1).padStart(3, '0')}`,
-    status: 'available',
-    createdAt: now,
-    updatedAt: now,
-  };
-  items = [item, ...items];
+  validateItem(itemData);
+  const item = await request<Item>('/items', {
+    method: 'POST',
+    body: JSON.stringify({ ...itemData, id: makeItemId() }),
+  });
+  notifyItemChanges();
   return cloneItem(item);
 };
 
 export const updateItem = async (id: string, itemData: UpdateItemInput): Promise<Item> => {
-  await wait();
-  const index = items.findIndex((candidate) => candidate.id === id);
-  if (index === -1) {
-    throw new MockApiError(`Item ${id} was not found.`, 'NOT_FOUND');
+  if (itemData.priceVnd !== undefined && itemData.priceVnd !== null
+    && (!Number.isSafeInteger(itemData.priceVnd) || itemData.priceVnd < 0)) {
+    throw new MockApiError('Price must be a non-negative integer.', 'BAD_REQUEST');
   }
-
-  items[index] = {
-    ...items[index],
-    ...itemData,
-    updatedAt: new Date().toISOString(),
-  };
-  return cloneItem(items[index]);
+  if (itemData.imageUrls && (
+    itemData.imageUrls.length > 5
+    || itemData.imageUrls.some((imageUrl) => imageUrl.length > 2048)
+  )) {
+    throw new MockApiError('An item can have at most 5 valid images.', 'BAD_REQUEST');
+  }
+  const updated = await request<Item>(`/items/${encodeURIComponent(id)}`, {
+    method: 'PATCH',
+    body: JSON.stringify(itemData),
+  });
+  notifyItemChanges();
+  return cloneItem(updated);
 };
 
 export const deleteItem = async (id: string): Promise<void> => {
-  await wait();
-  const exists = items.some((item) => item.id === id);
-  if (!exists) {
-    throw new MockApiError(`Item ${id} was not found.`, 'NOT_FOUND');
-  }
-
-  items = items.filter((item) => item.id !== id);
+  await request<void>(`/items/${encodeURIComponent(id)}`, { method: 'DELETE' });
+  notifyItemChanges();
 };

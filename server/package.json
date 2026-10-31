@@ -1,0 +1,13 @@
+{
+  "name": "nhom18-json-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "JSON Server demo API for local app testing",
+  "scripts": {
+    "start": "node server.cjs",
+    "test": "node --test"
+  },
+  "dependencies": {
+    "json-server": "0.17.4"
+  }
+}

@@ -1,36 +1,67 @@
-/**
- * useAuthController.ts  (camelCase, bắt đầu bằng use — CODING_STANDARDS.md)
- *
- * ⚠️  BẢN TẠM — THÀNH VIÊN A THAY BẰNG BẢN THẬT
- * Bản thật dùng Redux (hoặc Context) và gọi API xác thực thực sự.
- * Bản này chỉ đọc cờ USE_MOCK_USER từ src/utils/constants.ts để
- * giúp cả nhóm kiểm thử routing mà không cần back-end.
- *
- * Controller (MVC): chỉ chứa logic + trạng thái, không có JSX.
- */
-
-import { useMemo } from 'react';
+import { useCallback, useState } from 'react';
 import type { User } from '../models/userModel';
-import { MOCK_USER, USE_MOCK_USER } from '../utils/constants';
+import { ApiClientError } from '../services/api/apiClient';
+import { signInWithEmail } from '../services/authService';
+import { clearAuthenticatedUser, setAuthenticatedUser } from '../store/authSlice';
+import { useAppDispatch, useAppSelector } from '../store/hooks';
 
 export interface AuthState {
   user: User | null;
   isAuthenticated: boolean;
+  isSubmitting: boolean;
+  login: (email: string) => Promise<boolean>;
+  logout: () => void;
+  loginError: string | null;
 }
 
-/**
- * useAuthController
- * Trả về { user, isAuthenticated }.
- * View (index.tsx) đọc isAuthenticated rồi dùng <Redirect> của Expo Router.
- */
-export function useAuthController(): AuthState {
-  // useMemo: tránh tạo lại object mỗi lần render (CLO2)
-  const state = useMemo<AuthState>((): AuthState => {
-    if (USE_MOCK_USER) {
-      return { user: MOCK_USER, isAuthenticated: true };
-    }
-    return { user: null, isAuthenticated: false };
-  }, []);
+export function isValidStudentEmail(email: string): boolean {
+  return /^(?:[0-9]{8}\.[a-zA-Z]+(?:[.-][a-zA-Z]+)*|sinhvien001|sinhvien002|moderator)@student\.iuh\.edu\.vn$/i
+    .test(email.trim());
+}
 
-  return state;
+export function useAuthController(): AuthState {
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
+  const [loginError, setLoginError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const login = useCallback(async (email: string): Promise<boolean> => {
+    const normalizedEmail = email.trim();
+    if (!isValidStudentEmail(normalizedEmail)) {
+      setLoginError('Vui lòng dùng email sinh viên IUH hợp lệ.');
+      return false;
+    }
+
+    setIsSubmitting(true);
+    setLoginError(null);
+    try {
+      const signedInUser = await signInWithEmail(normalizedEmail);
+      dispatch(setAuthenticatedUser(signedInUser));
+      return true;
+    } catch (error) {
+      setLoginError(
+        error instanceof ApiClientError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : 'Đăng nhập không thành công.',
+      );
+      return false;
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [dispatch]);
+
+  const logout = useCallback(() => {
+    dispatch(clearAuthenticatedUser());
+  }, [dispatch]);
+
+  return {
+    user,
+    isAuthenticated: user !== null,
+    isSubmitting,
+    login,
+    logout,
+    loginError,
+  };
 }

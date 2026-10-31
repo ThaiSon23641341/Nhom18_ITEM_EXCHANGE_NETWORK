@@ -1,6 +1,7 @@
 import { Button, ScrollView, Text, YStack } from 'tamagui';
 import type { ItemReport, ReportReason } from '../../models/reportModel';
 import { useReportModerationController } from '../../controllers/useReportModerationController';
+import { getAccessibilityProps } from '../../utils/accessibility';
 
 const REASON_LABELS: Record<ReportReason, string> = {
   prohibited_item: 'Mặt hàng bị cấm',
@@ -34,7 +35,7 @@ export function ReportModerationScreen() {
         <Text color="color" fontSize="7" fontWeight="700">
           Hàng chờ báo cáo
         </Text>
-        <Text color="color" opacity={0.8} accessibilityRole="alert">
+        <Text color="color" opacity={0.8} {...getAccessibilityProps({ role: 'alert' })}>
           Bản demo dùng dữ liệu trong bộ nhớ, chưa có xác thực moderator hoặc
           phân quyền phía máy chủ. Không dùng màn hình này trong production.
         </Text>
@@ -46,7 +47,7 @@ export function ReportModerationScreen() {
 
         {error ? (
           <YStack gap="2">
-            <Text color="color" accessibilityRole="alert">
+            <Text color="color" {...getAccessibilityProps({ role: 'alert' })}>
               {error}
             </Text>
             <Button onPress={() => loadReports(page)}>Thử lại</Button>
@@ -95,7 +96,7 @@ export function ReportModerationScreen() {
         ))}
 
         {actionError ? (
-          <Text color="color" accessibilityRole="alert">
+          <Text color="color" {...getAccessibilityProps({ role: 'alert' })}>
             {actionError}
           </Text>
         ) : null}

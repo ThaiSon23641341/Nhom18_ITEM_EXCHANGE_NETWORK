@@ -12,23 +12,22 @@ import { CustomButton } from '../components/CustomButton';
 export interface LoginScreenProps {
   email?: string;
   onEmailChange?: (email: string) => void;
-  onLoginPress?: () => void;
+  onLoginPress?: (email: string) => void;
   isSubmitting?: boolean;
+  error?: string | null;
 }
-
-const HERO_IMAGE_URI =
-  'https://images.unsplash.com/photo-1509062522246-3755977927d7?auto=format&fit=crop&w=1200&q=85';
 
 export function LoginScreen({
   email,
   onEmailChange,
   onLoginPress,
   isSubmitting = false,
+  error,
 }: LoginScreenProps) {
   const [localEmail, setLocalEmail] = useState('');
   const displayedEmail = email ?? localEmail;
   const handleEmailChange = onEmailChange ?? setLocalEmail;
-  const handleLoginPress = () => onLoginPress?.();
+  const handleLoginPress = () => onLoginPress?.(displayedEmail.trim());
 
   return (
     <YStack
@@ -47,7 +46,7 @@ export function LoginScreen({
             backgroundColor="primary"
             items="center"
             justify="center"
-            accessibilityLabel="Biểu tượng lá xanh"
+            aria-label="Biểu tượng lá xanh"
           >
             <Leaf size={29} color="#FFFFFF" strokeWidth={2.4} />
           </YStack>
@@ -67,8 +66,7 @@ export function LoginScreen({
               height={190}
               objectFit="cover"
               alt="Minh họa khuôn viên trường học"
-              accessible
-              accessibilityLabel="Minh họa khuôn viên trường học"
+              aria-label="Minh họa khuôn viên trường học"
             />
           </YStack>
 
@@ -100,7 +98,7 @@ export function LoginScreen({
                 flex={1}
                 value={displayedEmail}
                 onChangeText={handleEmailChange}
-                placeholder="mssv.ten@student.iuh.edu.vn"
+                placeholder="23636991.phuc@student.iuh.edu.vn"
                 keyboardType="email-address"
                 autoCapitalize="none"
                 autoComplete="email"
@@ -112,16 +110,25 @@ export function LoginScreen({
                 px={0}
                 color="#153D30"
                 fontSize="3"
-                accessibilityLabel="Email sinh viên"
+                aria-label="Email sinh viên"
+                disabled={isSubmitting}
               />
             </XStack>
+            {error ? (
+              <Text color="#B42318" fontSize="2" role="alert">
+                {error}
+              </Text>
+            ) : null}
+            <Text color="#718078" fontSize="2">
+              Kiểm thử giao diện: chưa xác minh mật khẩu hoặc tài khoản với máy chủ.
+            </Text>
             <CustomButton
               onPress={handleLoginPress}
               disabled={isSubmitting}
               opacity={isSubmitting ? 0.7 : undefined}
               h={56}
               rounded="4"
-              accessibilityRole="button"
+              aria-busy={isSubmitting}
             >
               {isSubmitting ? 'Đang đăng nhập…' : 'Đăng nhập'}
             </CustomButton>

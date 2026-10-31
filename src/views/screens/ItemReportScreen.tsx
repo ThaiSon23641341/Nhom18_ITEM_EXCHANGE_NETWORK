@@ -1,7 +1,9 @@
-import { router, useLocalSearchParams } from 'expo-router';
+import { useLocalSearchParams } from 'expo-router';
 import { Button, ScrollView, Text, TextArea, YStack } from 'tamagui';
 import { useItemReportController } from '../../controllers/useItemReportController';
 import { REPORT_REASONS, type ReportReason } from '../../models/reportModel';
+import { getAccessibilityProps } from '../../utils/accessibility';
+import { goBackOrReplace } from '../../utils/navigation';
 
 const REASON_LABELS: Record<ReportReason, string> = {
   prohibited_item: 'Mặt hàng bị cấm',
@@ -14,6 +16,7 @@ const REASON_LABELS: Record<ReportReason, string> = {
 export function ItemReportScreen() {
   const params = useLocalSearchParams<{ id: string | string[] }>();
   const itemId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const backToItem = () => goBackOrReplace(itemId ? { pathname: '/item/[id]', params: { id: itemId } } : '/(tabs)');
   const {
     item,
     isLoading,
@@ -40,7 +43,7 @@ export function ItemReportScreen() {
     return (
       <YStack flex={1} backgroundColor="background" items="center" justify="center" p="4" gap="4">
         <Text color="color">{loadError ?? 'Không tìm thấy bài đăng.'}</Text>
-        <Button onPress={() => router.back()}>Quay lại</Button>
+        <Button onPress={backToItem}>Quay lại</Button>
       </YStack>
     );
   }
@@ -54,7 +57,7 @@ export function ItemReportScreen() {
         <Text color="color" text="center">
           Báo cáo cho “{item.title}” đã được ghi nhận để xem xét.
         </Text>
-        <Button onPress={() => router.back()}>Quay lại bài đăng</Button>
+        <Button onPress={backToItem}>Quay lại bài đăng</Button>
       </YStack>
     );
   }
@@ -77,8 +80,7 @@ export function ItemReportScreen() {
               key={option}
               onPress={() => setReason(option)}
               theme={reason === option ? 'active' : undefined}
-              accessibilityRole="radio"
-              accessibilityState={{ checked: reason === option }}
+              {...getAccessibilityProps({ role: 'radio', checked: reason === option })}
             >
               {REASON_LABELS[option]}
             </Button>
@@ -92,13 +94,13 @@ export function ItemReportScreen() {
           onChangeText={setDetails}
           maxLength={500}
           placeholder="Mô tả ngắn gọn vấn đề (tối đa 500 ký tự)"
-          accessibilityLabel="Thông tin bổ sung cho báo cáo"
+          {...getAccessibilityProps({ label: 'Thông tin bổ sung cho báo cáo' })}
         />
         <Text color="color" opacity={0.7} text="right">
           {details.length}/500
         </Text>
         {submitError ? (
-          <Text color="color" accessibilityRole="alert">
+          <Text color="color" {...getAccessibilityProps({ role: 'alert' })}>
             {submitError}
           </Text>
         ) : null}
@@ -106,11 +108,11 @@ export function ItemReportScreen() {
           theme="active"
           onPress={submitReport}
           disabled={isSubmitting}
-          accessibilityState={{ disabled: isSubmitting, busy: isSubmitting }}
+          {...getAccessibilityProps({ disabled: isSubmitting, busy: isSubmitting })}
         >
           {isSubmitting ? 'Đang gửi...' : 'Gửi báo cáo'}
         </Button>
-        <Button onPress={() => router.back()}>Hủy</Button>
+        <Button onPress={backToItem}>Hủy</Button>
       </YStack>
     </ScrollView>
   );
