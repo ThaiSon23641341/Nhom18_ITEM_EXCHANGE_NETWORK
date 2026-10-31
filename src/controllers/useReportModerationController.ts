@@ -41,7 +41,6 @@ export function useReportModerationController() {
   /* eslint-disable react-hooks/set-state-in-effect */
   useEffect(() => {
     // Kick off the initial queue load when the screen mounts.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     void loadReports(1);
   }, [loadReports]);
   /* eslint-enable react-hooks/set-state-in-effect */
