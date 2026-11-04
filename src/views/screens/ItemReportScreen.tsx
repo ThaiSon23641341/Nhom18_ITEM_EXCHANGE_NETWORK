@@ -1,5 +1,6 @@
 import { useLocalSearchParams } from 'expo-router';
 import { Button, ScrollView, Text, TextArea, YStack } from 'tamagui';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useItemReportController } from '../../controllers/useItemReportController';
 import { REPORT_REASONS, type ReportReason } from '../../models/reportModel';
 import { getAccessibilityProps } from '../../utils/accessibility';
@@ -63,7 +64,8 @@ export function ItemReportScreen() {
   }
 
   return (
-    <ScrollView flex={1} backgroundColor="background">
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <ScrollView flex={1} backgroundColor="background">
       <YStack p="4" gap="4">
         <Text color="color" fontSize="7" fontWeight="700">
           Báo cáo bài đăng
@@ -114,7 +116,8 @@ export function ItemReportScreen() {
         </Button>
         <Button onPress={backToItem}>Hủy</Button>
       </YStack>
-    </ScrollView>
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 

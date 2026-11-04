@@ -15,6 +15,7 @@ import { Platform, useColorScheme } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
+import * as Linking from 'expo-linking';
 import { StatusBar } from 'expo-status-bar';
 import { TamaguiProvider, Theme } from 'tamagui';
 import { config } from '../../tamagui.config';
@@ -24,6 +25,7 @@ import { store } from '../store';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
+  const linkingUrl = Linking.useURL();
 
   // useMemo: chỉ tính lại khi colorScheme thay đổi (CLO2)
   const tamaguiTheme = useMemo(
@@ -53,6 +55,19 @@ export default function RootLayout() {
     });
     return () => subscription.remove();
   }, []);
+
+  useEffect(() => {
+    if (!linkingUrl) return;
+    const parsed = Linking.parse(linkingUrl);
+    const path = parsed.path?.replace(/^\/--\//, '/').replace(/^\/+/, '') ?? '';
+    const match = /^item\/([^/]+)$/.exec(path);
+    if (!match) return;
+
+    router.replace({
+      pathname: '/item/[id]',
+      params: { id: decodeURIComponent(match[1]) },
+    });
+  }, [linkingUrl]);
 
   return (
     <Provider store={store}>

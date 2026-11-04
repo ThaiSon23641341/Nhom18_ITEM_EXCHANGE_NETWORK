@@ -12,6 +12,11 @@ const REPORT_REASONS = [
   'other',
 ];
 const REPORT_STATUSES = ['actioned', 'dismissed'];
+const APPOINTMENT_STATUSES = ['pending', 'confirmed', 'cancelled', 'completed'];
+const APPOINTMENT_FIELDS = new Set([
+  'id', 'itemId', 'requesterId', 'date', 'time', 'scheduledAt', 'location', 'note',
+]);
+const FAVORITE_FIELDS = new Set(['id', 'userId', 'itemId', 'createdAt']);
 const ITEM_FIELDS = new Set([
   'id',
   'ownerId',
@@ -108,6 +113,7 @@ function validateUpdateItem(body, db, itemId) {
   ) {
     return 'Thông tin cập nhật bài đăng không hợp lệ.';
   }
+
   for (const [field, maxLength] of [
     ['title', 120],
     ['description', 2000],
@@ -159,6 +165,29 @@ function validateUpdateItem(body, db, itemId) {
       return 'Không thể chuyển bài đăng sang trạng thái này.';
     }
   }
+  return null;
+}
+
+function validateAppointment(body, db) {
+  if (
+    !isRecord(body)
+    || Object.keys(body).some((key) => !APPOINTMENT_FIELDS.has(key))
+    || typeof body.itemId !== 'string'
+    || typeof body.requesterId !== 'string'
+    || !isText(body.date, 10, true)
+    || !/^\d{2}\/\d{2}\/\d{4}$/.test(body.date)
+    || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(body.time)
+    || !isText(body.location, 200, true)
+    || (body.note !== undefined && !isText(body.note, 500))
+    || (body.scheduledAt !== undefined && !isText(body.scheduledAt, 40))
+  ) {
+    return 'Thông tin lịch hẹn không hợp lệ.';
+  }
+  if (!db.get('users').find({ id: body.requesterId }).value()) return 'Không tìm thấy người đặt lịch.';
+  const item = db.get('items').find({ id: body.itemId }).value();
+  if (!item) return 'Không tìm thấy món đồ.';
+  if (item.ownerId === body.requesterId) return 'Bạn không thể đặt lịch món đồ của chính mình.';
+  if (item.status !== 'available') return 'Món đồ không còn khả dụng.';
   return null;
 }
 
@@ -216,6 +245,34 @@ function createServer(dbFile = path.join(__dirname, 'db.json')) {
     next();
   });
 
+  app.post('/favorites', (request, response, next) => {
+    const body = request.body;
+    if (
+      !isRecord(body)
+      || Object.keys(body).some((key) => !FAVORITE_FIELDS.has(key))
+      || !isText(body.id, 100, true)
+      || !isText(body.userId, 100, true)
+      || !isText(body.itemId, 100, true)
+      || !isText(body.createdAt, 40, true)
+    ) {
+      sendError(response, 400, 'BAD_REQUEST', 'Thông tin yêu thích không hợp lệ.');
+      return;
+    }
+    if (!router.db.get('users').find({ id: body.userId }).value()) {
+      sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy người dùng.');
+      return;
+    }
+    if (!router.db.get('items').find({ id: body.itemId }).value()) {
+      sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy món đồ.');
+      return;
+    }
+    if (router.db.get('favorites').find({ userId: body.userId, itemId: body.itemId }).value()) {
+      sendError(response, 409, 'CONFLICT', 'Món đồ đã được lưu.');
+      return;
+    }
+    next();
+  });
+
   app.post('/items', (request, response, next) => {
     const error = validateCreateItem(request.body, router.db);
     if (error) {
@@ -236,6 +293,100 @@ function createServer(dbFile = path.join(__dirname, 'db.json')) {
     }
     request.body.updatedAt = new Date().toISOString();
     next();
+  });
+
+  app.get('/appointments', (request, response, next) => {
+    const requesterId = request.query.requesterId;
+    const userId = request.query.userId;
+    if (requesterId !== undefined && typeof requesterId !== 'string') {
+      sendError(response, 400, 'BAD_REQUEST', 'requesterId không hợp lệ.');
+      return;
+    }
+    if (userId !== undefined && typeof userId !== 'string') {
+      sendError(response, 400, 'BAD_REQUEST', 'userId không hợp lệ.');
+      return;
+    }
+    if (requesterId !== undefined && userId !== undefined) {
+      sendError(response, 400, 'BAD_REQUEST', 'Chỉ được dùng một bộ lọc người dùng.');
+      return;
+    }
+    if (userId) {
+      const relatedAppointments = router.db.get('appointments').filter((appointment) => {
+        if (appointment.requesterId === userId) return true;
+        const item = router.db.get('items').find({ id: appointment.itemId }).value();
+        return item?.ownerId === userId;
+      }).value();
+      response.json(relatedAppointments);
+      return;
+    }
+    if (requesterId) {
+      response.json(router.db.get('appointments').filter({ requesterId }).value());
+      return;
+    }
+    next();
+  });
+
+  app.post('/appointments', (request, response) => {
+    const error = validateAppointment(request.body, router.db);
+    if (error) {
+      sendError(response, 400, 'BAD_REQUEST', error);
+      return;
+    }
+    const now = new Date().toISOString();
+    const appointment = {
+      ...request.body,
+      id: `appointment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+      status: 'pending',
+      createdAt: now,
+      updatedAt: now,
+    };
+    router.db.get('items').find({ id: appointment.itemId }).assign({
+      status: 'reserved',
+      updatedAt: now,
+    }).write();
+    router.db.get('appointments').push(appointment).write();
+    response.status(201).json(appointment);
+  });
+
+  app.patch('/appointments/:id/status', (request, response) => {
+    const status = request.body?.status;
+    if (!APPOINTMENT_STATUSES.includes(status)) {
+      sendError(response, 400, 'BAD_REQUEST', 'Trạng thái lịch hẹn không hợp lệ.');
+      return;
+    }
+    const appointment = router.db.get('appointments').find({ id: request.params.id }).value();
+    if (!appointment) {
+      sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy lịch hẹn.');
+      return;
+    }
+    const allowed = {
+      pending: ['confirmed', 'cancelled'],
+      confirmed: ['cancelled', 'completed'],
+      cancelled: [],
+      completed: [],
+    };
+    if (!allowed[appointment.status].includes(status)) {
+      sendError(response, 409, 'CONFLICT', 'Không thể chuyển trạng thái lịch hẹn.');
+      return;
+    }
+    const now = new Date().toISOString();
+    const updated = router.db.get('appointments').find({ id: appointment.id }).assign({
+      status,
+      updatedAt: now,
+    }).write();
+    if (status === 'cancelled') {
+      router.db.get('items').find({ id: appointment.itemId, status: 'reserved' }).assign({
+        status: 'available',
+        updatedAt: now,
+      }).write();
+    }
+    if (status === 'completed') {
+      router.db.get('items').find({ id: appointment.itemId }).assign({
+        status: 'exchanged',
+        updatedAt: now,
+      }).write();
+    }
+    response.json(updated);
   });
 
   app.post('/reports', (request, response, next) => {

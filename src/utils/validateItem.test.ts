@@ -34,8 +34,7 @@ describe('validateItemForm', () => {
     expect(validateItemForm({ ...valid, title: 'abc' }).title).toBeUndefined();
     expect(validateItemForm({ ...valid, title: 'a'.repeat(121) }).title).toBeTruthy();
     expect(validateItemForm({ ...valid, title: 'a'.repeat(120) }).title).toBeUndefined();
-    expect(validateItemForm({ ...valid, description: '123456789' }).description).toBeTruthy();
-    expect(validateItemForm({ ...valid, description: '1234567890' }).description).toBeUndefined();
+    expect(validateItemForm({ ...valid, description: 'a' }).description).toBeUndefined();
     expect(validateItemForm({ ...valid, description: 'a'.repeat(2001) }).description).toBeTruthy();
     expect(validateItemForm({ ...valid, description: 'a'.repeat(2000) }).description).toBeUndefined();
   });

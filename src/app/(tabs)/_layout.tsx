@@ -14,11 +14,15 @@ import { Platform, Pressable, useColorScheme, View } from 'react-native';
 import { useTheme } from 'tamagui';
 import { CalendarClock, Compass, Package, Plus, User } from 'lucide-react-native';
 import { AppHeaderBrand, AppHeaderProfileAction } from '../../views/components/AppHeader';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function TabsLayout() {
   // useTheme() trả về object theme hiện tại (light hoặc dark) — CLO5
   const theme = useTheme();
   const colorScheme = useColorScheme();
+  const insets = useSafeAreaInsets();
+  const headerStatusBarHeight = Math.max(insets.top, Platform.OS === 'web' ? 24 : 0);
+  const tabBarBottomInset = Math.max(insets.bottom, Platform.OS === 'web' ? 10 : 6);
 
   const tabBarActiveTintColor = theme.primary?.val as string;
   const tabBarInactiveTintColor = (theme.colorSubtle?.val ?? theme.color?.val) as string;
@@ -50,16 +54,17 @@ export default function TabsLayout() {
           />
         ),
         headerShown: true,
+        headerStatusBarHeight,
         headerTitle: AppHeaderBrand,
         headerTitleAlign: 'left',
         headerLeft: () => null,
         headerRight: AppHeaderProfileAction,
         tabBarStyle: {
-          minHeight: 64,
+          height: 72 + tabBarBottomInset,
           marginHorizontal: 0,
           marginBottom: 0,
           paddingTop: 3,
-          paddingBottom: 3,
+          paddingBottom: tabBarBottomInset,
           borderTopLeftRadius: 20,
           borderTopRightRadius: 20,
           borderTopWidth: 1,
@@ -77,12 +82,13 @@ export default function TabsLayout() {
           flexBasis: 0,
           alignItems: 'center',
           justifyContent: 'center',
-          paddingVertical: 4,
+          paddingVertical: 0,
         },
         tabBarLabelStyle: {
           fontSize: 11,
           fontWeight: '600',
           marginTop: 2,
+          marginBottom: 0,
         },
         headerStyle: {
           backgroundColor: tabBarBackgroundColor,

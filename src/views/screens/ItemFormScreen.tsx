@@ -2,6 +2,7 @@ import React, { useRef, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView as RNScrollView, StyleSheet, View } from 'react-native';
 import { CameraView, useCameraPermissions, type CameraView as CameraViewComponent } from 'expo-camera';
 import { Redirect, router } from 'expo-router';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { Button, Input, Text, TextArea, XStack, YStack } from 'tamagui';
 import type { ItemCondition } from '../../models/itemModel';
 import { CATEGORY_OPTIONS, CONDITION_OPTIONS } from '../../utils/itemOptions';
@@ -109,8 +110,12 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
   const isEdit = mode === 'edit';
 
   return (
-    <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-      <RNScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={{ flexGrow: 1 }}>
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
+      <RNScrollView
+        keyboardShouldPersistTaps="handled"
+        contentContainerStyle={{ flexGrow: 1, paddingTop: 12 }}
+      >
         <YStack flex={1} backgroundColor="background" p="4" gap="4">
           <XStack items="center" justify="space-between">
             <Button onPress={() => goBackOrReplace('/(tabs)/my-items')} {...getAccessibilityProps({ label: 'Quay lại' })}>Quay lại</Button>
@@ -143,6 +148,7 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
               onBlur={() => controller.blurField('description')}
               maxLength={2000}
               height={120}
+              textAlignVertical="top"
               placeholder="Mô tả tình trạng, nguồn gốc hoặc thông tin trao đổi"
               {...getAccessibilityProps({ label: 'Mô tả món đồ' })}
             />
@@ -185,7 +191,7 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
           </YStack>
 
           <YStack gap="2">
-            <Text color="color" fontWeight="700">Địa điểm giao dịch *</Text>
+            <Text color="color" fontWeight="700">Địa điểm giao dịch (tùy chọn)</Text>
             <Input
               value={controller.values.location}
               onChangeText={(value) => controller.setField('location', value)}
@@ -242,7 +248,8 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
           </View>
         </View>
       </Modal>
-    </KeyboardAvoidingView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 

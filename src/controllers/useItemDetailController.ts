@@ -46,7 +46,7 @@ export function useItemDetailController(itemId: string | undefined) {
   const retry = useCallback(() => setRetryCount((count) => count + 1), []);
 
   return {
-    item: itemId ? item : null,
+    item,
     isLoading: itemId ? isLoading : false,
     loadError: itemId ? loadError : 'Không tìm thấy mã đồ dùng.',
     retry,

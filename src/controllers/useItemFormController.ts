@@ -24,6 +24,9 @@ const EMPTY_VALUES: ItemFormValues = {
   location: '',
 };
 
+const areImageUrlsEqual = (left: string[], right: string[]): boolean =>
+  left.length === right.length && left.every((url, index) => url === right[index]);
+
 export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormControllerOptions) {
   const { user } = useAuthController();
   const [values, setValues] = useState<ItemFormValues>(EMPTY_VALUES);
@@ -85,27 +88,41 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
     setErrors((current) => ({ ...current, [field]: fieldErrors[field] }));
   }, [values]);
 
-  const isDirty = useMemo(() => mode === 'create'
-    ? true
-    : Object.keys(initialValues).some((key) => values[key as keyof ItemFormValues] !== initialValues[key as keyof ItemFormValues]),
-  [initialValues, mode, values]);
+  const isDirty = useMemo(() => {
+    if (mode === 'create') return true;
+    return (
+      values.title !== initialValues.title
+      || values.description !== initialValues.description
+      || values.category !== initialValues.category
+      || values.condition !== initialValues.condition
+      || values.imageUrl !== initialValues.imageUrl
+      || !areImageUrlsEqual(values.imageUrls, initialValues.imageUrls)
+      || values.price !== initialValues.price
+      || values.location !== initialValues.location
+    );
+  }, [initialValues, mode, values]);
 
-  const canSubmit = !isSubmitting && !isLoading && !permissionError && (mode === 'create' || isDirty);
+  const canSubmit = !isSubmitting && !isLoading && !permissionError;
 
   const submit = useCallback(async () => {
     if (!canSubmit) return;
+    if (mode === 'edit' && !isDirty) {
+      setSubmitError('Bạn chưa thay đổi thông tin bài đăng.');
+      return;
+    }
     const nextErrors = validateItemForm(values);
     setErrors(nextErrors);
-    if (Object.keys(nextErrors).length > 0) return;
+    if (Object.keys(nextErrors).length > 0) {
+      const errorMessages = Object.values(nextErrors).filter(
+        (message): message is string => Boolean(message),
+      );
+      setSubmitError(`Vui lòng kiểm tra: ${errorMessages.join(' ')}`);
+      return;
+    }
     if (!user) {
       setSubmitError('Bạn cần đăng nhập để tiếp tục.');
       return;
     }
-    if (!values.location.trim()) {
-      setErrors((current) => ({ ...current, location: 'Vui lòng nhập địa điểm giao dịch.' }));
-      return;
-    }
-
     setIsSubmitting(true);
     setSubmitError(null);
     try {
@@ -134,7 +151,7 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
         if (values.condition !== initialValues.condition) changed.condition = values.condition as ItemCondition;
         if (values.imageUrl !== initialValues.imageUrl) changed.imageUrl = values.imageUrl;
         if (values.location !== initialValues.location) changed.location = values.location.trim();
-        if (values.imageUrls !== initialValues.imageUrls) {
+        if (!areImageUrlsEqual(values.imageUrls, initialValues.imageUrls)) {
           changed.imageUrls = [...values.imageUrls];
           changed.imageUrl = values.imageUrls[0] ?? '';
         }
@@ -150,7 +167,7 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
     } finally {
       setIsSubmitting(false);
     }
-  }, [canSubmit, initialValues, itemId, mode, onSuccess, user, values]);
+  }, [canSubmit, initialValues, isDirty, itemId, mode, onSuccess, user, values]);
 
   return {
     values,

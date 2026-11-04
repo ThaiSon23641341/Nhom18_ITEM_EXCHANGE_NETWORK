@@ -126,6 +126,27 @@ test('item CRUD validates prohibited terms and persists valid edits', async () =
   assert.equal((await updated.json()).status, 'reserved');
 });
 
+test('favorites can be added, listed, and removed per user', async () => {
+  const createdResponse = await fetch(`${baseUrl}/favorites`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      id: 'favorite-test',
+      userId: 'user-001',
+      itemId: 'item-002',
+      createdAt: new Date().toISOString(),
+    }),
+  });
+  assert.equal(createdResponse.status, 201);
+
+  const listedResponse = await fetch(`${baseUrl}/favorites?userId=user-001&itemId=item-002`);
+  assert.equal(listedResponse.status, 200);
+  assert.equal((await listedResponse.json()).some((favorite) => favorite.id === 'favorite-test'), true);
+
+  const removedResponse = await fetch(`${baseUrl}/favorites/favorite-test`, { method: 'DELETE' });
+  assert.equal(removedResponse.status, 200);
+});
+
 test('report API rejects invalid reasons', async () => {
   const response = await fetch(`${baseUrl}/reports`, {
     method: 'POST',
@@ -139,4 +160,49 @@ test('report API rejects invalid reasons', async () => {
     }),
   });
   assert.equal(response.status, 400);
+});
+
+test('appointment API persists creation and releases the item on cancellation', async () => {
+  const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+  const date = `${String(scheduledAt.getDate()).padStart(2, '0')}/${String(
+    scheduledAt.getMonth() + 1,
+  ).padStart(2, '0')}/${scheduledAt.getFullYear()}`;
+  const time = `${String(scheduledAt.getHours()).padStart(2, '0')}:${String(
+    scheduledAt.getMinutes(),
+  ).padStart(2, '0')}`;
+  const createdResponse = await fetch(`${baseUrl}/appointments`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      itemId: 'item-002',
+      requesterId: 'user-001',
+      date,
+      time,
+      scheduledAt: scheduledAt.toISOString(),
+      location: 'Sảnh thư viện IUH',
+      note: 'Test đồng bộ backend',
+    }),
+  });
+  assert.equal(createdResponse.status, 201);
+  const created = await createdResponse.json();
+  assert.equal(created.status, 'pending');
+
+  const listedResponse = await fetch(`${baseUrl}/appointments?requesterId=user-001`);
+  assert.equal(listedResponse.status, 200);
+  assert.equal((await listedResponse.json()).some((appointment) => appointment.id === created.id), true);
+
+  const ownerListedResponse = await fetch(`${baseUrl}/appointments?userId=user-002`);
+  assert.equal(ownerListedResponse.status, 200);
+  assert.equal((await ownerListedResponse.json()).some((appointment) => appointment.id === created.id), true);
+
+  const cancelledResponse = await fetch(`${baseUrl}/appointments/${created.id}/status`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ status: 'cancelled' }),
+  });
+  assert.equal(cancelledResponse.status, 200);
+  assert.equal((await cancelledResponse.json()).status, 'cancelled');
+
+  const itemResponse = await fetch(`${baseUrl}/items/item-002`);
+  assert.equal((await itemResponse.json()).status, 'available');
 });

@@ -8,6 +8,6 @@
     "test": "node --test"
   },
   "dependencies": {
-    "json-server": "0.17.4"
+    "json-server": "^0.17.4"
   }
 }

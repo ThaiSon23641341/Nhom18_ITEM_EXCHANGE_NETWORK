@@ -7,6 +7,7 @@ import {
   XStack,
   YStack,
 } from 'tamagui';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { CustomButton } from '../components/CustomButton';
 
 export interface LoginScreenProps {
@@ -30,14 +31,15 @@ export function LoginScreen({
   const handleLoginPress = () => onLoginPress?.(displayedEmail.trim());
 
   return (
-    <YStack
-      flex={1}
-      backgroundColor="#F5FBF7"
-      p="5"
-      justify="space-between"
-      items="center"
-    >
-      <YStack w="100%" maxW={440} flex={1} justify="space-between">
+    <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
+      <YStack
+        flex={1}
+        backgroundColor="#F5FBF7"
+        p="5"
+        justify="space-between"
+        items="center"
+      >
+        <YStack w="100%" maxW={440} flex={1} justify="space-between">
         <YStack items="center" gap="2" pt="3">
           <YStack
             w={56}
@@ -146,8 +148,9 @@ export function LoginScreen({
             Cộng đồng trao đổi nội bộ IUH
           </Text>
         </XStack>
+        </YStack>
       </YStack>
-    </YStack>
+    </SafeAreaView>
   );
 }
 

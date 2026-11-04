@@ -23,7 +23,7 @@ export function validateItemForm(values: ItemFormValues): ItemFormErrors {
   else if (title.length < 3 || title.length > 120) errors.title = 'Tên món đồ phải từ 3 đến 120 ký tự.';
 
   if (!description) errors.description = 'Vui lòng nhập mô tả.';
-  else if (description.length < 10 || description.length > 2000) errors.description = 'Mô tả phải từ 10 đến 2000 ký tự.';
+  else if (description.length > 2000) errors.description = 'Mô tả không được vượt quá 2000 ký tự.';
 
   if (!values.category) errors.category = 'Vui lòng chọn danh mục.';
   else if (!CATEGORY_OPTIONS.some((option) => option.value === values.category)) errors.category = 'Danh mục không hợp lệ.';
@@ -41,9 +41,8 @@ export function validateItemForm(values: ItemFormValues): ItemFormErrors {
     errors.price = 'Giá tiền phải là số nguyên không âm hợp lệ.';
   }
 
-  if (values.location.trim().length > 200) {
-    errors.location = 'Địa điểm giao dịch không được vượt quá 200 ký tự.';
-  }
+  const location = values.location.trim();
+  if (location.length > 200) errors.location = 'Địa điểm giao dịch không được vượt quá 200 ký tự.';
 
   return errors;
 }

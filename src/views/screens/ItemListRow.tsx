@@ -10,7 +10,7 @@
  * - Sử dụng hoàn toàn Tamagui Tokens/Themes, không ghi cứng mã hex.
  */
 
-import React, { memo, useState } from 'react';
+import React, { memo, useEffect, useState } from 'react';
 import { Image } from 'react-native';
 import { Card, Text, XStack, YStack } from 'tamagui';
 import type { Item } from '../../models/itemModel';
@@ -20,6 +20,20 @@ import {
   getStatusLabel,
 } from '../../utils/itemOptions';
 import { getAccessibilityProps } from '../../utils/accessibility';
+import { getPublicUserById } from '../../services/authService';
+
+const ownerNameRequests = new Map<string, Promise<string>>();
+
+function getOwnerName(ownerId: string): Promise<string> {
+  const cachedRequest = ownerNameRequests.get(ownerId);
+  if (cachedRequest) return cachedRequest;
+
+  const request = getPublicUserById(ownerId)
+    .then((user) => user.fullName)
+    .catch(() => 'Sinh viên IUH');
+  ownerNameRequests.set(ownerId, request);
+  return request;
+}
 
 export interface ItemListRowProps {
   item: Item;
@@ -33,12 +47,28 @@ export const ItemListRow = memo(function ItemListRow({
   actions,
 }: ItemListRowProps) {
   const [imageError, setImageError] = useState(false);
+  const [ownerName, setOwnerName] = useState(item.ownerName ?? 'Sinh viên IUH');
+
+  useEffect(() => {
+    if (item.ownerName) {
+      setOwnerName(item.ownerName);
+      return;
+    }
+
+    let active = true;
+    void getOwnerName(item.ownerId).then((name) => {
+      if (active) setOwnerName(name);
+    });
+    return () => {
+      active = false;
+    };
+  }, [item.ownerId, item.ownerName]);
 
   const categoryLabel = getCategoryLabel(item.category);
   const conditionLabel = getConditionLabel(item.condition);
   const statusLabel = getStatusLabel(item.status);
 
-  const accessibilityText = `Món đồ ${item.title}, danh mục ${categoryLabel}, tình trạng ${conditionLabel}, trạng thái ${statusLabel}`;
+  const accessibilityText = `Món đồ ${item.title}, người đăng ${ownerName}, danh mục ${categoryLabel}, tình trạng ${conditionLabel}, trạng thái ${statusLabel}`;
 
   return (
     <Card
@@ -83,6 +113,10 @@ export const ItemListRow = memo(function ItemListRow({
         <YStack flex={1} gap="1" justify="space-between">
           <Text color="color" fontSize="4" fontWeight="700" numberOfLines={1}>
             {item.title}
+          </Text>
+
+          <Text color="color" opacity={0.75} fontSize="2" numberOfLines={1}>
+            Người đăng: {ownerName}
           </Text>
 
           <Text color="color" opacity={0.75} fontSize="3" numberOfLines={2}>

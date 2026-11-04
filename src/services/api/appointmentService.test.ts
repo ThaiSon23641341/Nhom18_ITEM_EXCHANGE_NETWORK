@@ -25,11 +25,22 @@ describe('appointmentService', () => {
       createdAt: '2026-10-01T00:00:00.000Z',
       updatedAt: '2026-10-01T00:00:00.000Z',
     }));
+    const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const date = [
+      scheduledAt.getFullYear(),
+      String(scheduledAt.getMonth() + 1).padStart(2, '0'),
+      String(scheduledAt.getDate()).padStart(2, '0'),
+    ].join('-');
+    const time = [
+      String(scheduledAt.getHours()).padStart(2, '0'),
+      String(scheduledAt.getMinutes()).padStart(2, '0'),
+    ].join(':');
+
     const appointment = await createAppointment({
       itemId: 'item-001',
       requesterId: 'student-12345678',
-      date: '2026-11-02',
-      time: '14:30',
+      date,
+      time,
       location: 'Thư viện IUH',
     });
 
@@ -49,11 +60,22 @@ describe('appointmentService', () => {
       createdAt: '2026-10-01T00:00:00.000Z',
       updatedAt: '2026-10-01T00:00:00.000Z',
     }));
+    const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const date = [
+      scheduledAt.getFullYear(),
+      String(scheduledAt.getMonth() + 1).padStart(2, '0'),
+      String(scheduledAt.getDate()).padStart(2, '0'),
+    ].join('-');
+    const time = [
+      String(scheduledAt.getHours()).padStart(2, '0'),
+      String(scheduledAt.getMinutes()).padStart(2, '0'),
+    ].join(':');
+
     await expect(createAppointment({
       itemId: 'item-001',
       requesterId: 'user-001',
-      date: '2026-11-02',
-      time: '14:30',
+      date,
+      time,
       location: 'Thư viện IUH',
     })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });

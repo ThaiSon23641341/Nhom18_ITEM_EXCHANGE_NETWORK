@@ -127,7 +127,7 @@
       "ownerName": "Nguyễn Văn An",
       "ownerFaculty": "Khoa Công nghệ thông tin",
       "createdAt": "2026-09-01T08:00:00.000Z",
-      "updatedAt": "2026-09-01T08:00:00.000Z"
+      "updatedAt": "2026-11-03T14:42:25.747Z"
     },
     {
       "id": "item-002",
@@ -270,13 +270,13 @@
       "id": "item-011",
       "title": "Ba lô laptop 15 inch",
       "description": "Ba lô chống nước, nhiều ngăn dùng.",
-      "category": "Phụ kiện",
-      "condition": "good",
+      "category": "Phu kien",
+      "condition": "fair",
       "imageUrl": "",
       "status": "available",
       "ownerId": "user-001",
       "createdAt": "2026-09-11T08:00:00.000Z",
-      "updatedAt": "2026-09-11T08:00:00.000Z"
+      "updatedAt": "2026-11-04T10:03:40.730Z"
     },
     {
       "id": "item-012",
@@ -312,7 +312,7 @@
       "status": "available",
       "ownerId": "user-004",
       "createdAt": "2026-09-14T08:00:00.000Z",
-      "updatedAt": "2026-09-14T08:00:00.000Z"
+      "updatedAt": "2026-11-03T16:12:34.896Z"
     },
     {
       "id": "item-015",
@@ -321,10 +321,10 @@
       "category": "Giáo trình",
       "condition": "good",
       "imageUrl": "",
-      "status": "available",
+      "status": "reserved",
       "ownerId": "user-005",
       "createdAt": "2026-09-15T08:00:00.000Z",
-      "updatedAt": "2026-09-15T08:00:00.000Z"
+      "updatedAt": "2026-11-03T14:19:53.568Z"
     },
     {
       "id": "item-016",
@@ -336,7 +336,7 @@
       "status": "available",
       "ownerId": "user-006",
       "createdAt": "2026-09-16T08:00:00.000Z",
-      "updatedAt": "2026-09-16T08:00:00.000Z"
+      "updatedAt": "2026-11-04T10:07:29.550Z"
     },
     {
       "id": "item-017",
@@ -345,10 +345,10 @@
       "category": "Dụng cụ học tập",
       "condition": "good",
       "imageUrl": "",
-      "status": "available",
+      "status": "exchanged",
       "ownerId": "user-007",
       "createdAt": "2026-09-17T08:00:00.000Z",
-      "updatedAt": "2026-09-17T08:00:00.000Z"
+      "updatedAt": "2026-11-04T11:10:07.130Z"
     },
     {
       "id": "item-018",
@@ -363,7 +363,33 @@
       "updatedAt": "2026-09-18T08:00:00.000Z"
     }
   ],
-  "appointments": [],
+  "appointments": [
+    {
+      "itemId": "item-016",
+      "requesterId": "user-001",
+      "date": "04/11/2026",
+      "time": "09:00",
+      "scheduledAt": "2026-11-04T02:00:00.000Z",
+      "location": "Cong A",
+      "id": "appointment-1793723878128-ghhiv8",
+      "status": "cancelled",
+      "createdAt": "2026-11-03T16:37:58.128Z",
+      "updatedAt": "2026-11-04T10:07:29.550Z"
+    },
+    {
+      "itemId": "item-017",
+      "requesterId": "user-001",
+      "date": "05/11/2026",
+      "time": "10:00",
+      "scheduledAt": "2026-11-05T03:00:00.000Z",
+      "location": "Cổng A",
+      "id": "appointment-1793790530311-d23y5p",
+      "status": "completed",
+      "createdAt": "2026-11-04T11:08:50.311Z",
+      "updatedAt": "2026-11-04T11:10:07.130Z"
+    }
+  ],
+  "favorites": [],
   "reports": [
     {
       "id": "report-0001",
