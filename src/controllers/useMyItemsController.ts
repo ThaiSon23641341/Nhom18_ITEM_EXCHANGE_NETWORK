@@ -5,6 +5,7 @@ import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { useAuthController } from './useAuthController';
 import { notifyItemsChanged, usePaginatedItems } from './usePaginatedItems';
 import type { Item } from '../models/itemModel';
+import { canDeleteItem } from '../utils/itemPermissions';
 
 export function useMyItemsController() {
   const { user } = useAuthController();
@@ -23,6 +24,10 @@ export function useMyItemsController() {
   const confirmDelete = useCallback(async (target?: Item) => {
     const itemToDelete = target ?? pendingDelete;
     if (!itemToDelete || deletingId) return;
+    if (!canDeleteItem(itemToDelete)) {
+      setDeleteError('Món đã trao không thể xóa.');
+      return;
+    }
     setDeletingId(itemToDelete.id);
     setDeleteError(null);
     try {

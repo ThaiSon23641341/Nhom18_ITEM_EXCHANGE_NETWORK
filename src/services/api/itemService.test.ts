@@ -1,5 +1,6 @@
 import {
   createItem,
+  deleteItem,
   getItemById,
   getItems,
   MockApiError,
@@ -100,6 +101,7 @@ describe('itemService', () => {
     };
     const fetch = jest.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(mockJsonResponse(item))
+      .mockResolvedValueOnce(mockJsonResponse(item))
       .mockResolvedValueOnce(mockJsonResponse({ ...item, title: 'Sách mới' }));
 
     await expect(getItemById('item-001')).resolves.toMatchObject(item);
@@ -138,5 +140,38 @@ describe('itemService', () => {
       code: 'NOT_FOUND',
       message: 'Item not found.',
     });
+  });
+
+  test('chặn xóa món đã trao và cho phép xóa món khả dụng', async () => {
+    const exchanged = {
+      id: 'item-exchanged',
+      title: 'Món đã trao',
+      description: 'Mô tả',
+      category: 'Sách',
+      condition: 'good' as const,
+      imageUrl: '',
+      status: 'exchanged' as const,
+      ownerId: 'user-001',
+      createdAt: '2026-11-04T00:00:00.000Z',
+      updatedAt: '2026-11-04T00:00:00.000Z',
+    };
+    const fetch = jest.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mockJsonResponse(exchanged));
+
+    await expect(deleteItem('item-exchanged')).rejects.toMatchObject({
+      code: 'CONFLICT',
+      message: 'Món đã trao không thể xóa.',
+    });
+
+    const available = { ...exchanged, id: 'item-available', status: 'available' as const };
+    fetch
+      .mockResolvedValueOnce(mockJsonResponse(available))
+      .mockResolvedValueOnce(mockJsonResponse(null, 204));
+
+    await expect(deleteItem('item-available')).resolves.toBeUndefined();
+    expect(fetch).toHaveBeenLastCalledWith(
+      expect.stringMatching(/\/items\/item-available$/),
+      expect.objectContaining({ method: 'DELETE' }),
+    );
   });
 });

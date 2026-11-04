@@ -30,6 +30,7 @@ describe('appointmentService', () => {
     };
     jest.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(mockJsonResponse(item))
+      .mockResolvedValueOnce(mockJsonResponse(item))
       .mockResolvedValueOnce(mockJsonResponse({ ...item, status: 'reserved' }));
     const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     const scheduledDate = new Date(scheduledAt);

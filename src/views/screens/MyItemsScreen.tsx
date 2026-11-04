@@ -29,7 +29,7 @@ export function MyItemsScreen() {
               <Button
                 backgroundColor="border-color"
                 color="color"
-                disabled={controller.deletingId === item.id}
+                disabled={item.status === 'exchanged' || controller.deletingId === item.id}
                 onPress={() => {
                   controller.requestDelete(item);
                   const strongWarning = item.status === 'reserved'

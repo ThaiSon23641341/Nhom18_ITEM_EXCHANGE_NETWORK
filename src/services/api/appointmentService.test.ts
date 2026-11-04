@@ -13,6 +13,8 @@ describe('appointmentService', () => {
   });
 
   test('creates and lists a valid appointment for its requester', async () => {
+    const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const date = futureDate.toISOString().slice(0, 10);
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({
       id: 'item-001',
       title: 'Textbook',
@@ -28,7 +30,7 @@ describe('appointmentService', () => {
     const appointment = await createAppointment({
       itemId: 'item-001',
       requesterId: 'student-12345678',
-      date: '2026-11-02',
+      date,
       time: '14:30',
       location: 'Thư viện IUH',
     });
@@ -37,6 +39,8 @@ describe('appointmentService', () => {
   });
 
   test('rejects attempts to schedule an item owned by the requester', async () => {
+    const futureDate = new Date(Date.now() + 24 * 60 * 60 * 1000);
+    const date = futureDate.toISOString().slice(0, 10);
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({
       id: 'item-001',
       title: 'Textbook',
@@ -52,7 +56,7 @@ describe('appointmentService', () => {
     await expect(createAppointment({
       itemId: 'item-001',
       requesterId: 'user-001',
-      date: '2026-11-02',
+      date,
       time: '14:30',
       location: 'Thư viện IUH',
     })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
