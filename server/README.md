@@ -24,6 +24,23 @@ API endpoints are ordinary JSON Server resources:
 - `GET /users?email=...`, `POST /users`, `GET /users/:id/public`
 - `GET /reports`, `POST /reports`, `PATCH /reports/:id`
 
+## Route files and owners
+
+`server.cjs` only creates the server and registers the files in `routes/`. Each
+route file exports `register({ app, router })` and has one owner (see
+`root/PHASE4_ASSIGNMENT.md`). Shared helpers live in `lib/helpers.cjs`.
+
+| File | Owner | Endpoints |
+| --- | --- | --- |
+| `routes/users.cjs` | Sơn | `GET /health`, `POST /users`, `GET /users/:id/public` |
+| `routes/items.cjs` | Phú | `POST /items`, `PATCH /items/:id` validation |
+| `routes/reports.cjs` | Phú | `POST /reports`, `PATCH /reports/:id` validation |
+| `routes/appointments.cjs` | Tú | `/appointments` (to be added) |
+| `routes/favorites.cjs` | Phúc | `/favorites` (to be added) |
+
+Tests follow the same split in `test/<feature>.test.cjs`; reuse
+`test/helpers.cjs`. Only Sơn edits `db.json`, `package*.json` and `server.cjs`.
+
 The server validates demo item/report writes, disallows prohibited listing
 terms and limits public profile fields. JSON Server does not enforce
 authentication, authorization, or ownership. App-side login merely selects or

@@ -1,6 +1,7 @@
 const fs = require('node:fs');
 const path = require('node:path');
 const jsonServer = require('json-server');
+const appointmentRoutes = require('./routes/appointments.cjs');
 
 const ITEM_CONDITIONS = ['new', 'good', 'fair'];
 const ITEM_STATUSES = ['available', 'reserved', 'exchanged'];
@@ -167,7 +168,6 @@ function validateUpdateItem(body, db, itemId) {
   }
   return null;
 }
-
 function validateAppointment(body, db) {
   const dateMatch = typeof body?.date === 'string'
     ? /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(body.date)
@@ -212,6 +212,7 @@ function createServer(dbFile = path.join(__dirname, 'db.json')) {
   const router = jsonServer.router(dbFile);
   app.use(jsonServer.defaults({ logger: false }));
   app.use(jsonServer.bodyParser);
+  appointmentRoutes.register({ app, router });
 
   app.get('/health', (_request, response) => {
     response.json({ status: 'ok', mode: 'json-server-demo' });
@@ -433,7 +434,6 @@ function createServer(dbFile = path.join(__dirname, 'db.json')) {
     request.body.updatedAt = new Date().toISOString();
     next();
   });
-
   app.use(router);
   return app;
 }
