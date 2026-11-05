@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input, Text, TextArea, XStack, YStack } from 'tamagui';
 import type { Item } from '../../models/itemModel';
 import { getItemById } from '../../services/api/itemService';
+import { getPublicUserById } from '../../services/authService';
 import { combineAppointmentDate, isAppointmentDateInFuture } from '../../controllers/useAppointmentController';
 import { CustomButton } from '../../views/components/CustomButton';
 import { goBackOrReplace } from '../../utils/navigation';
@@ -121,6 +122,7 @@ export default function AppointmentCreateRoute() {
     itemId ? { pathname: '/item/[id]', params: { id: itemId } } : '/(tabs)',
   );
   const [item, setItem] = useState<Item | null>(null);
+  const [ownerFullName, setOwnerFullName] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [date, setDate] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
@@ -135,6 +137,21 @@ export default function AppointmentCreateRoute() {
     getItemById(itemId).then((value) => { if (active) setItem(value); }).finally(() => { if (active) setLoading(false); });
     return () => { active = false; };
   }, [itemId]);
+
+  useEffect(() => {
+    if (!item?.ownerId) return;
+    let active = true;
+    void getPublicUserById(item.ownerId)
+      .then((owner) => {
+        if (active) setOwnerFullName(owner.fullName);
+      })
+      .catch(() => {
+        if (active) setOwnerFullName(item.ownerName ?? null);
+      });
+    return () => {
+      active = false;
+    };
+  }, [item?.ownerId, item?.ownerName]);
 
   if (!itemId) {
     return <YStack flex={1} backgroundColor="background" items="center" justify="center" p="6" gap="4">
@@ -183,7 +200,7 @@ export default function AppointmentCreateRoute() {
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
-        <ScrollView contentContainerStyle={{ flexGrow: 1 }}>
+        <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: 12 }}>
           <YStack flex={1} backgroundColor="background" p="4" gap="3">
           <Text color="color" fontSize="7" fontWeight="700" text="center">Đặt lịch nhận đồ</Text>
           <Text color="color" opacity={0.65} fontSize="3" text="center">Chọn thời gian và địa điểm nhận đồ</Text>
@@ -192,7 +209,9 @@ export default function AppointmentCreateRoute() {
             <YStack flex={1} gap="1">
               <Text color="color" fontSize="5" fontWeight="700" numberOfLines={2}>{item.title}</Text>
               <Text color="color" opacity={0.7} fontSize="3">Món đồ trao đổi</Text>
-              <Text color="primary" fontWeight="700" fontSize="3">Người đăng: {item.ownerId}</Text>
+              <Text color="primary" fontWeight="700" fontSize="3">
+                Người đăng: {ownerFullName ?? item.ownerName ?? 'Sinh viên IUH'}
+              </Text>
             </YStack>
           </XStack>
           <YStack gap="2">
