@@ -39,14 +39,14 @@ Hiện user chỉ có `id`, `email`, `studentId`, `fullName`, `avatarUrl`, `role
 | `reputation` | Điểm uy tín | Chỉ server tính, không cho client ghi |
 
 - `successfulExchanges` bằng số lịch hẹn `completed` mà user là người đặt hoặc chủ món đồ. Tính khi đọc hồ sơ, không lưu tay để tránh lệch dữ liệu.
-- `reputation` do server tính từ dữ liệu giao dịch. Công thức cần chốt (xem phần bên dưới).
-- `fullName` và `phoneNumber` chưa nằm trong phạm vi sửa lần này. Cần chốt thêm nếu muốn mở.
+- `reputation` do server tính khi đọc hồ sơ. **Đã chốt:** dựa trên số giao dịch thành công, trừ điểm cho báo cáo đã được xử lý. Công thức demo: `reputation = clamp(50 + 5 × successfulExchanges − 10 × số báo cáo có status "actioned" trên các bài đăng của user, 0, 100)`. Hệ số 50, 5 và 10 là mức khởi điểm và có thể chỉnh trong một hằng số duy nhất ở server.
+- **Đã chốt:** không cho sửa `fullName` và `phoneNumber` (cả hai chỉ đọc).
 - `email`, `studentId`, `role` không cho sửa.
 
 ### Luồng người dùng
 1. Tab Hồ sơ hiển thị đủ: ảnh, họ tên, Khoa, Lớp, số giao dịch thành công, uy tín.
 2. Nút "Chỉnh sửa hồ sơ" mở màn hình `profile/edit`.
-3. Sửa Khoa, Lớp và chọn ảnh mới (thư viện hoặc camera). Lưu thành công thì cập nhật ngay trên Hồ sơ và trên các màn hình khác dùng thông tin người đăng.
+3. Sửa Khoa, Lớp và chọn ảnh mới. **Đã chốt:** ảnh đại diện chọn được từ thư viện hoặc chụp bằng camera (cần xin quyền tương ứng, từ chối quyền thì giữ ảnh cũ và báo lỗi). Lưu thành công thì cập nhật ngay trên Hồ sơ và trên các màn hình khác dùng thông tin người đăng.
 4. Lỗi mạng hoặc dữ liệu sai: hiển thị lỗi, giữ nguyên nội dung đang nhập.
 
 ### Quy tắc và quyền riêng tư
@@ -68,10 +68,31 @@ Hiện user chỉ có `id`, `email`, `studentId`, `fullName`, `avatarUrl`, `role
 - Hoàn thành một lịch hẹn thì `successfulExchanges` của cả hai bên tăng 1.
 - Hồ sơ công khai không chứa email, mã sinh viên, số điện thoại.
 - Đổi ảnh xong, tắt và mở lại app vẫn thấy ảnh mới (dữ liệu nằm trên server).
+- Điểm uy tín tăng theo giao dịch thành công và giảm khi có báo cáo "actioned"; luôn nằm trong khoảng 0–100.
+- Gửi `fullName` hoặc `phoneNumber` trong yêu cầu sửa hồ sơ bị từ chối (400).
 
-## Cần chốt trước khi làm
+## 5. Chỉnh sửa giao diện thẻ món đồ
+Nguồn: góp ý của Tú về thẻ món đồ ở danh sách. Hiện thẻ trong `src/views/screens/ItemListRow.tsx` chỉ hiển thị ảnh, tên, danh mục, tình trạng và trạng thái. Model `Item` đã có sẵn `ownerName`, `ownerAvatarUrl`, `priceVnd` và `location` nên chủ yếu là sửa phần hiển thị.
+
+Thẻ cần bổ sung:
+1. **Người đăng:** tên (kèm avatar nhỏ) để tăng độ tin cậy. Có thể kèm Khoa hoặc điểm uy tín sau khi mục 4 hoàn thành.
+2. **Giá hoặc hình thức trao đổi:** miễn phí, bán hoặc đổi, để người xem biết cách nhận món. `priceVnd` bằng 0 là miễn phí, có giá là bán, không có giá là trao đổi (cùng quy tắc `formatPrice` đang dùng ở màn chi tiết).
+3. **Địa điểm:** hiển thị gọn ở thẻ nếu còn chỗ; nếu thẻ chật thì chỉ để ở trang chi tiết.
+
+Nguyên tắc: tên món vẫn là phần nổi nhất, văn bản dài thì cắt bằng `numberOfLines`, kiểm tra trên màn hình nhỏ. Hiển thị trạng thái (Đang giữ…) giữ nguyên. Trang chủ vẫn không hiện món đã trao (mục 1).
+
+Phân công đề xuất:
+| Người | Việc |
+|---|---|
+| Phú | `ItemListRow.tsx` và `ExploreScreen` (Phú là chủ danh sách món đồ); lấy dữ liệu người đăng, không để thẻ gọi thêm API cho từng dòng nếu server đã trả sẵn |
+| Phúc | `ItemCard.tsx` và `ExpandableItemCard.tsx` trong `views/components/**` nếu dùng chung kiểu hiển thị; kiểm tra giao diện |
+
+Kiểm thử: thẻ hiển thị đủ ba thông tin với món có và không có giá/địa điểm/ảnh người đăng; không vỡ bố cục với tên dài; kiểm tra trên Android, iOS và Web.
+
+## Đã chốt và còn mở
+Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera.
+
+Còn mở:
 - Cách lưu xác nhận của hai bên (mục 2) vì ảnh hưởng cả mục 3.
 - Chat có cần cập nhật thời gian thực hay chỉ tải lại khi mở màn hình (mức demo: tải lại định kỳ).
-- Công thức uy tín (mục 4): chỉ dựa trên số giao dịch thành công, hay có đánh giá sao sau giao dịch và trừ điểm khi bị báo cáo? Đề xuất mức demo: tính từ số giao dịch thành công, trừ điểm cho báo cáo đã được xác nhận.
-- Có cho sửa họ tên và số điện thoại trong lần này không.
-- Ảnh đại diện chỉ chọn từ thư viện hay cả chụp bằng camera.
+- Thẻ món đồ (mục 5): hiển thị địa điểm ở thẻ hay chỉ ở trang chi tiết.
