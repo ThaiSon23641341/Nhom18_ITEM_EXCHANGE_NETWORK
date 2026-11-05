@@ -2,7 +2,6 @@ import { router, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeft,
   CalendarDays,
-  Check,
   ChevronRight,
   Heart,
   MapPin,
@@ -13,10 +12,20 @@ import {
   UserRound,
 } from 'lucide-react-native';
 import { useState } from 'react';
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 import { Share } from 'react-native';
 import { Button, Image, ScrollView, Text, XStack, YStack } from 'tamagui';
 import { useAuthController } from '../../controllers/useAuthController';
+import { useFavoritesController } from '../../controllers/useFavoritesController';
 import { useItemDetailController } from '../../controllers/useItemDetailController';
+import { MOCK_USER } from '../../utils/constants';
+
+const DESCRIPTION_COLLAPSED_HEIGHT = 72;
+const DESCRIPTION_ANIMATION_DURATION_MS = 260;
 
 const CONDITION_LABELS = {
   new: 'Còn mới',
@@ -36,13 +45,119 @@ const formatPrice = (priceVnd?: number) => {
   return `${new Intl.NumberFormat('vi-VN').format(priceVnd)}đ`;
 };
 
+interface ExpandableDescriptionProps {
+  description: string;
+}
+
+function ExpandableDescription({ description }: ExpandableDescriptionProps) {
+  const [contentHeight, setContentHeight] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false);
+  const animatedHeight = useSharedValue(DESCRIPTION_COLLAPSED_HEIGHT);
+
+  const descriptionStyle = useAnimatedStyle(() => ({
+    height: animatedHeight.value,
+    overflow: 'hidden',
+  }));
+
+  const handleDescriptionLayout = (event: {
+    nativeEvent: { layout: { height: number } };
+  }) => {
+    const measuredHeight = event.nativeEvent.layout.height;
+    setContentHeight(measuredHeight);
+
+    if (!isExpanded) {
+      // Reanimated shared values drive the height animation on the UI thread.
+      // eslint-disable-next-line react-hooks/immutability
+      animatedHeight.value = Math.min(
+        measuredHeight,
+        DESCRIPTION_COLLAPSED_HEIGHT,
+      );
+    } else {
+      // Reanimated shared values drive the height animation on the UI thread.
+      animatedHeight.value = withTiming(measuredHeight, {
+        duration: DESCRIPTION_ANIMATION_DURATION_MS,
+      });
+    }
+  };
+
+  const toggleExpanded = () => {
+    const nextExpanded = !isExpanded;
+    setIsExpanded(nextExpanded);
+    // Reanimated shared values drive the height animation on the UI thread.
+    // eslint-disable-next-line react-hooks/immutability
+    animatedHeight.value = withTiming(
+      nextExpanded
+        ? contentHeight
+        : Math.min(contentHeight, DESCRIPTION_COLLAPSED_HEIGHT),
+      { duration: DESCRIPTION_ANIMATION_DURATION_MS },
+    );
+  };
+
+  return (
+    <YStack flex={1} gap="2">
+      <Text color="color" opacity={0.7} fontSize="3">
+        Mô tả
+      </Text>
+      <Animated.View style={descriptionStyle}>
+        <Text
+          color="color"
+          fontSize="3"
+          lineHeight={24}
+          onLayout={handleDescriptionLayout}
+        >
+          {description}
+        </Text>
+      </Animated.View>
+      {contentHeight > DESCRIPTION_COLLAPSED_HEIGHT ? (
+        <Button
+          self="flex-start"
+          minH={36}
+          px="0"
+          backgroundColor="transparent"
+          borderWidth={0}
+          onPress={toggleExpanded}
+          accessibilityRole="button"
+          accessibilityState={{ expanded: isExpanded }}
+        >
+          <Button.Text color="primary" fontWeight="700">
+            {isExpanded ? 'Thu gọn' : 'Xem thêm'}
+          </Button.Text>
+        </Button>
+      ) : null}
+    </YStack>
+  );
+}
+
 export function ItemDetailScreen() {
-  const params = useLocalSearchParams<{ id: string | string[] }>();
+  const params = useLocalSearchParams<{
+    id: string | string[];
+    returnTo?: string | string[];
+  }>();
   const itemId = Array.isArray(params.id) ? params.id[0] : params.id;
+  const returnTo = Array.isArray(params.returnTo)
+    ? params.returnTo[0]
+    : params.returnTo;
+  const navigateBackToSource = () => {
+    router.replace(returnTo === 'profile' ? '/(tabs)/profile' : '/(tabs)');
+  };
   const { item, isLoading, loadError, retry } = useItemDetailController(itemId);
   const { user } = useAuthController();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
-  const [isFavorite, setIsFavorite] = useState(false);
+  const {
+    favorites,
+    isLoading: isLoadingFavorites,
+    error: favoriteError,
+    pendingItemIds,
+    toggleFavorite: updateFavorite,
+  } = useFavoritesController(user?.id ?? MOCK_USER.id);
+  const isFavorite = item
+    ? favorites.some((favorite) => favorite.itemId === item.id)
+    : false;
+  const isSavingFavorite = item ? pendingItemIds.has(item.id) : false;
+  const toggleFavorite = () => {
+    if (!item) return;
+    void updateFavorite(item.id);
+  };
 
   const images = item?.imageUrls?.length
     ? item.imageUrls
@@ -71,7 +186,7 @@ export function ItemDetailScreen() {
       <YStack flex={1} backgroundColor="background" items="center" justify="center" p="5" gap="3">
         <Text color="color" fontSize="4" text="center">{loadError ?? 'Không tìm thấy đồ dùng.'}</Text>
         <Button onPress={retry} theme="active">Thử lại</Button>
-        <Button onPress={() => router.back()}>Quay lại</Button>
+        <Button onPress={navigateBackToSource}>Quay lại</Button>
       </YStack>
     );
   }
@@ -79,11 +194,11 @@ export function ItemDetailScreen() {
   return (
     <YStack flex={1} backgroundColor="background">
       <XStack h={52} px="4" items="center" justify="space-between">
-        <Button w={40} h={40} circular backgroundColor="#E8F5EF" borderWidth={0} aria-label="Quay lại" onPress={() => router.back()}>
+        <Button w={40} h={40} circular backgroundColor="#E8F5EF" borderWidth={0} accessibilityRole="button" accessibilityLabel="Quay lại" onPress={navigateBackToSource}>
           <ArrowLeft size={21} color="#145B45" />
         </Button>
         <Text color="secondary" fontSize="5" fontWeight="800">Chi tiết đồ dùng</Text>
-        <Button w={40} h={40} circular backgroundColor="#E8F5EF" borderWidth={0} aria-label="Chia sẻ đồ dùng" onPress={shareItem}>
+        <Button w={40} h={40} circular backgroundColor="#E8F5EF" borderWidth={0} accessibilityRole="button" accessibilityLabel="Chia sẻ đồ dùng" onPress={shareItem}>
           <Share2 size={20} color="#145B45" />
         </Button>
       </XStack>
@@ -92,10 +207,36 @@ export function ItemDetailScreen() {
         <YStack px="4" pt="2" pb="4" gap="4">
           <YStack w="100%" aspectRatio={1.6} rounded="5" overflow="hidden" backgroundColor="#E8F5EF" position="relative" items="center" justify="center">
             {images.length > 0 ? (
-              <Image src={images[activeImageIndex]} style={{ width: '100%', height: '100%' }} objectFit="cover" aria-label={`Ảnh ${item.title}`} />
+              <Image src={images[activeImageIndex]} style={{ width: '100%', height: '100%' }} objectFit="cover" accessibilityLabel={`Ảnh ${item.title}`} />
             ) : (
               <PackageCheck size={44} color="#16815D" />
             )}
+            <Button
+              position="absolute"
+              t={10}
+              r={10}
+              w={44}
+              h={44}
+              circular
+              backgroundColor="background"
+              opacity={0.96}
+              accessibilityLabel={isFavorite ? `Bỏ lưu ${item.title} khỏi danh sách yêu thích` : `Lưu ${item.title} vào danh sách yêu thích`}
+              accessibilityHint={isFavorite ? 'Bỏ món này khỏi danh sách yêu thích.' : 'Lưu món này vào danh sách yêu thích.'}
+              accessibilityRole="button"
+              accessibilityState={{
+                selected: isFavorite,
+                disabled: isLoadingFavorites || isSavingFavorite,
+                busy: isSavingFavorite,
+              }}
+              disabled={isLoadingFavorites || isSavingFavorite}
+              onPress={toggleFavorite}
+            >
+              <Heart
+                size={22}
+                color={isFavorite ? '#E11D48' : '#145B45'}
+                fill={isFavorite ? '#E11D48' : 'transparent'}
+              />
+            </Button>
             {images.length > 1 ? (
               <XStack position="absolute" b={3} w="100%" justify="center" gap="2">
                 {images.map((image, index) => (
@@ -107,7 +248,7 @@ export function ItemDetailScreen() {
                     circular
                     borderWidth={0}
                     backgroundColor={activeImageIndex === index ? '#16815D' : '#FFFFFF'}
-                    aria-label={`Xem ảnh ${index + 1}`}
+                    accessibilityLabel={`Xem ảnh ${index + 1}`}
                     onPress={() => setActiveImageIndex(index)}
                   />
                 ))}
@@ -115,12 +256,19 @@ export function ItemDetailScreen() {
             ) : null}
           </YStack>
 
+          {favoriteError ? (
+            <Text color="color" fontSize="2" accessibilityRole="alert">
+              {favoriteError}
+            </Text>
+          ) : null}
+
           <YStack gap="3">
             <XStack self="flex-start" items="center" gap="2" px="3" py="2" rounded="10" backgroundColor={item.status === 'available' ? '#E4F6EA' : '#EEF1F2'}>
               <PackageCheck size={17} color={item.status === 'available' ? '#16815D' : '#667085'} />
               <Text color={item.status === 'available' ? 'primary' : 'color'} fontSize="2" fontWeight="700">{STATUS_LABELS[item.status]}</Text>
             </XStack>
             <Text color="secondary" fontSize="7" fontWeight="800">{item.title}</Text>
+            <Text color="color" opacity={0.65} fontSize="2">Yêu thích được đồng bộ với máy chủ demo.</Text>
             <XStack items="center" justify="space-between" gap="3">
               <Text color="primary" fontSize="6" fontWeight="800">{formatPrice(item.priceVnd)}</Text>
               <XStack items="center" gap="2" px="3" py="2" rounded="10" backgroundColor="#E8F5EF">
@@ -140,10 +288,7 @@ export function ItemDetailScreen() {
             </XStack>
             <XStack items="flex-start" gap="3">
               <Tag size={20} color="#16815D" />
-              <YStack flex={1} gap="2">
-                <Text color="color" opacity={0.7} fontSize="3">Mô tả</Text>
-                <Text color="color" fontSize="3">{item.description}</Text>
-              </YStack>
+              <ExpandableDescription description={item.description} />
             </XStack>
           </YStack>
 
@@ -152,7 +297,7 @@ export function ItemDetailScreen() {
             <XStack items="center" gap="3" p="3" rounded="5" borderWidth={1} borderColor="border-color" backgroundColor="#F4F8F5">
               <YStack w={54} h={54} rounded="10" overflow="hidden" backgroundColor="#E8F5EF" items="center" justify="center">
                 {item.ownerAvatarUrl ? (
-                  <Image src={item.ownerAvatarUrl} style={{ width: '100%', height: '100%' }} objectFit="cover" aria-label={`Ảnh ${item.ownerName ?? 'người đăng'}`} />
+                  <Image src={item.ownerAvatarUrl} style={{ width: '100%', height: '100%' }} objectFit="cover" accessibilityLabel={`Ảnh ${item.ownerName ?? 'người đăng'}`} />
                 ) : (
                   <UserRound size={25} color="#16815D" />
                 )}
@@ -178,7 +323,7 @@ export function ItemDetailScreen() {
               px="0"
               gap="2"
               onPress={() => router.push({ pathname: '/item/[id]/report', params: { id: item.id } })}
-              aria-label="Báo cáo bài đăng"
+              accessibilityLabel="Báo cáo bài đăng"
             >
               <Text color="color" opacity={0.7} fontSize="2">Bài đăng có vấn đề?</Text>
               <Text color="primary" fontSize="2" fontWeight="700">Báo cáo</Text>
@@ -188,19 +333,6 @@ export function ItemDetailScreen() {
       </ScrollView>
 
       <XStack px="4" pt="3" pb="3" gap="3" borderTopWidth={1} borderTopColor="border-color" backgroundColor="background">
-        <Button
-          w={54}
-          h={52}
-          rounded="5"
-          backgroundColor={isFavorite ? '#E4F6EA' : '#F4F8F5'}
-          borderWidth={1}
-          borderColor="border-color"
-          aria-label={isFavorite ? 'Bỏ lưu đồ dùng' : 'Lưu đồ dùng'}
-          aria-pressed={isFavorite}
-          onPress={() => setIsFavorite((favorite) => !favorite)}
-        >
-          {isFavorite ? <Check size={22} color="#16815D" /> : <Heart size={22} color="#145B45" />}
-        </Button>
         <Button
           flex={1}
           h={52}

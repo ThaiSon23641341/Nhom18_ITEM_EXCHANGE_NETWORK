@@ -8,6 +8,7 @@
 import { Redirect, router } from 'expo-router';
 import { useAuthController } from '../../controllers/useAuthController';
 import { createItem } from '../../services/api/itemService';
+import { goBackOrReplace } from '../../utils/navigation';
 import { CreateItemScreen } from '../../views/screens/CreateItemScreen';
 
 export default function ItemCreateRoute() {
@@ -17,7 +18,7 @@ export default function ItemCreateRoute() {
 
   return (
     <CreateItemScreen
-      onBack={() => router.back()}
+      onBack={() => goBackOrReplace('/(tabs)')}
       onSubmit={async (form) => {
         const condition = form.condition === 'Mới 100%'
           ? 'new'

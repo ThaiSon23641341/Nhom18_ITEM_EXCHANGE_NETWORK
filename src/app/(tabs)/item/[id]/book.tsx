@@ -3,6 +3,7 @@ import { Button, Text, YStack } from 'tamagui';
 import { useAuthController } from '../../../../controllers/useAuthController';
 import { useItemDetailController } from '../../../../controllers/useItemDetailController';
 import { createAppointment } from '../../../../services/api/appointmentService';
+import { goBackOrReplace } from '../../../../utils/navigation';
 import { BookAppointmentScreen } from '../../../../views/screens/BookAppointmentScreen';
 
 export default function BookAppointmentRoute() {
@@ -26,7 +27,11 @@ export default function BookAppointmentRoute() {
       <YStack flex={1} items="center" justify="center" gap="3" p="4">
         <Text color="red">{loadError ?? 'Không tìm thấy đồ dùng này.'}</Text>
         <Button onPress={retry}>Thử lại</Button>
-        <Button onPress={() => router.back()}>Quay lại</Button>
+        <Button onPress={() => goBackOrReplace(
+          itemId
+            ? { pathname: '/item/[id]', params: { id: itemId } }
+            : '/(tabs)',
+        )}>Quay lại</Button>
       </YStack>
     );
   }
@@ -34,7 +39,10 @@ export default function BookAppointmentRoute() {
   return (
     <BookAppointmentScreen
       item={item}
-      onBack={() => router.back()}
+      onBack={() => goBackOrReplace({
+        pathname: '/item/[id]',
+        params: { id: item.id },
+      })}
       onSubmit={async (date, time, location) => {
         await createAppointment({
           itemId: item.id,
