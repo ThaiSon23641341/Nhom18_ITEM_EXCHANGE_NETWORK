@@ -28,9 +28,25 @@ export const subscribeToAppointmentChanges = (listener: () => void): (() => void
 };
 
 const isValidDate = (value: string): boolean => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) return false;
+  const parsed = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+  return parsed.getFullYear() === Number(match[3])
+    && parsed.getMonth() === Number(match[2]) - 1
+    && parsed.getDate() === Number(match[1]);
+};
+
+const parseLocalDateTime = (date: string, time: string): number => {
+  const dateMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(date);
+  const timeMatch = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+  if (!dateMatch || !timeMatch) return Number.NaN;
+  return new Date(
+    Number(dateMatch[3]),
+    Number(dateMatch[2]) - 1,
+    Number(dateMatch[1]),
+    Number(timeMatch[1]),
+    Number(timeMatch[2]),
+  ).getTime();
 };
 
 export const createAppointment = async (
@@ -50,7 +66,7 @@ export const createAppointment = async (
   ) {
     throw new AppointmentServiceError('Ngày, giờ hoặc địa điểm hẹn không hợp lệ.', 'BAD_REQUEST');
   }
-  if (new Date(`${input.date}T${input.time}:00`).getTime() <= Date.now()) {
+  if (parseLocalDateTime(input.date, input.time) <= Date.now()) {
     throw new AppointmentServiceError('Thời gian hẹn phải ở trong tương lai.', 'BAD_REQUEST');
   }
 

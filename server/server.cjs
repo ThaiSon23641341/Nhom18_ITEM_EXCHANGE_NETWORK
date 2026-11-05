@@ -169,13 +169,25 @@ function validateUpdateItem(body, db, itemId) {
 }
 
 function validateAppointment(body, db) {
+  const dateMatch = typeof body?.date === 'string'
+    ? /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(body.date)
+    : null;
+  const parsedDate = dateMatch
+    ? new Date(Number(dateMatch[3]), Number(dateMatch[2]) - 1, Number(dateMatch[1]))
+    : null;
+  const hasValidDate = Boolean(
+    parsedDate
+      && parsedDate.getFullYear() === Number(dateMatch[3])
+      && parsedDate.getMonth() === Number(dateMatch[2]) - 1
+      && parsedDate.getDate() === Number(dateMatch[1]),
+  );
   if (
     !isRecord(body)
     || Object.keys(body).some((key) => !APPOINTMENT_FIELDS.has(key))
     || typeof body.itemId !== 'string'
     || typeof body.requesterId !== 'string'
     || !isText(body.date, 10, true)
-    || !/^\d{2}\/\d{2}\/\d{4}$/.test(body.date)
+    || !hasValidDate
     || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(body.time)
     || !isText(body.location, 200, true)
     || (body.note !== undefined && !isText(body.note, 500))

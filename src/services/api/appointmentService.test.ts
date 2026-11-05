@@ -26,11 +26,9 @@ describe('appointmentService', () => {
       updatedAt: '2026-10-01T00:00:00.000Z',
     }));
     const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const date = [
-      scheduledAt.getFullYear(),
-      String(scheduledAt.getMonth() + 1).padStart(2, '0'),
-      String(scheduledAt.getDate()).padStart(2, '0'),
-    ].join('-');
+    const date = `${String(scheduledAt.getDate()).padStart(2, '0')}/${String(
+      scheduledAt.getMonth() + 1,
+    ).padStart(2, '0')}/${scheduledAt.getFullYear()}`;
     const time = [
       String(scheduledAt.getHours()).padStart(2, '0'),
       String(scheduledAt.getMinutes()).padStart(2, '0'),
@@ -61,11 +59,9 @@ describe('appointmentService', () => {
       updatedAt: '2026-10-01T00:00:00.000Z',
     }));
     const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
-    const date = [
-      scheduledAt.getFullYear(),
-      String(scheduledAt.getMonth() + 1).padStart(2, '0'),
-      String(scheduledAt.getDate()).padStart(2, '0'),
-    ].join('-');
+    const date = `${String(scheduledAt.getDate()).padStart(2, '0')}/${String(
+      scheduledAt.getMonth() + 1,
+    ).padStart(2, '0')}/${scheduledAt.getFullYear()}`;
     const time = [
       String(scheduledAt.getHours()).padStart(2, '0'),
       String(scheduledAt.getMinutes()).padStart(2, '0'),
