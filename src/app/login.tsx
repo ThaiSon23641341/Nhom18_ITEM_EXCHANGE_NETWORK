@@ -1,9 +1,8 @@
 /**
  * src/app/login.tsx
  *
- * Route "/login" — màn hình đăng nhập tạm.
- * B làm giao diện (B08), A làm xử lý đăng nhập (B09).
- * File này chỉ import và re-export màn hình thật từ src/views/screens.
+ * Route "/login": đăng nhập bằng email sinh viên và mật khẩu.
+ * Tài khoản chưa tồn tại sẽ được chuyển sang "/register".
  */
 
 import { router } from 'expo-router';
@@ -13,15 +12,20 @@ import { LoginScreen } from '../views/screens/LoginScreen';
 export default function LoginRoute() {
   const { login, loginError, isSubmitting } = useAuthController();
 
-  const handleLogin = async (email: string) => {
-    if (await login(email)) {
+  const handleLogin = async (email: string, password: string) => {
+    const result = await login(email, password);
+    if (result === 'success') {
       router.replace('/(tabs)');
+    } else if (result === 'account-not-found') {
+      router.push({ pathname: '/register', params: { email, notFound: '1' } });
     }
   };
 
   return (
     <LoginScreen
-      onLoginPress={(email) => { void handleLogin(email); }}
+      onLoginPress={(email, password) => { void handleLogin(email, password); }}
+      onForgotPasswordPress={(email) => router.push({ pathname: '/forgot-password', params: { email } })}
+      onRegisterPress={(email) => router.push({ pathname: '/register', params: { email } })}
       error={loginError}
       isSubmitting={isSubmitting}
     />
