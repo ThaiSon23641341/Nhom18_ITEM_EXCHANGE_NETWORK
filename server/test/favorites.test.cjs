@@ -16,34 +16,42 @@ describe('favorites API', () => {
   });
 
   test('filters by user, prevents duplicates, and removes favorites', async () => {
+    const initialResponse = await request(context.baseUrl, '/favorites?userId=user-001');
+    const initialFavorites = await initialResponse.json();
+    const initialOtherUserResponse = await request(context.baseUrl, '/favorites?userId=user-002');
+    const initialOtherUserFavorites = await initialOtherUserResponse.json();
+    const item = context.seed.items.find((candidate) =>
+      !initialFavorites.some((favorite) => favorite.itemId === candidate.id),
+    );
+    assert.ok(item, 'test database needs an item not already favorited by user-001');
+
     const created = await postJson(context.baseUrl, '/favorites', {
       userId: '21036001',
-      itemId: 'item-001',
+      itemId: item.id,
     });
     assert.equal(created.status, 201);
     const favorite = await created.json();
     assert.equal(favorite.userId, 'user-001');
-    assert.equal(favorite.itemId, 'item-001');
+    assert.equal(favorite.itemId, item.id);
     assert.ok(favorite.id);
     assert.ok(favorite.createdAt);
 
     const duplicate = await postJson(context.baseUrl, '/favorites', {
       userId: 'user-001',
-      itemId: 'item-001',
+      itemId: item.id,
     });
     assert.equal(duplicate.status, 409);
 
     const favorites = await request(context.baseUrl, '/favorites?userId=21036001');
     assert.equal(favorites.status, 200);
-    assert.deepEqual(await favorites.json(), [favorite]);
-
+    assert.deepEqual(await favorites.json(), [...initialFavorites, favorite]);
     const otherUserFavorites = await request(context.baseUrl, '/favorites?userId=user-002');
-    assert.deepEqual(await otherUserFavorites.json(), []);
+    assert.deepEqual(await otherUserFavorites.json(), initialOtherUserFavorites);
 
     const removed = await request(context.baseUrl, `/favorites/${favorite.id}`, { method: 'DELETE' });
     assert.equal(removed.status, 200);
     const afterRemoval = await request(context.baseUrl, '/favorites?userId=user-001');
-    assert.deepEqual(await afterRemoval.json(), []);
+    assert.deepEqual(await afterRemoval.json(), initialFavorites);
   });
 
   test('rejects invalid identifiers and missing resources', async () => {

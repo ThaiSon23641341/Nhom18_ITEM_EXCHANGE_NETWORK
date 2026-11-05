@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useState } from 'react';
+import { useFocusEffect } from 'expo-router';
 import type { Favorite } from '../models/favoriteModel';
 import {
   addFavorite,
@@ -14,36 +15,37 @@ export function useFavoritesController(userId: string) {
   const [pendingItemIds, setPendingItemIds] = useState<ReadonlySet<string>>(
     () => new Set(),
   );
-  const [retryCount, setRetryCount] = useState(0);
-
-  useEffect(() => {
-    let active = true;
-    getFavorites(userId)
+  const loadFavorites = useCallback((isActive: () => boolean = () => true) => {
+    return getFavorites(userId)
       .then((loadedFavorites) => {
-        if (!active) return;
+        if (!isActive()) return;
         setFavorites(loadedFavorites);
         setError(null);
       })
       .catch((loadError: unknown) => {
-        if (!active) return;
+        if (!isActive()) return;
         setError(loadError instanceof Error
           ? loadError.message
           : 'Không thể tải danh sách yêu thích.');
       })
       .finally(() => {
-        if (active) setIsLoading(false);
+        if (isActive()) setIsLoading(false);
       });
+  }, [userId]);
 
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    void loadFavorites(() => active);
     return () => {
       active = false;
     };
-  }, [userId, retryCount]);
+  }, [loadFavorites]));
 
   const retry = useCallback(() => {
     setIsLoading(true);
     setError(null);
-    setRetryCount((count) => count + 1);
-  }, []);
+    void loadFavorites();
+  }, [loadFavorites]);
 
   const toggleFavorite = useCallback(async (itemId: string) => {
     if (!userId || pendingItemIds.has(itemId)) return;
