@@ -7,6 +7,14 @@ const mockJsonResponse = (body: unknown): Response =>
     text: async () => JSON.stringify(body),
   }) as Response;
 
+const futureDate = (): string => {
+  const date = new Date();
+  date.setDate(date.getDate() + 7);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+};
+
 describe('appointmentService', () => {
   beforeEach(() => {
     jest.restoreAllMocks();
@@ -28,7 +36,7 @@ describe('appointmentService', () => {
     const appointment = await createAppointment({
       itemId: 'item-001',
       requesterId: 'student-12345678',
-      date: '2026-11-02',
+      date: futureDate(),
       time: '14:30',
       location: 'Thư viện IUH',
     });
@@ -52,7 +60,7 @@ describe('appointmentService', () => {
     await expect(createAppointment({
       itemId: 'item-001',
       requesterId: 'user-001',
-      date: '2026-11-02',
+      date: futureDate(),
       time: '14:30',
       location: 'Thư viện IUH',
     })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
