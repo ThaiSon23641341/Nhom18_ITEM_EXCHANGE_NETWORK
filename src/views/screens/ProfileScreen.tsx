@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { Heart, MapPin, Package, UserRound } from 'lucide-react-native';
+import { Heart, LogOut, MapPin, Package, UserRound } from 'lucide-react-native';
 import { Button, Image, ScrollView, Text, XStack, YStack } from 'tamagui';
 import { useAuthController } from '../../controllers/useAuthController';
 import { useFavoritesController } from '../../controllers/useFavoritesController';
@@ -22,7 +22,7 @@ const formatPrice = (priceVnd?: number): string => {
 };
 
 export function ProfileScreen() {
-  const { user } = useAuthController();
+  const { user, logout } = useAuthController();
   const userId = user?.id ?? MOCK_USER.id;
   const {
     profile,
@@ -133,6 +133,26 @@ export function ProfileScreen() {
             </Text>
           ) : null}
         </YStack>
+
+        {user ? (
+          <XStack>
+            <Button
+              minH={48}
+              borderColor="#D92D20"
+              color="#B42318"
+              backgroundColor="transparent"
+              icon={<LogOut size={18} color="#B42318" />}
+              onPress={() => {
+                logout();
+                router.replace('/login');
+              }}
+              accessibilityRole="button"
+              accessibilityLabel="Đăng xuất"
+            >
+              Đăng xuất
+            </Button>
+          </XStack>
+        ) : null}
 
         <YStack gap="3">
           <XStack items="center" justify="space-between">
