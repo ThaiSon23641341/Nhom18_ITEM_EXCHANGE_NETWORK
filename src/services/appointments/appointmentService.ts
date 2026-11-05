@@ -1,5 +1,6 @@
 import type { Appointment } from '../../models/appointmentModel';
-import { getItemById, MockApiError, updateItem } from '../api/itemService';
+import { getItemById, MockApiError } from '../api/itemService';
+import { apiRequest } from '../api/apiClient';
 
 export type CreateAppointmentInput = Omit<
   Appointment,
@@ -8,7 +9,6 @@ export type CreateAppointmentInput = Omit<
 
 let appointments: Appointment[] = [];
 const listeners = new Set<() => void>();
-let nextAppointmentId = 1;
 
 const notify = () => listeners.forEach((listener) => listener());
 
@@ -19,6 +19,53 @@ export function subscribeToAppointments(listener: () => void): () => void {
 
 export function getAppointments(): Appointment[] {
   return appointments;
+}
+
+export async function updateAppointmentStatus(
+  appointmentId: string,
+  status: Appointment['status'],
+): Promise<Appointment> {
+  const appointment = appointments.find((candidate) => candidate.id === appointmentId);
+  if (!appointment) throw new Error('Không tìm thấy lịch hẹn.');
+  if (appointment.status === status) return { ...appointment };
+
+  const updated = await apiRequest<Appointment>(
+    `/appointments/${encodeURIComponent(appointmentId)}/status`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ status }),
+    },
+  );
+  if (status === 'cancelled') {
+    const { cancelAppointmentReminder } = await import('../device/notificationService');
+    await cancelAppointmentReminder(appointmentId);
+  }
+  appointments = appointments.map((candidate) =>
+    candidate.id === appointmentId ? updated : candidate,
+  );
+  notify();
+  return { ...updated };
+}
+
+export async function loadAppointments(requesterId: string): Promise<Appointment[]> {
+  const loaded = await apiRequest<Appointment[]>(
+    `/appointments?userId=${encodeURIComponent(requesterId)}`,
+  );
+  appointments = loaded;
+  notify();
+  return appointments;
+}
+
+export async function cancelAppointment(appointmentId: string): Promise<Appointment> {
+  const appointment = appointments.find((candidate) => candidate.id === appointmentId);
+  if (!appointment) {
+    throw new Error('Không tìm thấy lịch hẹn.');
+  }
+  if (appointment.status !== 'pending' && appointment.status !== 'confirmed') {
+    throw new Error('Lịch hẹn này không thể hủy.');
+  }
+
+  return updateAppointmentStatus(appointment.id, 'cancelled');
 }
 
 function parseLocalDate(date: string, time: string): Date | null {
@@ -83,18 +130,15 @@ export async function createAppointment(input: CreateAppointmentInput): Promise<
     throw new Error('Đồ dùng này không còn khả dụng để đặt lịch.');
   }
 
-  const now = new Date().toISOString();
-  const appointment: Appointment = {
-    ...input,
-    itemId,
-    requesterId,
-    location,
-    id: `appointment-${String(nextAppointmentId++).padStart(4, '0')}`,
-    status: 'pending',
-    createdAt: now,
-    updatedAt: now,
-  };
-  await updateItem(itemId, { status: 'reserved' });
+  const appointment = await apiRequest<Appointment>('/appointments', {
+    method: 'POST',
+    body: JSON.stringify({
+      ...input,
+      itemId,
+      requesterId,
+      location,
+    }),
+  });
   appointments = [appointment, ...appointments];
   notify();
   return { ...appointment };

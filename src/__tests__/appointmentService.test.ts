@@ -28,9 +28,6 @@ describe('appointmentService', () => {
       createdAt: '2026-10-01T00:00:00.000Z',
       updatedAt: '2026-10-01T00:00:00.000Z',
     };
-    jest.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(mockJsonResponse(item))
-      .mockResolvedValueOnce(mockJsonResponse({ ...item, status: 'reserved' }));
     const scheduledAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString();
     const scheduledDate = new Date(scheduledAt);
     const date = `${String(scheduledDate.getDate()).padStart(2, '0')}/${String(
@@ -39,6 +36,21 @@ describe('appointmentService', () => {
     const time = `${String(scheduledDate.getHours()).padStart(2, '0')}:${String(
       scheduledDate.getMinutes(),
     ).padStart(2, '0')}`;
+    jest.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mockJsonResponse(item))
+      .mockResolvedValueOnce(mockJsonResponse({
+        id: 'appointment-test',
+        itemId: 'item-002',
+        requesterId: 'user-test',
+        date,
+        time,
+        scheduledAt,
+        location: 'Sảnh thư viện IUH',
+        note: 'Tôi sẽ đến sau giờ học.',
+        status: 'pending',
+        createdAt: new Date().toISOString(),
+        updatedAt: new Date().toISOString(),
+      }));
 
     const appointment = await createAppointment({
       itemId: 'item-002',

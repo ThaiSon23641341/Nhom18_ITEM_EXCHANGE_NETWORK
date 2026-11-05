@@ -2,7 +2,7 @@ import { Redirect, router, useLocalSearchParams } from 'expo-router';
 import { Button, Text, YStack } from 'tamagui';
 import { useAuthController } from '../../../../controllers/useAuthController';
 import { useItemDetailController } from '../../../../controllers/useItemDetailController';
-import { createAppointment } from '../../../../services/api/appointmentService';
+import { createAppointment } from '../../../../services/appointments/appointmentService';
 import { BookAppointmentScreen } from '../../../../views/screens/BookAppointmentScreen';
 import { goBackOrReplace } from '../../../../utils/navigation';
 

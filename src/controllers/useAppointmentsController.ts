@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Appointment } from '../models/appointmentModel';
 import {
-  getAppointments,
-  subscribeToAppointmentChanges,
-} from '../services/api/appointmentService';
+  loadAppointments,
+  subscribeToAppointments,
+} from '../services/appointments/appointmentService';
 
 export function useAppointmentsController(requesterId: string | undefined) {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -12,7 +12,7 @@ export function useAppointmentsController(requesterId: string | undefined) {
   const [reloadCount, setReloadCount] = useState(0);
 
   useEffect(() => {
-    const unsubscribe = subscribeToAppointmentChanges(() => {
+    const unsubscribe = subscribeToAppointments(() => {
       setLoadError(null);
       setIsLoading(true);
       setReloadCount((count) => count + 1);
@@ -23,7 +23,19 @@ export function useAppointmentsController(requesterId: string | undefined) {
 
   useEffect(() => {
     let active = true;
-    getAppointments(requesterId ?? '')
+    if (!requesterId) {
+      Promise.resolve().then(() => {
+        if (active) {
+          setAppointments([]);
+          setIsLoading(false);
+        }
+      });
+      return () => {
+        active = false;
+      };
+    }
+
+    loadAppointments(requesterId)
       .then((result) => {
         if (active) setAppointments(result);
       })
