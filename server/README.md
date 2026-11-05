@@ -22,6 +22,10 @@ API endpoints are ordinary JSON Server resources:
 - `GET /health`
 - `GET /items`, `GET /items/:id`, `POST /items`, `PATCH /items/:id`, `DELETE /items/:id`
 - `GET /users?email=...`, `POST /users`, `GET /users/:id/public`
+- `POST /auth/login`, `POST /auth/register`, `POST /auth/forgot-password`, `POST /auth/reset-password`
+  (passwords are stored as salted scrypt hashes in `credentials`, which is never served;
+  seeded accounts accept the demo password `Demo@1234` until they set their own;
+  the reset code is returned in the response because the demo sends no email)
 - `GET /reports`, `POST /reports`, `PATCH /reports/:id`
 
 ## Route files and owners
