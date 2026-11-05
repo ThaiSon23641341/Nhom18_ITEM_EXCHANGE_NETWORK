@@ -364,6 +364,7 @@
     }
   ],
   "appointments": [],
+  "favorites": [],
   "reports": [
     {
       "id": "report-0001",
