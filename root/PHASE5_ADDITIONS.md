@@ -112,6 +112,158 @@ Kiểm thử: thẻ hiển thị đủ ba thông tin với món có và không c
 - Phụ trách: Phú (`items.cjs`, `itemPermissions`, `MyItemsScreen`, `ItemFormScreen`); Tú cung cấp cách xác định lịch `confirmed` của một món.
 - Kiểm thử: món có lịch `confirmed` sửa hoặc xóa trả 409; hủy lịch thì sửa lại được; món chỉ có lịch `pending` vẫn sửa được.
 
+## 9. Mọi dữ liệu đọc, ghi và chỉnh sửa trên server
+Nguyên tắc: server (`server/db.json` qua các route) là nguồn dữ liệu duy nhất. App không giữ dữ liệu nghiệp vụ chỉ ở máy; đổi máy hoặc cài lại app vẫn thấy đủ thông tin, và mọi chỉnh sửa phải được server lưu rồi app mới hiển thị.
+
+Phạm vi dữ liệu:
+| Dữ liệu | Hiện trạng | Cần đạt |
+|---|---|---|
+| Bài đăng món đồ | Tạo, sửa, xóa đã qua `/items` | Giữ nguyên; thêm `availableUntil` (mục 7); ảnh món đồ hiện chưa upload, cần lưu ảnh trên server hoặc lưu chuỗi ảnh trong bài đăng để máy khác xem được |
+| Lịch hẹn | Lưu trong `appointments` trên server | Mọi đổi trạng thái (xác nhận, hủy, hoàn thành) và địa điểm lấy từ món (mục 6) đều do server ghi và kiểm tra; app luôn tải lại từ server thay vì giữ bản sao |
+| Nhắc lịch | Chỉ đặt cục bộ trên điện thoại, server không biết | Lưu thời điểm nhắc của lịch (ví dụ `reminderAt`) trên server; khi mở app hoặc đăng nhập trên máy khác thì đặt lại nhắc từ dữ liệu server |
+| Tài khoản và hồ sơ | Chưa có luồng sửa; phiên đăng nhập chỉ nằm trong Redux, tắt app là mất | Sửa hồ sơ qua `PATCH /users/:id` (mục 4); lưu phiên đăng nhập ở máy (token hoặc `userId`) và tải lại hồ sơ từ server khi mở app |
+| Yêu thích | Đã qua `/favorites` | Giữ nguyên, kiểm tra không còn cache cục bộ lệch với server |
+| Báo cáo vi phạm | Đã qua `/reports` | Giữ nguyên |
+| Tin nhắn | Chưa có | Lưu trong `messages` trên server (mục 3) |
+
+Quy tắc chung:
+- Ghi thành công mới cập nhật giao diện; ghi lỗi thì báo lỗi và giữ nguyên dữ liệu đang nhập.
+- Chỉ lưu ở máy những thứ không phải dữ liệu nghiệp vụ: phiên đăng nhập, lịch nhắc đã đặt (để hủy khi cần).
+- Giới hạn của demo: server chưa có xác thực phiên, nên quyền "chỉ chủ mới được sửa" vẫn dựa vào `userId` do app gửi (đã ghi ở mục 4).
+
+Việc cần làm:
+1. Kiểm kê: lập danh sách mọi nơi app còn giữ dữ liệu nghiệp vụ ở máy hoặc dữ liệu mẫu (`src/services/api/mockData.ts`, cache trong controller, store) và đối chiếu từng nơi với route trên server.
+2. Phụ trách đề xuất: Sơn (model và `db.json`, `PATCH /users/:id`, lưu phiên đăng nhập trong store và `authService`), Tú (lưu `reminderAt` và đặt lại nhắc từ `appointments`), Phú (ảnh món đồ và `availableUntil`), Phúc (hồ sơ và yêu thích dùng dữ liệu từ server).
+
+Kiểm thử:
+- Đăng nhập, tắt hẳn app rồi mở lại vẫn còn phiên và hồ sơ từ server.
+- Sửa bài đăng, hồ sơ hoặc lịch hẹn ở một máy thì máy khác tải lại thấy đúng nội dung mới.
+- Đặt lịch xong, xóa dữ liệu app và đăng nhập lại: lịch hẹn và nhắc lịch vẫn còn.
+- Ngắt server thì thao tác ghi báo lỗi rõ ràng và không tạo dữ liệu chỉ nằm ở máy.
+
+## 9.1 Luồng chi tiết: phiên đăng nhập, nhắc lịch, ảnh
+
+### a. Phiên đăng nhập lưu trên server
+- Đăng nhập (`POST /auth/login`, `/auth/register`) tạo một phiên trong collection `sessions` của `server/db.json` (`id`/`token` ngẫu nhiên, `userId`, `createdAt`, `expiresAt`) và trả `token` cùng hồ sơ user. Mật khẩu vẫn chỉ nằm trong `credentials`, không bao giờ trả ra.
+- App chỉ giữ `token` ở máy (dùng `expo-secure-store`, cài bằng `npx expo install`), không giữ dữ liệu hồ sơ làm nguồn chính.
+- Mở app: nếu có `token` thì gọi `GET /auth/session` (kèm `Authorization: Bearer <token>`); hợp lệ thì tải hồ sơ từ server và vào thẳng app, hết hạn hoặc không hợp lệ (401) thì xóa `token` và về màn đăng nhập.
+- Đăng xuất: `DELETE /auth/session` xóa phiên trên server rồi xóa `token` ở máy. Đổi mật khẩu hoặc đặt lại mật khẩu thì hủy mọi phiên cũ của user.
+- Hạn phiên đề xuất 30 ngày, đặt trong một hằng số ở server. Server bắt đầu dùng `token` để biết người đang gọi, nhờ đó các quy tắc "chỉ chủ được sửa" (mục 4, 8) lấy `userId` từ phiên thay vì từ dữ liệu app gửi; làm dần theo từng route, route nào chưa chuyển thì ghi chú rõ.
+- Phụ trách: Sơn (`server/routes/users.cjs`/auth, `server/lib`, `db.json`, `authService`, `authSlice`, `apiClient`, `package.json`). Phúc cập nhật `ProfileScreen` và nút đăng xuất gọi đúng luồng này.
+- Kiểm thử: đăng nhập, tắt hẳn app, mở lại vẫn vào được; đăng xuất rồi gọi `GET /auth/session` bằng `token` cũ trả 401; `token` hết hạn bị từ chối; mật khẩu và `credentials` không xuất hiện trong bất kỳ phản hồi nào.
+
+### b. Nhắc lịch lưu trên server
+- Lịch hẹn có thêm `reminderAt` (ISO) và `reminderMinutes` (mặc định đang là 1 phút, nên đổi thành giá trị thực tế như 60 phút) do server tính khi tạo lịch từ ngày giờ hẹn; không cho bên đặt lịch tự ghi thời điểm nhắc tùy ý.
+- Luồng tạo: đặt lịch thành công thì server trả lịch kèm `reminderAt`; app dùng giá trị đó để đặt thông báo cục bộ (`notificationService`), không tự tính riêng.
+- Luồng sửa: đổi ngày giờ (khi còn được sửa, xem mục 2) hoặc hủy, hoàn thành thì server cập nhật hoặc xóa `reminderAt`; app hủy nhắc cũ và đặt nhắc mới theo dữ liệu mới.
+- Khôi phục: khi mở app hoặc đăng nhập trên máy khác, app tải danh sách lịch của user (`GET /appointments?userId=...`) và đặt lại nhắc cho mọi lịch `confirmed` còn tương lai chưa có nhắc trên máy. Cả hai bên (người đặt và chủ món) đều nhận nhắc.
+- Giữ ở máy chỉ id thông báo đã đặt (để hủy được), không coi đó là dữ liệu nghiệp vụ.
+- Phụ trách: Tú (`server/routes/appointments.cjs`, `appointmentModel`, `notificationService`, `AppointmentsScreen`, test); Sơn thêm trường vào dữ liệu mẫu `db.json` nếu cần.
+- Kiểm thử: tạo lịch trả `reminderAt` đúng bằng giờ hẹn trừ `reminderMinutes`; hủy hoặc hoàn thành thì không còn nhắc; đăng nhập ở máy khác vẫn đặt lại được nhắc; client gửi `reminderAt` bị bỏ qua hoặc từ chối.
+- Giới hạn: Expo Go Android không đặt được channel thông báo, cần development build để thử đầy đủ.
+
+### c. Ảnh món đồ và ảnh đại diện lưu trên server
+- Hiện `imageUrl` và `imageUrls` chỉ là chuỗi địa chỉ do người dùng nhập hoặc dữ liệu mẫu, ảnh chọn từ máy không được tải lên nên máy khác không thấy.
+- Thêm `POST /uploads` nhận ảnh (jpg/png, giới hạn dung lượng, đề xuất 5 MB) từ người đã đăng nhập, lưu file vào thư mục `server/uploads/` (không đưa vào git) và trả URL công khai dạng `/uploads/<tên-file>`. Server tự đặt tên file, không dùng tên người gửi, kiểm tra định dạng bằng nội dung chứ không chỉ đuôi file.
+- Luồng đăng món: chọn ảnh từ thư viện hoặc camera, xem trước, bấm lưu thì app tải ảnh lên `POST /uploads` trước, rồi gửi bài đăng với URL nhận được. Tải ảnh lỗi thì không tạo bài.
+- Luồng sửa món: thêm, thay hoặc xóa ảnh trong form sửa, tải ảnh mới lên rồi `PATCH /items/:id` với danh sách `imageUrls` mới; ảnh bị bỏ khỏi bài thì server xóa file khi không còn bài nào dùng. Món đã khóa (mục 8) không sửa được ảnh.
+- Luồng ảnh đại diện: cùng cơ chế `POST /uploads`, rồi `PATCH /users/:id` với `avatarUrl` (mục 4). Ảnh cũ được dọn khi không còn dùng.
+- Trên máy khác hoặc sau khi cài lại app, ảnh vẫn hiện vì nằm trên server. App ghép URL tương đối với `EXPO_PUBLIC_API_URL`.
+- Phụ trách: Sơn (`server/routes/uploads.cjs` mới, `server/lib`, `server.cjs` phục vụ `/uploads`, `.gitignore` cho `server/uploads/`, `expo-image-picker`); Phú (form đăng và sửa món, `itemService`); Phúc (ảnh đại diện trong màn sửa hồ sơ, `ItemCard`).
+- Kiểm thử: tải ảnh hợp lệ trả URL xem được; file sai định dạng hoặc quá lớn bị từ chối (400); người chưa đăng nhập tải lên bị từ chối (401); đăng món trên máy A thì máy B thấy ảnh; xóa ảnh khỏi bài thì file được dọn; ngắt server giữa chừng không tạo bài chỉ có ảnh ở máy.
+
+## 9.2 Giới hạn của server hiện tại (JSON Server chạy cục bộ)
+- "Server" trong kế hoạch này là JSON Server demo (`server/server.cjs`, dữ liệu trong `server/db.json`) chạy trên máy của người phát triển, không phải server trên mạng. Điện thoại chỉ kết nối được khi cùng Wi-Fi với máy đó, qua `EXPO_PUBLIC_API_URL` (IP LAN đổi theo mạng nên phải cập nhật `.env.local`).
+- Hệ quả: tắt server hoặc tắt máy thì app không đọc và ghi được dữ liệu; mỗi máy phát triển có `db.json` riêng nên dữ liệu không đồng bộ giữa các thành viên. "Máy khác thấy dữ liệu" trong các kiểm thử nghĩa là hai điện thoại cùng kết nối tới một server cục bộ.
+- Mọi thứ mới (bảng `sessions`, `reminderAt`, thư mục `server/uploads/`) cũng nằm trên máy chạy server. `server/uploads/` và dữ liệu test phải được git bỏ qua; không commit thay đổi `db.json` sinh ra khi test (như quy ước hiện nay).
+- Khi mất kết nối server, app phải báo lỗi rõ ràng, không lưu dữ liệu nghiệp vụ tạm ở máy rồi coi như đã thành công.
+- Ngoài phạm vi giai đoạn 5: đưa server lên máy chủ thật hoặc dịch vụ đám mây, dùng cơ sở dữ liệu thật, và lưu ảnh trên kho lưu trữ riêng. Nếu cần demo ngoài mạng nội bộ thì xử lý ở giai đoạn sau (ví dụ tunnel hoặc triển khai server).
+
+## 10. Giao diện trang chủ: chế độ xem, bộ lọc gọn, ảnh lớn
+Hiện trang Khám phá (`ExploreScreen`) là danh sách một cột dùng `ItemListRow`, bộ lọc `ItemFilterBar` đặt phía trên danh sách nên chiếm nhiều chỗ, ảnh món nhỏ. Yêu cầu: người dùng dễ nhìn ảnh hơn, tương tự cách app X (Twitter) hiển thị bài (ảnh lớn gần hết chiều ngang, thông tin người đăng và tên ngay trên và dưới ảnh).
+
+1. **Nút bật tắt 1 cột hoặc 2 cột:**
+   - Thanh trên của trang chủ có nút chuyển giữa 1 cột (thẻ lớn, mặc định như hiện tại nhưng ảnh to hơn) và 2 cột (lưới thẻ nhỏ gọn để xem nhiều món).
+   - Dùng `FlatList` với `numColumns` và đổi `key` khi đổi số cột (React Native không cho đổi `numColumns` tại chỗ). Giữ phân trang, kéo làm mới, tải thêm như cũ.
+   - Lưu lựa chọn của người dùng ở máy (sở thích giao diện, không phải dữ liệu nghiệp vụ; xem mục 9) để lần sau mở app vẫn giữ.
+   - Cần hai kiểu thẻ: thẻ 1 cột (ảnh gần full chiều ngang, tỉ lệ 4:3 hoặc 1:1) và thẻ 2 cột (ảnh vuông, tên tối đa 2 dòng). Cả hai hiển thị đủ nội dung của mục 5 (người đăng, giá hoặc hình thức, địa điểm nếu còn chỗ).
+2. **Bộ lọc chiếm ít diện tích hơn:**
+   - Thu gọn thành một hàng: ô tìm kiếm cùng nút "Bộ lọc" (kèm số điều kiện đang bật) và nút đổi cột; các lựa chọn danh mục, tình trạng, sắp xếp nằm trong bottom sheet hoặc hàng chip cuộn ngang một dòng.
+   - Thanh tìm kiếm và bộ lọc ẩn khi cuộn xuống và hiện lại khi cuộn lên để nhường chỗ cho ảnh (tùy chọn nếu kịp thời gian).
+   - Giữ nguyên hành vi lọc hiện có (`itemFilters`), chỉ đổi cách trình bày; giữ nhãn truy cập (`aria-label`) cho các nút.
+3. **Ảnh bài đăng lớn hơn:** ảnh là phần chính của thẻ, bo góc, giữ tỉ lệ cố định để danh sách không nhảy khi ảnh tải; ảnh tải chậm hoặc lỗi hiển thị khung chờ và biểu tượng thay thế; nhiều ảnh thì hiển thị ảnh đầu và số ảnh còn lại. Món đã `reserved` có nhãn nổi trên ảnh.
+
+Phụ trách đề xuất: Phú (chủ `ExploreScreen`, `ItemFilterBar`, `ItemListRow`, `ListStateView`, `itemFilters`, test); Phúc (thẻ dùng chung trong `views/components/**` nếu dùng lại cho hai kiểu thẻ). Cần thống nhất với mục 5 để chỉ sửa thẻ một lần.
+
+Kiểm thử:
+- Bật tắt 1 cột và 2 cột không mất vị trí cuộn quá mức, không lỗi cảnh báo `numColumns`; lựa chọn được giữ sau khi tắt và mở lại app.
+- Bộ lọc và tìm kiếm cho kết quả giống trước khi đổi giao diện; số điều kiện lọc hiển thị đúng.
+- Tên dài, không ảnh, ảnh lỗi, không có giá hoặc không có địa điểm đều không vỡ bố cục trên màn hình nhỏ.
+- Kiểm tra trên Android, iOS và Web; trang chủ vẫn không hiện món đã trao (mục 1).
+
+## 11. Phân công file giai đoạn 5 (mỗi file chỉ một chủ)
+Bảng này là phân công chính thức. Nếu khác phần "Phụ trách đề xuất" ở mục 1 đến 10 thì theo mục 11. Quy ước giữ như giai đoạn 4 (`PHASE4_ASSIGNMENT.md`): file của ai người đó sửa, cần sửa file người khác thì nhờ chủ file; `package*.json`, `app.json` và `server/db.json` chỉ Sơn sửa.
+
+### Sơn
+| Việc | File sửa | File mới |
+|---|---|---|
+| Thư viện, cấu hình | `package.json`, `package-lock.json`, `app.json` (plugin và quyền camera, thư viện ảnh), `.gitignore` (`server/uploads/`) | cài `expo-secure-store`, `expo-image-picker`, `@react-native-async-storage/async-storage` bằng `npx expo install` |
+| Dữ liệu mẫu | `server/db.json`: `faculty`, `className` cho user; `availableUntil` cho món; `reminderAt` cho lịch; collection `sessions` và `messages` | |
+| Gắn route server | `server/server.cjs` (gắn `uploads.cjs`, `messages.cjs`), `server/lib/**` (helper phiên, lấy `userId` từ token, tính uy tín) | `server/routes/uploads.cjs`, `server/lib/session.cjs`, `server/lib/reputation.cjs` |
+| Phiên đăng nhập | `server/routes/users.cjs` (đăng nhập tạo phiên, `GET` và `DELETE /auth/session`, hủy phiên khi đổi mật khẩu), `src/services/authService.ts`, `src/store/**`, `src/controllers/useAuthController.ts`, `src/services/api/apiClient.ts` (gắn `Authorization`) | `src/controllers/useSessionBootstrap.ts` |
+| Hồ sơ trên server | `src/models/userModel.ts`, `src/models/index.ts`, `server/routes/users.cjs` (`PATCH /users/:id`, mở rộng `GET /users/:id/public`), `src/services/api/userService.ts` | |
+| Tải ảnh | `src/services/api/index.ts` | `src/services/api/uploadService.ts`, `src/services/media/imagePickerService.ts` (chọn ảnh từ thư viện hoặc camera, xin quyền) |
+| Test | `server/test/users.test.cjs`, `server/test/auth.test.cjs` | `server/test/uploads.test.cjs`, `server/test/sessions.test.cjs`, test của `uploadService` và `imagePickerService` đặt cạnh file nguồn |
+| Tài liệu | `root/PROJECT_PROGRESS.md`, `root/PHASE5_ADDITIONS.md`, `server/README.md` | |
+
+### Phú
+| Việc | File sửa | File mới |
+|---|---|---|
+| Món đồ trên server | `server/routes/items.cjs` (lọc `available` và chưa hết hạn ở trang chủ, kiểm `availableUntil`, khóa sửa và xóa khi món có lịch `confirmed`, bắt buộc có `location`), `src/models/itemModel.ts` (thêm `availableUntil`), `src/services/api/itemService.ts`, `src/services/api/mockData.ts`, `src/utils/itemPermissions.ts`, `src/utils/validateItem.ts`, `src/utils/itemOptions.ts`, `src/utils/constants.ts` | `src/utils/availability.ts` (hạn trao, các mức chọn nhanh) |
+| Form đăng và sửa món | `ItemFormScreen.tsx`, `CreateItemScreen.tsx`, `useItemFormController.ts`, `useItemController.ts` (chọn hạn trao, nhập địa điểm, chọn ảnh qua `ImagePickerField` của Phúc và `uploadService` của Sơn) | |
+| Trang chủ và bộ lọc | `ExploreScreen.tsx`, `ItemFilterBar.tsx`, `ItemListRow.tsx` (chọn thẻ 1 cột hoặc 2 cột theo chế độ xem), `ListStateView.tsx`, `useExploreController.ts`, `usePaginatedItems.ts`, `src/utils/itemFilters.ts` | `src/views/screens/ItemFilterSheet.tsx`, `src/utils/viewModePreference.ts` (lưu chế độ 1 hoặc 2 cột) |
+| Đồ của tôi | `MyItemsScreen.tsx`, `useMyItemsController.ts` (ẩn và vô hiệu nút sửa, xóa khi món bị khóa) | |
+| Khởi động app | `src/app/_layout.tsx`, `src/app/(tabs)/_layout.tsx` | `src/controllers/useAppBootstrap.ts` (gom `useSessionBootstrap` của Sơn và `useReminderSyncController` của Tú, `_layout.tsx` chỉ gọi hook này) |
+| Test | `server/test/items.test.cjs`, test của `itemService`, `itemPermissions`, `validateItem`, `itemFilters` | test của `availability.ts` và `viewModePreference.ts` đặt cạnh file nguồn |
+
+### Tú
+| Việc | File sửa | File mới |
+|---|---|---|
+| Lịch hẹn trên server | `server/routes/appointments.cjs` (địa điểm lấy từ món, kiểm ngày hẹn không quá `availableUntil`, `reminderAt` do server tính, xác nhận hai bên và khóa theo mục 2), `src/models/appointmentModel.ts`, `src/services/api/appointmentService.ts` | |
+| Bỏ ô địa điểm | `BookAppointmentScreen.tsx`, `src/app/appointment/create.tsx`, `src/app/appointment/confirm.tsx`, `useAppointmentController.ts` | |
+| Danh sách lịch hẹn | `AppointmentsScreen.tsx`, `useAppointmentsController.ts` (nút mở chat khi đủ hai xác nhận) | |
+| Nhắc lịch từ server | `src/services/device/notificationService.ts` | `src/controllers/useReminderSyncController.ts` (tải lịch `confirmed` còn tương lai rồi đặt lại nhắc khi mở app), `src/services/appointments/reminderSync.ts` |
+| Chat theo lịch hẹn | | `server/routes/messages.cjs` (Sơn tạo file rỗng để gắn route trong bước 0 rồi giao cho Tú), `src/models/messageModel.ts` (import trực tiếp, không sửa `src/models/index.ts`), `src/services/api/messageService.ts`, `src/controllers/useChatController.ts`, `src/views/screens/ChatScreen.tsx`, `src/app/appointment/[id]/chat.tsx` |
+| Test | `server/test/appointments.test.cjs`, test của `appointmentService` | `server/test/messages.test.cjs`, test của `messageService` và `useChatController` |
+
+### Phúc
+| Việc | File sửa | File mới |
+|---|---|---|
+| Hồ sơ | `ProfileScreen.tsx`, `src/app/(tabs)/profile.tsx` (hiển thị Khoa, Lớp, số giao dịch, uy tín, nút "Chỉnh sửa hồ sơ", đăng xuất), `usePublicProfileController.ts` | `src/app/profile/edit.tsx`, `src/views/screens/ProfileEditScreen.tsx`, `src/controllers/useProfileEditController.ts` |
+| Thành phần dùng chung | `src/views/components/ItemCard.tsx`, `ExpandableItemCard.tsx`, `ProductCard.tsx` | `src/views/components/ItemCardLarge.tsx` (thẻ 1 cột, ảnh lớn), `src/views/components/ItemCardGrid.tsx` (thẻ 2 cột), `src/views/components/OwnerBadge.tsx` (avatar nhỏ, tên, uy tín), `src/views/components/ImagePickerField.tsx` (chọn và xem trước ảnh, dùng chung cho ảnh đại diện và ảnh món) |
+| Chi tiết món | `ItemDetailScreen.tsx` (hiển thị người đăng, hạn trao, địa điểm), `useItemDetailController.ts` | |
+| Test | `ProfileScreen.test.tsx`, `ItemDetailScreen.test.tsx` | test của `ProfileEditScreen`, `useProfileEditController`, các thẻ mới đặt cạnh file nguồn |
+
+### Chỗ giao nhau và hợp đồng giữa các người
+| Chỗ giao nhau | Cách tránh trùng file |
+|---|---|
+| Thẻ món (mục 5, 10) | Phúc làm `ItemCardLarge`, `ItemCardGrid`, `OwnerBadge` với props `item` và `onPress`; Phú chỉ chọn thẻ trong `ItemListRow.tsx` theo chế độ xem. Không ai sửa file của người kia |
+| Chọn và tải ảnh | Sơn cung cấp `imagePickerService` và `uploadService`; Phúc làm `ImagePickerField` gọi hai service này; Phú dùng `ImagePickerField` trong form món, Phúc dùng trong sửa hồ sơ |
+| Khóa món khi chủ xác nhận (mục 8) | Quy ước: món bị khóa khi trong collection `appointments` có lịch của món đó ở trạng thái `confirmed`. Phú tự đọc `db` trong `items.cjs`, Tú không sửa `items.cjs`; Tú chỉ bảo đảm trạng thái lịch đúng |
+| Hạn trao (mục 7) | Phú kiểm tra và lưu `availableUntil` trong `items.cjs`; Tú đọc `availableUntil` của món trong `appointments.cjs` để từ chối ngày hẹn quá hạn; Sơn chỉ thêm dữ liệu mẫu |
+| Uy tín và số giao dịch (mục 4) | Sơn tính trong `server/lib/reputation.cjs` và trả qua `users.cjs`, chỉ đọc `appointments` và `reports` từ `db`; Tú và Phú không tính lại |
+| Khởi động app (phiên, nhắc lịch) | Sơn viết `useSessionBootstrap`, Tú viết `useReminderSyncController`, Phú gom trong `useAppBootstrap` và gọi một lần ở `_layout.tsx` |
+| Gắn route mới vào server | Chỉ Sơn sửa `server/server.cjs`; Tú và Phú không thêm dòng `require` |
+| Dữ liệu mẫu | Chỉ Sơn sửa `server/db.json`; cần thêm dữ liệu thì nhờ Sơn trước khi mở PR; không commit thay đổi `db.json` sinh ra khi test |
+| Test | Test của tính năng mới đặt cạnh file nguồn hoặc trong `server/test/` của đúng chủ; riêng `src/__tests__/**` chỉ Tú sửa |
+
+### Thứ tự thực hiện để không chờ nhau
+1. **Sơn (bước 0):** thư viện, `app.json`, `db.json`, `server.cjs`, file rỗng `messages.cjs`, phiên đăng nhập, `PATCH /users/:id`, `uploads.cjs`, `imagePickerService`, `uploadService`, `useSessionBootstrap`. Merge trước.
+2. **Phúc và Tú song song** (dựa trên bước 0): Phúc làm `ImagePickerField` và các thẻ dùng chung, Tú làm chat, nhắc lịch từ server, bỏ ô địa điểm.
+3. **Phú** (dựa trên bước 1 và 2): form món với hạn trao và ảnh, lọc và khóa món, trang chủ 1 hoặc 2 cột, `useAppBootstrap`.
+4. **Phúc:** màn hồ sơ và sửa hồ sơ, chi tiết món.
+5. Mỗi người một PR cho mỗi bước, chỉ chứa file trong cột của mình; trước khi mở PR chạy `npm test`, `npm run server:test`, `npx tsc --noEmit`, `npm run lint`.
+
 ## Đã chốt và còn mở
 Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera, bỏ ô địa điểm khi đặt lịch (mục 6), người đăng đặt hạn trao món (mục 7), khóa sửa món từ khi chủ món xác nhận (mục 8).
 
@@ -121,3 +273,4 @@ Còn mở:
 - Thẻ món đồ (mục 5): hiển thị địa điểm ở thẻ hay chỉ ở trang chi tiết.
 - Hạn trao (mục 7): mức tối đa (đề xuất 3 tháng) và các lựa chọn nhanh.
 - Cách xác định "chủ món đã xác nhận" (mục 8) khi chưa lưu từng bên xác nhận: dùng trạng thái `confirmed` hiện có (người đăng là bên xác nhận) cho đến khi mục 2 thống nhất `confirmedBy`.
+- Mục 9.1: hạn phiên (đề xuất 30 ngày), giá trị nhắc trước giờ hẹn (đề xuất 60 phút), dung lượng ảnh tối đa (đề xuất 5 MB), và có chuyển các route sang lấy `userId` từ phiên ngay trong giai đoạn 5 hay làm dần.
