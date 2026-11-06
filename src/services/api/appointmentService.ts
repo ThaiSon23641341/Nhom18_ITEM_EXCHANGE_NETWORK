@@ -1,14 +1,15 @@
 import type { Appointment } from '../../models/appointmentModel';
-import { getItemById, MockApiError } from './itemService';
+import {
+  createAppointment as createServerAppointment,
+  getAppointments as getLoadedAppointments,
+  loadAppointments as loadServerAppointments,
+  subscribeToAppointments,
+} from '../appointments/appointmentService';
 
 export type CreateAppointmentInput = Pick<
   Appointment,
   'itemId' | 'requesterId' | 'date' | 'time' | 'location'
 >;
-
-const appointments: Appointment[] = [];
-let nextAppointmentId = 1;
-const appointmentListeners = new Set<() => void>();
 
 export class AppointmentServiceError extends Error {
   constructor(
@@ -21,16 +22,29 @@ export class AppointmentServiceError extends Error {
 }
 
 export const subscribeToAppointmentChanges = (listener: () => void): (() => void) => {
-  appointmentListeners.add(listener);
-  return () => {
-    appointmentListeners.delete(listener);
-  };
+  return subscribeToAppointments(listener);
 };
 
 const isValidDate = (value: string): boolean => {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
-  const parsed = new Date(`${value}T00:00:00.000Z`);
-  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().startsWith(value);
+  const match = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(value);
+  if (!match) return false;
+  const parsed = new Date(Number(match[3]), Number(match[2]) - 1, Number(match[1]));
+  return parsed.getFullYear() === Number(match[3])
+    && parsed.getMonth() === Number(match[2]) - 1
+    && parsed.getDate() === Number(match[1]);
+};
+
+const isFutureDateTime = (date: string, time: string): boolean => {
+  const dateMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(date);
+  const timeMatch = /^([01]\d|2[0-3]):([0-5]\d)$/.exec(time);
+  if (!dateMatch || !timeMatch) return false;
+  return new Date(
+    Number(dateMatch[3]),
+    Number(dateMatch[2]) - 1,
+    Number(dateMatch[1]),
+    Number(timeMatch[1]),
+    Number(timeMatch[2]),
+  ).getTime() > Date.now();
 };
 
 export const createAppointment = async (
@@ -45,48 +59,27 @@ export const createAppointment = async (
     || !requesterId
     || !isValidDate(input.date)
     || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(input.time)
+    || !isFutureDateTime(input.date, input.time)
     || !location
     || location.length > 200
   ) {
     throw new AppointmentServiceError('Ngày, giờ hoặc địa điểm hẹn không hợp lệ.', 'BAD_REQUEST');
   }
-  if (new Date(`${input.date}T${input.time}:00`).getTime() <= Date.now()) {
-    throw new AppointmentServiceError('Thời gian hẹn phải ở trong tương lai.', 'BAD_REQUEST');
-  }
-
-  let item;
   try {
-    item = await getItemById(itemId);
+    return await createServerAppointment({ ...input, itemId, requesterId, location });
   } catch (error) {
-    if (error instanceof MockApiError) {
-      throw new AppointmentServiceError('Không tìm thấy đồ dùng.', 'NOT_FOUND');
+    const message = error instanceof Error ? error.message : 'Không thể tạo lịch hẹn.';
+    if (message.includes('không còn khả dụng')) {
+      throw new AppointmentServiceError(message, 'CONFLICT');
+    }
+    if (message.includes('Không tìm thấy đồ dùng')) {
+      throw new AppointmentServiceError(message, 'NOT_FOUND');
+    }
+    if (message.includes('chính mình')) {
+      throw new AppointmentServiceError(message, 'BAD_REQUEST');
     }
     throw error;
   }
-
-  if (item.ownerId === requesterId) {
-    throw new AppointmentServiceError('Bạn không thể đặt lịch nhận đồ của chính mình.', 'BAD_REQUEST');
-  }
-  if (item.status !== 'available') {
-    throw new AppointmentServiceError('Đồ dùng này không còn khả dụng để đặt lịch.', 'CONFLICT');
-  }
-
-  const now = new Date().toISOString();
-  const appointment: Appointment = {
-    ...input,
-    itemId,
-    requesterId,
-    date: input.date,
-    time: input.time,
-    location,
-    id: `appointment-${String(nextAppointmentId++).padStart(4, '0')}`,
-    status: 'pending',
-    createdAt: now,
-    updatedAt: now,
-  };
-  appointments.unshift(appointment);
-  appointmentListeners.forEach((listener) => listener());
-  return { ...appointment };
 };
 
 export const getAppointments = async (requesterId: string): Promise<Appointment[]> => {
@@ -95,7 +88,6 @@ export const getAppointments = async (requesterId: string): Promise<Appointment[
     throw new AppointmentServiceError('Cần đăng nhập để xem lịch hẹn.', 'BAD_REQUEST');
   }
 
-  return appointments
-    .filter((appointment) => appointment.requesterId === normalizedId)
-    .map((appointment) => ({ ...appointment }));
+  await loadServerAppointments(normalizedId);
+  return getLoadedAppointments().map((appointment) => ({ ...appointment }));
 };

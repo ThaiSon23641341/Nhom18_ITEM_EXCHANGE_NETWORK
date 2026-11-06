@@ -4,24 +4,34 @@ const mockScheduled = new Map<string, {
 }>();
 const mockScheduleNotificationAsync = jest.fn(async (request: {
   content: { data: { appointmentId: string }; body?: string };
+  trigger: { channelId?: string };
 }) => {
   const identifier = `notification-${mockScheduled.size + 1}`;
   mockScheduled.set(identifier, { identifier, content: request.content });
   return identifier;
 });
+const mockSetNotificationChannelAsync = jest.fn(async () => ({
+  id: 'appointment-reminders',
+}));
+const mockGetPermissionsAsync = jest.fn(async () => ({ status: 'granted' }));
+const mockRequestPermissionsAsync = jest.fn(async () => ({ status: 'granted' }));
 
 jest.mock('expo-notifications', () => ({
-  AndroidImportance: { DEFAULT: 5 },
+  AndroidImportance: { DEFAULT: 3, HIGH: 4 },
   setNotificationHandler: jest.fn(),
-  setNotificationChannelAsync: jest.fn(async () => undefined),
-  getPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
-  requestPermissionsAsync: jest.fn(async () => ({ status: 'granted' })),
+  setNotificationChannelAsync: mockSetNotificationChannelAsync,
+  getPermissionsAsync: mockGetPermissionsAsync,
+  requestPermissionsAsync: mockRequestPermissionsAsync,
   getAllScheduledNotificationsAsync: jest.fn(async () => [...mockScheduled.values()]),
   cancelScheduledNotificationAsync: jest.fn(async (identifier: string) => {
     mockScheduled.delete(identifier);
   }),
   scheduleNotificationAsync: mockScheduleNotificationAsync,
   SchedulableTriggerInputTypes: { DATE: 'date' },
+}));
+
+jest.mock('react-native', () => ({
+  Platform: { OS: 'android' },
 }));
 
 // The service must load after the native module mock is registered.
@@ -36,6 +46,9 @@ describe('notificationService', () => {
   beforeEach(() => {
     mockScheduled.clear();
     jest.clearAllMocks();
+    mockSetNotificationChannelAsync.mockResolvedValue({ id: 'appointment-reminders' });
+    mockGetPermissionsAsync.mockResolvedValue({ status: 'granted' });
+    mockRequestPermissionsAsync.mockResolvedValue({ status: 'granted' });
   });
 
   it('schedules one reminder for a future appointment', async () => {
@@ -55,6 +68,53 @@ describe('notificationService', () => {
     expect(result.scheduled).toBe(true);
     expect(mockScheduleNotificationAsync).toHaveBeenCalledTimes(1);
     expect(mockScheduleNotificationAsync.mock.calls[0][0].content.body).toContain('Balo học tập');
+    expect(mockScheduleNotificationAsync.mock.calls[0][0].trigger.channelId).toBe('appointment-reminders');
+  });
+
+  it('schedules a reminder using the Android default channel when channel creation fails', async () => {
+    mockSetNotificationChannelAsync.mockRejectedValueOnce(
+      new Error('setNotificationChannelAsync is unavailable'),
+    );
+    const warn = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    const result = await scheduleAppointmentReminder({
+      id: 'appointment-channel-fallback',
+      itemId: 'item-1',
+      requesterId: 'user-1',
+      date: '30/10/2030',
+      time: '15:00',
+      scheduledAt: '2030-10-30T08:00:00.000Z',
+      location: 'Cổng trường',
+      status: 'pending',
+      createdAt: '2030-01-01T00:00:00.000Z',
+      updatedAt: '2030-01-01T00:00:00.000Z',
+    }, 'Balo học tập');
+
+    expect(result.scheduled).toBe(true);
+    expect(mockGetPermissionsAsync).toHaveBeenCalled();
+    expect(mockScheduleNotificationAsync.mock.calls[0][0].trigger.channelId).toBeUndefined();
+    expect(warn).toHaveBeenCalled();
+    warn.mockRestore();
+  });
+
+  it('does not schedule a reminder when notification permission is denied', async () => {
+    mockGetPermissionsAsync.mockResolvedValueOnce({ status: 'denied' });
+    mockRequestPermissionsAsync.mockResolvedValueOnce({ status: 'denied' });
+    const result = await scheduleAppointmentReminder({
+      id: 'appointment-denied',
+      itemId: 'item-1',
+      requesterId: 'user-1',
+      date: '30/10/2030',
+      time: '15:00',
+      scheduledAt: '2030-10-30T08:00:00.000Z',
+      location: 'Cổng trường',
+      status: 'pending',
+      createdAt: '2030-01-01T00:00:00.000Z',
+      updatedAt: '2030-01-01T00:00:00.000Z',
+    }, 'Balo học tập');
+
+    expect(result).toEqual({ scheduled: false, reason: 'permission-denied' });
+    expect(mockRequestPermissionsAsync).toHaveBeenCalledTimes(1);
+    expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
   it('does not schedule a reminder when the reminder time has passed', async () => {

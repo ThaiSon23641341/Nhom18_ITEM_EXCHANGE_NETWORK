@@ -1,9 +1,15 @@
 import * as Notifications from 'expo-notifications';
+import { AndroidImportance, type DateTriggerInput } from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { Appointment } from '../../models/appointmentModel';
 
 export const APPOINTMENT_REMINDER_MINUTES = 1;
 const APPOINTMENT_CHANNEL_ID = 'appointment-reminders';
+
+type NotificationPermissionResult = {
+  granted: boolean;
+  channelId?: string;
+};
 
 export type NotificationScheduleResult = {
   scheduled: boolean;
@@ -22,19 +28,32 @@ if (Platform.OS !== 'web') {
   });
 }
 
-async function ensurePermission(): Promise<boolean> {
-  if (Platform.OS === 'web') return false;
+async function ensurePermission(): Promise<NotificationPermissionResult> {
+  if (Platform.OS === 'web') return { granted: false };
+  let channelId: string | undefined;
   if (Platform.OS === 'android') {
-    await Notifications.setNotificationChannelAsync(APPOINTMENT_CHANNEL_ID, {
-      name: 'Nhắc lịch nhận đồ',
-      importance: 5,
-      vibrationPattern: [0, 250, 250],
-    });
+    try {
+      const channel = await Notifications.setNotificationChannelAsync(APPOINTMENT_CHANNEL_ID, {
+        name: 'Nhắc lịch nhận đồ',
+        importance: AndroidImportance.HIGH,
+        vibrationPattern: [0, 250, 250],
+      });
+      if (channel) {
+        channelId = APPOINTMENT_CHANNEL_ID;
+      } else {
+        console.warn('Không tạo được notification channel; sẽ dùng channel mặc định của Android.');
+      }
+    } catch (error: unknown) {
+      console.warn(
+        'Không tạo được notification channel; sẽ dùng channel mặc định của Android:',
+        error,
+      );
+    }
   }
   const current = await Notifications.getPermissionsAsync();
-  if (current.status === 'granted') return true;
+  if (current.status === 'granted') return { granted: true, channelId };
   const requested = await Notifications.requestPermissionsAsync();
-  return requested.status === 'granted';
+  return { granted: requested.status === 'granted', channelId };
 }
 
 async function findNotificationId(appointmentId: string): Promise<string | undefined> {
@@ -92,10 +111,15 @@ export async function scheduleAppointmentReminder(
   }
   if (reminderDate.getTime() <= now) return { scheduled: false, reason: 'too-soon' };
 
-  const granted = await ensurePermission();
-  if (!granted) return { scheduled: false, reason: 'permission-denied' };
+  const permission = await ensurePermission();
+  if (!permission.granted) return { scheduled: false, reason: 'permission-denied' };
 
   await cancelAppointmentReminder(appointment.id);
+  const trigger: DateTriggerInput = {
+    type: Notifications.SchedulableTriggerInputTypes.DATE,
+    date: reminderDate,
+    ...(permission.channelId ? { channelId: permission.channelId } : {}),
+  };
   const notificationId = await Notifications.scheduleNotificationAsync({
     content: {
       title: 'Nhắc lịch nhận đồ',
@@ -103,11 +127,7 @@ export async function scheduleAppointmentReminder(
       data: { appointmentId: appointment.id },
       sound: 'default',
     },
-    trigger: {
-      type: Notifications.SchedulableTriggerInputTypes.DATE,
-      date: reminderDate,
-      channelId: APPOINTMENT_CHANNEL_ID,
-    },
+    trigger,
   });
   return { scheduled: true, notificationId };
 }

@@ -2,11 +2,18 @@ import { Alert, Platform, Share } from 'react-native';
 import * as Linking from 'expo-linking';
 
 export function createItemShareUrl(itemId: string): string {
-  if (Platform.OS === 'web' && typeof window !== 'undefined') {
-    return `${window.location.origin}/item/${encodeURIComponent(itemId)}`;
+  const encodedItemId = encodeURIComponent(itemId);
+  const shareBaseUrl = process.env.EXPO_PUBLIC_SHARE_BASE_URL?.replace(/\/+$/, '');
+
+  if (shareBaseUrl) {
+    return `${shareBaseUrl}/item/${encodedItemId}`;
   }
 
-  return Linking.createURL(`/item/${encodeURIComponent(itemId)}`);
+  if (Platform.OS === 'web' && typeof window !== 'undefined') {
+    return `${window.location.origin}/item/${encodedItemId}`;
+  }
+
+  return Linking.createURL(`item/${encodedItemId}`);
 }
 
 export async function shareItem(itemId: string, itemTitle?: string): Promise<void> {
