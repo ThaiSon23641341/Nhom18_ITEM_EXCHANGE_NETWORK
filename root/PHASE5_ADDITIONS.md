@@ -141,6 +141,37 @@ Kiểm thử:
 - Đặt lịch xong, xóa dữ liệu app và đăng nhập lại: lịch hẹn và nhắc lịch vẫn còn.
 - Ngắt server thì thao tác ghi báo lỗi rõ ràng và không tạo dữ liệu chỉ nằm ở máy.
 
+## 9.1 Luồng chi tiết: phiên đăng nhập, nhắc lịch, ảnh
+
+### a. Phiên đăng nhập lưu trên server
+- Đăng nhập (`POST /auth/login`, `/auth/register`) tạo một phiên trong collection `sessions` của `server/db.json` (`id`/`token` ngẫu nhiên, `userId`, `createdAt`, `expiresAt`) và trả `token` cùng hồ sơ user. Mật khẩu vẫn chỉ nằm trong `credentials`, không bao giờ trả ra.
+- App chỉ giữ `token` ở máy (dùng `expo-secure-store`, cài bằng `npx expo install`), không giữ dữ liệu hồ sơ làm nguồn chính.
+- Mở app: nếu có `token` thì gọi `GET /auth/session` (kèm `Authorization: Bearer <token>`); hợp lệ thì tải hồ sơ từ server và vào thẳng app, hết hạn hoặc không hợp lệ (401) thì xóa `token` và về màn đăng nhập.
+- Đăng xuất: `DELETE /auth/session` xóa phiên trên server rồi xóa `token` ở máy. Đổi mật khẩu hoặc đặt lại mật khẩu thì hủy mọi phiên cũ của user.
+- Hạn phiên đề xuất 30 ngày, đặt trong một hằng số ở server. Server bắt đầu dùng `token` để biết người đang gọi, nhờ đó các quy tắc "chỉ chủ được sửa" (mục 4, 8) lấy `userId` từ phiên thay vì từ dữ liệu app gửi; làm dần theo từng route, route nào chưa chuyển thì ghi chú rõ.
+- Phụ trách: Sơn (`server/routes/users.cjs`/auth, `server/lib`, `db.json`, `authService`, `authSlice`, `apiClient`, `package.json`). Phúc cập nhật `ProfileScreen` và nút đăng xuất gọi đúng luồng này.
+- Kiểm thử: đăng nhập, tắt hẳn app, mở lại vẫn vào được; đăng xuất rồi gọi `GET /auth/session` bằng `token` cũ trả 401; `token` hết hạn bị từ chối; mật khẩu và `credentials` không xuất hiện trong bất kỳ phản hồi nào.
+
+### b. Nhắc lịch lưu trên server
+- Lịch hẹn có thêm `reminderAt` (ISO) và `reminderMinutes` (mặc định đang là 1 phút, nên đổi thành giá trị thực tế như 60 phút) do server tính khi tạo lịch từ ngày giờ hẹn; không cho bên đặt lịch tự ghi thời điểm nhắc tùy ý.
+- Luồng tạo: đặt lịch thành công thì server trả lịch kèm `reminderAt`; app dùng giá trị đó để đặt thông báo cục bộ (`notificationService`), không tự tính riêng.
+- Luồng sửa: đổi ngày giờ (khi còn được sửa, xem mục 2) hoặc hủy, hoàn thành thì server cập nhật hoặc xóa `reminderAt`; app hủy nhắc cũ và đặt nhắc mới theo dữ liệu mới.
+- Khôi phục: khi mở app hoặc đăng nhập trên máy khác, app tải danh sách lịch của user (`GET /appointments?userId=...`) và đặt lại nhắc cho mọi lịch `confirmed` còn tương lai chưa có nhắc trên máy. Cả hai bên (người đặt và chủ món) đều nhận nhắc.
+- Giữ ở máy chỉ id thông báo đã đặt (để hủy được), không coi đó là dữ liệu nghiệp vụ.
+- Phụ trách: Tú (`server/routes/appointments.cjs`, `appointmentModel`, `notificationService`, `AppointmentsScreen`, test); Sơn thêm trường vào dữ liệu mẫu `db.json` nếu cần.
+- Kiểm thử: tạo lịch trả `reminderAt` đúng bằng giờ hẹn trừ `reminderMinutes`; hủy hoặc hoàn thành thì không còn nhắc; đăng nhập ở máy khác vẫn đặt lại được nhắc; client gửi `reminderAt` bị bỏ qua hoặc từ chối.
+- Giới hạn: Expo Go Android không đặt được channel thông báo, cần development build để thử đầy đủ.
+
+### c. Ảnh món đồ và ảnh đại diện lưu trên server
+- Hiện `imageUrl` và `imageUrls` chỉ là chuỗi địa chỉ do người dùng nhập hoặc dữ liệu mẫu, ảnh chọn từ máy không được tải lên nên máy khác không thấy.
+- Thêm `POST /uploads` nhận ảnh (jpg/png, giới hạn dung lượng, đề xuất 5 MB) từ người đã đăng nhập, lưu file vào thư mục `server/uploads/` (không đưa vào git) và trả URL công khai dạng `/uploads/<tên-file>`. Server tự đặt tên file, không dùng tên người gửi, kiểm tra định dạng bằng nội dung chứ không chỉ đuôi file.
+- Luồng đăng món: chọn ảnh từ thư viện hoặc camera, xem trước, bấm lưu thì app tải ảnh lên `POST /uploads` trước, rồi gửi bài đăng với URL nhận được. Tải ảnh lỗi thì không tạo bài.
+- Luồng sửa món: thêm, thay hoặc xóa ảnh trong form sửa, tải ảnh mới lên rồi `PATCH /items/:id` với danh sách `imageUrls` mới; ảnh bị bỏ khỏi bài thì server xóa file khi không còn bài nào dùng. Món đã khóa (mục 8) không sửa được ảnh.
+- Luồng ảnh đại diện: cùng cơ chế `POST /uploads`, rồi `PATCH /users/:id` với `avatarUrl` (mục 4). Ảnh cũ được dọn khi không còn dùng.
+- Trên máy khác hoặc sau khi cài lại app, ảnh vẫn hiện vì nằm trên server. App ghép URL tương đối với `EXPO_PUBLIC_API_URL`.
+- Phụ trách: Sơn (`server/routes/uploads.cjs` mới, `server/lib`, `server.cjs` phục vụ `/uploads`, `.gitignore` cho `server/uploads/`, `expo-image-picker`); Phú (form đăng và sửa món, `itemService`); Phúc (ảnh đại diện trong màn sửa hồ sơ, `ItemCard`).
+- Kiểm thử: tải ảnh hợp lệ trả URL xem được; file sai định dạng hoặc quá lớn bị từ chối (400); người chưa đăng nhập tải lên bị từ chối (401); đăng món trên máy A thì máy B thấy ảnh; xóa ảnh khỏi bài thì file được dọn; ngắt server giữa chừng không tạo bài chỉ có ảnh ở máy.
+
 ## Đã chốt và còn mở
 Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera, bỏ ô địa điểm khi đặt lịch (mục 6), người đăng đặt hạn trao món (mục 7), khóa sửa món từ khi chủ món xác nhận (mục 8).
 
@@ -150,3 +181,4 @@ Còn mở:
 - Thẻ món đồ (mục 5): hiển thị địa điểm ở thẻ hay chỉ ở trang chi tiết.
 - Hạn trao (mục 7): mức tối đa (đề xuất 3 tháng) và các lựa chọn nhanh.
 - Cách xác định "chủ món đã xác nhận" (mục 8) khi chưa lưu từng bên xác nhận: dùng trạng thái `confirmed` hiện có (người đăng là bên xác nhận) cho đến khi mục 2 thống nhất `confirmedBy`.
+- Mục 9.1: hạn phiên (đề xuất 30 ngày), giá trị nhắc trước giờ hẹn (đề xuất 60 phút), dung lượng ảnh tối đa (đề xuất 5 MB), và có chuyển các route sang lấy `userId` từ phiên ngay trong giai đoạn 5 hay làm dần.
