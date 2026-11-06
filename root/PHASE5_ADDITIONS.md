@@ -179,6 +179,28 @@ Kiểm thử:
 - Khi mất kết nối server, app phải báo lỗi rõ ràng, không lưu dữ liệu nghiệp vụ tạm ở máy rồi coi như đã thành công.
 - Ngoài phạm vi giai đoạn 5: đưa server lên máy chủ thật hoặc dịch vụ đám mây, dùng cơ sở dữ liệu thật, và lưu ảnh trên kho lưu trữ riêng. Nếu cần demo ngoài mạng nội bộ thì xử lý ở giai đoạn sau (ví dụ tunnel hoặc triển khai server).
 
+## 10. Giao diện trang chủ: chế độ xem, bộ lọc gọn, ảnh lớn
+Hiện trang Khám phá (`ExploreScreen`) là danh sách một cột dùng `ItemListRow`, bộ lọc `ItemFilterBar` đặt phía trên danh sách nên chiếm nhiều chỗ, ảnh món nhỏ. Yêu cầu: người dùng dễ nhìn ảnh hơn, tương tự cách app X (Twitter) hiển thị bài (ảnh lớn gần hết chiều ngang, thông tin người đăng và tên ngay trên và dưới ảnh).
+
+1. **Nút bật tắt 1 cột hoặc 2 cột:**
+   - Thanh trên của trang chủ có nút chuyển giữa 1 cột (thẻ lớn, mặc định như hiện tại nhưng ảnh to hơn) và 2 cột (lưới thẻ nhỏ gọn để xem nhiều món).
+   - Dùng `FlatList` với `numColumns` và đổi `key` khi đổi số cột (React Native không cho đổi `numColumns` tại chỗ). Giữ phân trang, kéo làm mới, tải thêm như cũ.
+   - Lưu lựa chọn của người dùng ở máy (sở thích giao diện, không phải dữ liệu nghiệp vụ; xem mục 9) để lần sau mở app vẫn giữ.
+   - Cần hai kiểu thẻ: thẻ 1 cột (ảnh gần full chiều ngang, tỉ lệ 4:3 hoặc 1:1) và thẻ 2 cột (ảnh vuông, tên tối đa 2 dòng). Cả hai hiển thị đủ nội dung của mục 5 (người đăng, giá hoặc hình thức, địa điểm nếu còn chỗ).
+2. **Bộ lọc chiếm ít diện tích hơn:**
+   - Thu gọn thành một hàng: ô tìm kiếm cùng nút "Bộ lọc" (kèm số điều kiện đang bật) và nút đổi cột; các lựa chọn danh mục, tình trạng, sắp xếp nằm trong bottom sheet hoặc hàng chip cuộn ngang một dòng.
+   - Thanh tìm kiếm và bộ lọc ẩn khi cuộn xuống và hiện lại khi cuộn lên để nhường chỗ cho ảnh (tùy chọn nếu kịp thời gian).
+   - Giữ nguyên hành vi lọc hiện có (`itemFilters`), chỉ đổi cách trình bày; giữ nhãn truy cập (`aria-label`) cho các nút.
+3. **Ảnh bài đăng lớn hơn:** ảnh là phần chính của thẻ, bo góc, giữ tỉ lệ cố định để danh sách không nhảy khi ảnh tải; ảnh tải chậm hoặc lỗi hiển thị khung chờ và biểu tượng thay thế; nhiều ảnh thì hiển thị ảnh đầu và số ảnh còn lại. Món đã `reserved` có nhãn nổi trên ảnh.
+
+Phụ trách đề xuất: Phú (chủ `ExploreScreen`, `ItemFilterBar`, `ItemListRow`, `ListStateView`, `itemFilters`, test); Phúc (thẻ dùng chung trong `views/components/**` nếu dùng lại cho hai kiểu thẻ). Cần thống nhất với mục 5 để chỉ sửa thẻ một lần.
+
+Kiểm thử:
+- Bật tắt 1 cột và 2 cột không mất vị trí cuộn quá mức, không lỗi cảnh báo `numColumns`; lựa chọn được giữ sau khi tắt và mở lại app.
+- Bộ lọc và tìm kiếm cho kết quả giống trước khi đổi giao diện; số điều kiện lọc hiển thị đúng.
+- Tên dài, không ảnh, ảnh lỗi, không có giá hoặc không có địa điểm đều không vỡ bố cục trên màn hình nhỏ.
+- Kiểm tra trên Android, iOS và Web; trang chủ vẫn không hiện món đã trao (mục 1).
+
 ## Đã chốt và còn mở
 Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera, bỏ ô địa điểm khi đặt lịch (mục 6), người đăng đặt hạn trao món (mục 7), khóa sửa món từ khi chủ món xác nhận (mục 8).
 
