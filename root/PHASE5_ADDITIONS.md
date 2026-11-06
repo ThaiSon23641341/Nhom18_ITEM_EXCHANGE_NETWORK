@@ -89,10 +89,35 @@ Phân công đề xuất:
 
 Kiểm thử: thẻ hiển thị đủ ba thông tin với món có và không có giá/địa điểm/ảnh người đăng; không vỡ bố cục với tên dài; kiểm tra trên Android, iOS và Web.
 
+## 6. Bỏ ô nhập địa điểm khi đặt lịch hẹn
+- Người đặt không còn nhập "Địa điểm gặp" ở màn đặt lịch (`BookAppointmentScreen`, `app/appointment/create`); địa điểm nhận đồ do người đăng quyết định nên ô này bị thừa.
+- Lịch hẹn lấy địa điểm từ `item.location` của món đồ (nếu thiếu thì mặc định "Trong khuôn viên IUH"). Server vẫn lưu `location` trong lịch hẹn như hiện tại nhưng tự điền từ món đồ, không bắt buộc client gửi.
+- Màn đặt lịch chỉ hiển thị địa điểm (chỉ đọc) và chọn ngày, giờ. `canContinue` không còn phụ thuộc vào địa điểm.
+- Phụ trách: Tú (màn đặt lịch, `server/routes/appointments.cjs`, test lịch hẹn).
+- Kiểm thử: tạo lịch không gửi `location` vẫn thành công và lịch có địa điểm của món đồ; màn đặt lịch không còn ô nhập địa điểm.
+
+## 7. Hạn trao món đồ do người đăng đặt
+- Khi đăng món (và khi sửa), người đăng chọn thời hạn muốn trao, ví dụ 1 tháng, để món không bị đặt quá lâu về sau (ví dụ sang năm sau).
+- Đề xuất dữ liệu: thêm trường `availableUntil` (ngày hết hạn, ISO) vào `Item`. Giao diện cho chọn nhanh 1 tuần, 2 tuần, 1 tháng (mặc định), 3 tháng hoặc chọn ngày; server tính và kiểm tra `availableUntil` phải ở tương lai và không quá giới hạn tối đa (đề xuất 3 tháng, một hằng số duy nhất).
+- Món quá hạn mà vẫn `available` thì không hiện ở trang chủ và không thể đặt lịch (server trả 409 "Món đã hết hạn trao"). Chủ món vẫn thấy trong "Đồ của tôi" và có thể gia hạn bằng cách sửa `availableUntil`.
+- Ngày hẹn nhận đồ của lịch hẹn phải không muộn hơn `availableUntil` của món.
+- Món đã `reserved` hoặc `exchanged` không bị ảnh hưởng bởi hạn; chỉ áp dụng cho món còn `available`.
+- Phụ trách: Sơn (`Item` model và `server/db.json` thêm `availableUntil` cho dữ liệu mẫu), Phú (`server/routes/items.cjs`, form đăng/sửa, lọc trang chủ, `validateItem`), Tú (kiểm tra ngày hẹn so với hạn trong `server/routes/appointments.cjs` và màn đặt lịch).
+- Kiểm thử: đăng món không có hạn dùng mặc định 1 tháng; hạn quá khứ hoặc vượt tối đa bị từ chối (400); món quá hạn không ở trang chủ và đặt lịch trả 409; ngày hẹn sau hạn bị từ chối.
+
+## 8. Khóa sửa thông tin món đồ khi chủ món đã xác nhận lịch hẹn
+- Ngay khi người đăng (chủ món) xác nhận lịch hẹn, món đồ không còn cho sửa thông tin (tên, mô tả, ảnh, giá, hạn...) và không cho xóa, không cần chờ cả hai bên xác nhận. Món đang `reserved` do có lịch `confirmed` được tính là khóa.
+- Điều này mở rộng mục 2: mục 2 khóa lịch hẹn khi đủ hai xác nhận, mục này khóa món đồ từ lúc chủ món xác nhận. Hủy lịch hẹn (và món về lại `available`) thì mở khóa.
+- Server: `PATCH` và `DELETE /items/:id` trả 409 khi món có lịch hẹn `confirmed` đang hiệu lực (hiện đã chặn với `exchanged`, phần này mở rộng quy tắc ở `server/routes/items.cjs` và `itemPermissions`). Giao diện ẩn hoặc vô hiệu nút sửa và xóa kèm lời giải thích.
+- Phụ trách: Phú (`items.cjs`, `itemPermissions`, `MyItemsScreen`, `ItemFormScreen`); Tú cung cấp cách xác định lịch `confirmed` của một món.
+- Kiểm thử: món có lịch `confirmed` sửa hoặc xóa trả 409; hủy lịch thì sửa lại được; món chỉ có lịch `pending` vẫn sửa được.
+
 ## Đã chốt và còn mở
-Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera.
+Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera, bỏ ô địa điểm khi đặt lịch (mục 6), người đăng đặt hạn trao món (mục 7), khóa sửa món từ khi chủ món xác nhận (mục 8).
 
 Còn mở:
 - Cách lưu xác nhận của hai bên (mục 2) vì ảnh hưởng cả mục 3.
 - Chat có cần cập nhật thời gian thực hay chỉ tải lại khi mở màn hình (mức demo: tải lại định kỳ).
 - Thẻ món đồ (mục 5): hiển thị địa điểm ở thẻ hay chỉ ở trang chi tiết.
+- Hạn trao (mục 7): mức tối đa (đề xuất 3 tháng) và các lựa chọn nhanh.
+- Cách xác định "chủ món đã xác nhận" (mục 8) khi chưa lưu từng bên xác nhận: dùng trạng thái `confirmed` hiện có (người đăng là bên xác nhận) cho đến khi mục 2 thống nhất `confirmedBy`.
