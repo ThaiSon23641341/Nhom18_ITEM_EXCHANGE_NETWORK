@@ -6,7 +6,7 @@ import type { Item } from '../../models/itemModel';
 export interface BookAppointmentScreenProps {
   item: Item;
   onBack: () => void;
-  onSubmit: (date: string, time: string, location: string) => Promise<void>;
+  onSubmit: (date: string, time: string) => Promise<void>;
 }
 
 const pad = (value: number) => value.toString().padStart(2, '0');
@@ -20,7 +20,6 @@ const getDefaultDate = () => {
 export function BookAppointmentScreen({ item, onBack, onSubmit }: BookAppointmentScreenProps) {
   const [date, setDate] = useState(getDefaultDate);
   const [time, setTime] = useState('14:00');
-  const [location, setLocation] = useState(item.location ?? '');
   const [error, setError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -28,7 +27,7 @@ export function BookAppointmentScreen({ item, onBack, onSubmit }: BookAppointmen
     setError(null);
     setIsSubmitting(true);
     try {
-      await onSubmit(date.trim(), time.trim(), location.trim());
+      await onSubmit(date.trim(), time.trim());
     } catch (submitError) {
       setError(submitError instanceof Error ? submitError.message : 'Không thể tạo lịch hẹn.');
     } finally {
@@ -49,7 +48,12 @@ export function BookAppointmentScreen({ item, onBack, onSubmit }: BookAppointmen
           <YStack p="4" gap="2" rounded="5" backgroundColor="#E8F5EF">
             <Text color="secondary" fontSize="4" fontWeight="700">{item.title}</Text>
             <Text color="primary">{item.ownerName ?? 'Sinh viên IUH'}</Text>
-            <Text color="color" opacity={0.75}>{item.location ?? 'Trong khuôn viên IUH'}</Text>
+            <XStack items="center" gap="2">
+              <MapPin size={16} color="#16815D" />
+              <Text color="color" opacity={0.75}>
+                {item.location || 'Trong khuôn viên IUH'}
+              </Text>
+            </XStack>
           </YStack>
 
           <YStack gap="2">
@@ -74,19 +78,6 @@ export function BookAppointmentScreen({ item, onBack, onSubmit }: BookAppointmen
               placeholder="14:00"
               aria-label="Giờ nhận"
               autoCapitalize="none"
-            />
-          </YStack>
-
-          <YStack gap="2">
-            <XStack items="center" gap="2">
-              <MapPin size={18} color="#16815D" />
-              <Text color="color" fontWeight="700">Địa điểm gặp</Text>
-            </XStack>
-            <Input
-              value={location}
-              onChangeText={setLocation}
-              placeholder="Ví dụ: Thư viện IUH"
-              aria-label="Địa điểm gặp"
             />
           </YStack>
 
