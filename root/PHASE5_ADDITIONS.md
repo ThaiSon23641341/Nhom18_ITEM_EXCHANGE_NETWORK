@@ -207,10 +207,10 @@ Bảng này là phân công chính thức. Nếu khác phần "Phụ trách đ�
 ### Sơn
 | Việc | File sửa | File mới |
 |---|---|---|
-| Thư viện, cấu hình | `package.json`, `package-lock.json`, `app.json` (plugin và quyền camera, thư viện ảnh), `.gitignore` (`server/uploads/`), `.env.example` | cài `expo-secure-store`, `expo-image-picker`, `@react-native-async-storage/async-storage` bằng `npx expo install` |
+| Thư viện, cấu hình | `package.json`, `package-lock.json`, `app.json` (plugin và quyền camera, thư viện ảnh), `.gitignore` (`server/uploads/`) | cài `expo-secure-store`, `expo-image-picker`, `@react-native-async-storage/async-storage` bằng `npx expo install` |
 | Dữ liệu mẫu | `server/db.json`: `faculty`, `className` cho user; `availableUntil` cho món; `reminderAt` cho lịch; collection `sessions` và `messages` | |
 | Gắn route server | `server/server.cjs` (gắn `uploads.cjs`, `messages.cjs`), `server/lib/**` (helper phiên, lấy `userId` từ token, tính uy tín) | `server/routes/uploads.cjs`, `server/lib/session.cjs`, `server/lib/reputation.cjs` |
-| Phiên đăng nhập | `server/routes/users.cjs` (đăng nhập tạo phiên, `GET` và `DELETE /auth/session`, hủy phiên khi đổi mật khẩu), `src/services/authService.ts`, `src/store/**`, `src/controllers/useAuthController.ts`, `src/services/api/apiClient.ts` (gắn `Authorization`), `RegisterScreen.tsx`, `ForgotPasswordScreen.tsx` | `src/controllers/useSessionBootstrap.ts` |
+| Phiên đăng nhập | `server/routes/users.cjs` (đăng nhập tạo phiên, `GET` và `DELETE /auth/session`, hủy phiên khi đổi mật khẩu), `src/services/authService.ts`, `src/store/**`, `src/controllers/useAuthController.ts`, `src/services/api/apiClient.ts` (gắn `Authorization`) | `src/controllers/useSessionBootstrap.ts` |
 | Hồ sơ trên server | `src/models/userModel.ts`, `src/models/index.ts`, `server/routes/users.cjs` (`PATCH /users/:id`, mở rộng `GET /users/:id/public`), `src/services/api/userService.ts` | |
 | Tải ảnh | `src/services/api/index.ts` | `src/services/api/uploadService.ts`, `src/services/media/imagePickerService.ts` (chọn ảnh từ thư viện hoặc camera, xin quyền) |
 | Test | `server/test/users.test.cjs`, `server/test/auth.test.cjs` | `server/test/uploads.test.cjs`, `server/test/sessions.test.cjs`, test của `uploadService` và `imagePickerService` đặt cạnh file nguồn |
@@ -224,8 +224,7 @@ Bảng này là phân công chính thức. Nếu khác phần "Phụ trách đ�
 | Trang chủ và bộ lọc | `ExploreScreen.tsx`, `ItemFilterBar.tsx`, `ItemListRow.tsx` (chọn thẻ 1 cột hoặc 2 cột theo chế độ xem), `ListStateView.tsx`, `useExploreController.ts`, `usePaginatedItems.ts`, `src/utils/itemFilters.ts` | `src/views/screens/ItemFilterSheet.tsx`, `src/utils/viewModePreference.ts` (lưu chế độ 1 hoặc 2 cột) |
 | Đồ của tôi | `MyItemsScreen.tsx`, `useMyItemsController.ts` (ẩn và vô hiệu nút sửa, xóa khi món bị khóa) | |
 | Khởi động app | `src/app/_layout.tsx`, `src/app/(tabs)/_layout.tsx` | `src/controllers/useAppBootstrap.ts` (gom `useSessionBootstrap` của Sơn và `useReminderSyncController` của Tú, `_layout.tsx` chỉ gọi hook này) |
-| Báo cáo | `server/routes/reports.cjs`, `reportService.ts`, `ReportModerationScreen.tsx` | (không đổi trong giai đoạn 5) |
-| Test | `server/test/items.test.cjs`, `server/test/reports.test.cjs`, test của `itemService`, `itemPermissions`, `validateItem`, `itemFilters` | test của `availability.ts` và `viewModePreference.ts` đặt cạnh file nguồn |
+| Test | `server/test/items.test.cjs`, test của `itemService`, `itemPermissions`, `validateItem`, `itemFilters` | test của `availability.ts` và `viewModePreference.ts` đặt cạnh file nguồn |
 
 ### Tú
 | Việc | File sửa | File mới |
@@ -235,9 +234,7 @@ Bảng này là phân công chính thức. Nếu khác phần "Phụ trách đ�
 | Danh sách lịch hẹn | `AppointmentsScreen.tsx`, `useAppointmentsController.ts` (nút mở chat khi đủ hai xác nhận) | |
 | Nhắc lịch từ server | `src/services/device/notificationService.ts` | `src/controllers/useReminderSyncController.ts` (tải lịch `confirmed` còn tương lai rồi đặt lại nhắc khi mở app), `src/services/appointments/reminderSync.ts` |
 | Chat theo lịch hẹn | | `server/routes/messages.cjs` (Sơn tạo file rỗng để gắn route trong bước 0 rồi giao cho Tú), `src/models/messageModel.ts` (import trực tiếp, không sửa `src/models/index.ts`), `src/services/api/messageService.ts`, `src/controllers/useChatController.ts`, `src/views/screens/ChatScreen.tsx`, `src/app/appointment/[id]/chat.tsx` |
-| Số giao dịch thành công | `server/routes/appointments.cjs` bảo đảm lịch `completed` ghi đúng; số này do `server/lib/reputation.cjs` của Sơn đọc ra | |
-| QA | `root/PHASE3_QA_CHECKLIST.md`, `eas.json` | |
-| Test | `server/test/appointments.test.cjs`, `src/__tests__/**`, test của `appointmentService` | `server/test/messages.test.cjs`, test của `messageService` và `useChatController` |
+| Test | `server/test/appointments.test.cjs`, test của `appointmentService` | `server/test/messages.test.cjs`, test của `messageService` và `useChatController` |
 
 ### Phúc
 | Việc | File sửa | File mới |
@@ -245,11 +242,7 @@ Bảng này là phân công chính thức. Nếu khác phần "Phụ trách đ�
 | Hồ sơ | `ProfileScreen.tsx`, `src/app/(tabs)/profile.tsx` (hiển thị Khoa, Lớp, số giao dịch, uy tín, nút "Chỉnh sửa hồ sơ", đăng xuất), `usePublicProfileController.ts` | `src/app/profile/edit.tsx`, `src/views/screens/ProfileEditScreen.tsx`, `src/controllers/useProfileEditController.ts` |
 | Thành phần dùng chung | `src/views/components/ItemCard.tsx`, `ExpandableItemCard.tsx`, `ProductCard.tsx` | `src/views/components/ItemCardLarge.tsx` (thẻ 1 cột, ảnh lớn), `src/views/components/ItemCardGrid.tsx` (thẻ 2 cột), `src/views/components/OwnerBadge.tsx` (avatar nhỏ, tên, uy tín), `src/views/components/ImagePickerField.tsx` (chọn và xem trước ảnh, dùng chung cho ảnh đại diện và ảnh món) |
 | Chi tiết món | `ItemDetailScreen.tsx` (hiển thị người đăng, hạn trao, địa điểm), `useItemDetailController.ts` | |
-| Đăng nhập | `LoginScreen.tsx` (chỉ sửa giao diện, không đổi luồng phiên của Sơn) | |
-| Yêu thích | `server/routes/favorites.cjs`, `favoriteService.ts`, `useFavoritesController.ts` | |
-| Báo cáo món | `ItemReportScreen.tsx`, `useItemReportController.ts` | |
-| Giao diện chung | `tamagui.config.ts`, `assets/**` | |
-| Test | `server/test/favorites.test.cjs`, `ProfileScreen.test.tsx`, `ItemDetailScreen.test.tsx`, `LoginScreen.test.tsx`, `ItemReportScreen.test.tsx` | test của `ProfileEditScreen`, `useProfileEditController`, các thẻ mới đặt cạnh file nguồn |
+| Test | `ProfileScreen.test.tsx`, `ItemDetailScreen.test.tsx` | test của `ProfileEditScreen`, `useProfileEditController`, các thẻ mới đặt cạnh file nguồn |
 
 ### Chỗ giao nhau và hợp đồng giữa các người
 | Chỗ giao nhau | Cách tránh trùng file |
