@@ -1,4 +1,5 @@
 import { ApiClientError } from './api/apiClient';
+import { clearToken, saveToken } from './api/tokenStorage';
 import {
   getPublicUserById,
   isValidPassword,
@@ -6,7 +7,14 @@ import {
   requestPasswordReset,
   resetPassword,
   signInWithPassword,
+  signOut,
 } from './authService';
+
+jest.mock('./api/tokenStorage', () => ({
+  getAuthToken: () => null,
+  saveToken: jest.fn().mockResolvedValue(undefined),
+  clearToken: jest.fn().mockResolvedValue(undefined),
+}));
 
 const mockJsonResponse = (body: unknown, status = 200): Response =>
   ({
@@ -31,9 +39,10 @@ describe('authService demo identity', () => {
       createdAt: '2026-10-01T08:00:00.000Z',
       updatedAt: '2026-10-01T08:00:00.000Z',
     };
-    const fetch = jest.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse(user));
+    const fetch = jest.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ token: 'a'.repeat(64), user }));
 
     await expect(signInWithPassword(` ${user.email.toUpperCase()} `, 'Demo@1234')).resolves.toEqual(user);
+    expect(saveToken).toHaveBeenCalledWith('a'.repeat(64));
     const [url, options] = fetch.mock.calls[0];
     expect(url).toContain('/auth/login');
     expect(JSON.parse(String(options?.body))).toEqual({ email: user.email, password: 'Demo@1234' });
@@ -62,11 +71,12 @@ describe('authService demo identity', () => {
 
   test('registers and resets passwords through the auth endpoints', async () => {
     const fetch = jest.spyOn(globalThis, 'fetch')
-      .mockResolvedValueOnce(mockJsonResponse({ id: 'student-21036001' }, 201))
+      .mockResolvedValueOnce(mockJsonResponse({ token: 'b'.repeat(64), user: { id: 'student-21036001' } }, 201))
       .mockResolvedValueOnce(mockJsonResponse({ resetCode: '123456', expiresInSeconds: 600 }))
       .mockResolvedValueOnce(mockJsonResponse({ ok: true }));
 
     await registerAccount('21036001.an@student.iuh.edu.vn', 'Abcd@1234');
+    expect(saveToken).toHaveBeenCalledWith('b'.repeat(64));
     await expect(requestPasswordReset('21036001.an@student.iuh.edu.vn')).resolves.toEqual({
       resetCode: '123456',
       expiresInSeconds: 600,
@@ -91,6 +101,12 @@ describe('authService demo identity', () => {
       expect(isValidPassword(weak)).toBe(false);
     }
   });
+  test('sign out clears the local token even when the server is unreachable', async () => {
+    jest.spyOn(globalThis, 'fetch').mockRejectedValue(new Error('offline'));
+    await expect(signOut()).resolves.toBeUndefined();
+    expect(clearToken).toHaveBeenCalled();
+  });
+
   test('returns only public profile fields from the API', async () => {
     const profile = { id: 'user-001', fullName: 'Demo Student', avatarUrl: '' };
     jest.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse(profile));

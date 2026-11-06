@@ -10,6 +10,7 @@ import {
   requestPasswordReset,
   resetPassword,
   signInWithPassword,
+  signOut,
 } from '../services/authService';
 import { clearAuthenticatedUser, setAuthenticatedUser } from '../store/authSlice';
 import { useAppDispatch, useAppSelector } from '../store/hooks';
@@ -153,6 +154,7 @@ export function useAuthController(): AuthState {
 
   const logout = useCallback(() => {
     dispatch(clearAuthenticatedUser());
+    void signOut();
   }, [dispatch]);
 
   return {

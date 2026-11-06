@@ -1,5 +1,6 @@
-import type { PublicUser, User } from '../models/userModel';
+import type { AuthSession, PublicUser, User } from '../models/userModel';
 import { ApiClientError, apiRequest } from './api/apiClient';
+import { clearToken, saveToken } from './api/tokenStorage';
 
 const STUDENT_EMAIL_PATTERN =
   /^(?:([0-9]{8})\.([a-zA-Z]+(?:[.-][a-zA-Z]+)*)|sinhvien001|sinhvien002|moderator)@student\.iuh\.edu\.vn$/i;
@@ -22,6 +23,11 @@ function postAuth<T>(path: string, body: Record<string, string>): Promise<T> {
   return apiRequest<T>(path, { method: 'POST', body: JSON.stringify(body) });
 }
 
+async function startSession(session: AuthSession): Promise<User> {
+  await saveToken(session.token);
+  return session.user;
+}
+
 export async function signInWithPassword(email: string, password: string): Promise<User> {
   if (!isValidStudentEmail(email)) {
     throw new ApiClientError(INVALID_EMAIL_MESSAGE, 'BAD_REQUEST', 400);
@@ -29,7 +35,10 @@ export async function signInWithPassword(email: string, password: string): Promi
   if (!password) {
     throw new ApiClientError('Vui lòng nhập mật khẩu.', 'BAD_REQUEST', 400);
   }
-  return postAuth<User>('/auth/login', { email: email.trim().toLowerCase(), password });
+  return startSession(await postAuth<AuthSession>('/auth/login', {
+    email: email.trim().toLowerCase(),
+    password,
+  }));
 }
 
 export async function registerAccount(email: string, password: string): Promise<User> {
@@ -39,7 +48,25 @@ export async function registerAccount(email: string, password: string): Promise<
   if (!isValidPassword(password)) {
     throw new ApiClientError(INVALID_PASSWORD_MESSAGE, 'BAD_REQUEST', 400);
   }
-  return postAuth<User>('/auth/register', { email: email.trim().toLowerCase(), password });
+  return startSession(await postAuth<AuthSession>('/auth/register', {
+    email: email.trim().toLowerCase(),
+    password,
+  }));
+}
+
+export async function fetchSession(): Promise<User> {
+  return (await apiRequest<{ user: User }>('/auth/session')).user;
+}
+
+// Tells the server to revoke the token; the local token is dropped even if that fails.
+export async function signOut(): Promise<void> {
+  try {
+    await apiRequest<{ ok: true }>('/auth/session', { method: 'DELETE' });
+  } catch {
+    // Offline logout still clears the device.
+  } finally {
+    await clearToken();
+  }
 }
 
 export interface PasswordResetRequest {
