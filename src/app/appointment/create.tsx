@@ -28,6 +28,8 @@ const formatTimeInput = (value: string) => {
   if (digits.length <= 2) return digits;
   return `${digits.slice(0, 2)}:${digits.slice(2)}`;
 };
+const MONTHS = ['Tháng 1', 'Tháng 2', 'Tháng 3', 'Tháng 4', 'Tháng 5', 'Tháng 6',
+  'Tháng 7', 'Tháng 8', 'Tháng 9', 'Tháng 10', 'Tháng 11', 'Tháng 12'];
 const SUGGESTED_TIMES = ['09:00 - 09:30', '10:00 - 10:30', '14:00 - 14:30', '16:00 - 16:30'];
 
 function DatePicker({
@@ -45,6 +47,8 @@ function DatePicker({
   const [month, setMonth] = useState(
     () => new Date(selected?.getFullYear() ?? today.getFullYear(), selected?.getMonth() ?? today.getMonth(), 1),
   );
+  const [yearInput, setYearInput] = useState(String(month.getFullYear()));
+  const [showMonthYearPicker, setShowMonthYearPicker] = useState(false);
   const firstDay = new Date(month.getFullYear(), month.getMonth(), 1).getDay();
   const daysInMonth = new Date(month.getFullYear(), month.getMonth() + 1, 0).getDate();
   const cells = Array.from({ length: firstDay + daysInMonth }, (_, index) =>
@@ -58,44 +62,98 @@ function DatePicker({
         <Pressable style={styles.modalSheet} onPress={(event) => event.stopPropagation()}>
           <YStack backgroundColor="background" p="5" gap="3">
             <Text color="color" fontSize="6" fontWeight="700">Chọn ngày nhận</Text>
-            <View style={styles.monthHeader}>
-              <Pressable
-                disabled={isCurrentMonth}
-                onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
-                style={[styles.arrowButton, isCurrentMonth && styles.disabled]}
-              >
-                <Text color="color" fontSize="6">‹</Text>
-              </Pressable>
-              <Text color="color" fontWeight="700">{pad(month.getMonth() + 1)}/{month.getFullYear()}</Text>
-              <Pressable
-                onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
-                style={styles.arrowButton}
-              >
-                <Text color="color" fontSize="6">›</Text>
-              </Pressable>
-            </View>
-            <View style={styles.calendarGrid}>
-              {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day) => (
-                <View key={day} style={styles.calendarCell}><Text color="color" opacity={0.6} text="center">{day}</Text></View>
-              ))}
-              {cells.map((day, index) => {
-                if (!day) return <View key={`empty-${index}`} style={styles.calendarCell} />;
-                const candidate = new Date(month.getFullYear(), month.getMonth(), day);
-                const disabled = candidate < today;
-                const selectedDay = selected?.toDateString() === candidate.toDateString();
-                return (
-                  <View key={day} style={styles.calendarCell}>
-                    <Pressable
-                      disabled={disabled}
-                      onPress={() => { onSelect(candidate); onClose(); }}
-                      style={[styles.dayButton, selectedDay && styles.selectedDay, disabled && styles.disabled]}
-                    >
-                      <Text color={selectedDay ? 'white' : 'color'} fontWeight={selectedDay ? '700' : '400'}>{day}</Text>
-                    </Pressable>
-                  </View>
-                );
-              })}
-            </View>
+            {showMonthYearPicker ? (
+              <YStack gap="3">
+                <Text color="color" opacity={0.7}>Nhập năm rồi chọn tháng</Text>
+                <Input
+                  value={yearInput}
+                  onChangeText={(value) => setYearInput(value.replace(/\D/g, '').slice(0, 4))}
+                  placeholder="Năm"
+                  keyboardType="number-pad"
+                  maxLength={4}
+                  aria-label="Năm"
+                />
+                <View style={styles.monthPickerGrid}>
+                  {MONTHS.map((label, index) => {
+                    const year = Number(yearInput);
+                    const validYear = yearInput.length === 4 && year >= today.getFullYear();
+                    const disabled = !validYear
+                      || (year === today.getFullYear() && index < today.getMonth());
+                    const isSelected = year === month.getFullYear() && index === month.getMonth();
+                    return (
+                      <View key={label} style={styles.monthPickerCell}>
+                        <Pressable
+                          disabled={disabled}
+                          onPress={() => {
+                            setMonth(new Date(year, index, 1));
+                            setShowMonthYearPicker(false);
+                          }}
+                          style={[styles.monthButton, isSelected && styles.selectedDay, disabled && styles.disabled]}
+                        >
+                          <Text color={isSelected ? 'white' : 'color'} fontWeight={isSelected ? '700' : '400'}>
+                            {label}
+                          </Text>
+                        </Pressable>
+                      </View>
+                    );
+                  })}
+                </View>
+              </YStack>
+            ) : (
+              <>
+                <View style={styles.monthHeader}>
+                  <Pressable
+                    disabled={isCurrentMonth}
+                    onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() - 1, 1))}
+                    style={[styles.arrowButton, isCurrentMonth && styles.disabled]}
+                    accessibilityRole="button"
+                    accessibilityLabel="Tháng trước"
+                  >
+                    <Text color="color" fontSize="6">‹</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => {
+                      setYearInput(String(month.getFullYear()));
+                      setShowMonthYearPicker(true);
+                    }}
+                    accessibilityRole="button"
+                    accessibilityLabel="Chọn tháng và năm"
+                  >
+                    <Text color="color" fontWeight="700">{pad(month.getMonth() + 1)}/{month.getFullYear()} ▾</Text>
+                  </Pressable>
+                  <Pressable
+                    onPress={() => setMonth(new Date(month.getFullYear(), month.getMonth() + 1, 1))}
+                    style={styles.arrowButton}
+                    accessibilityRole="button"
+                    accessibilityLabel="Tháng tiếp theo"
+                  >
+                    <Text color="color" fontSize="6">›</Text>
+                  </Pressable>
+                </View>
+                <View style={styles.calendarGrid}>
+                  {['CN', 'T2', 'T3', 'T4', 'T5', 'T6', 'T7'].map((day) => (
+                    <View key={day} style={styles.calendarCell}><Text color="color" opacity={0.6} text="center">{day}</Text></View>
+                  ))}
+                  {cells.map((day, index) => {
+                    if (!day) return <View key={`empty-${index}`} style={styles.calendarCell} />;
+                    const candidate = new Date(month.getFullYear(), month.getMonth(), day);
+                    const disabled = candidate < today;
+                    const selectedDay = selected?.toDateString() === candidate.toDateString();
+                    return (
+                      <View key={day} style={styles.calendarCell}>
+                        <Pressable
+                          disabled={disabled}
+                          onPress={() => { onSelect(candidate); onClose(); }}
+                          style={[styles.dayButton, selectedDay && styles.selectedDay, disabled && styles.disabled]}
+                        >
+                          <Text color={selectedDay ? 'white' : 'color'} fontWeight={selectedDay ? '700' : '400'}>{day}</Text>
+                        </Pressable>
+                      </View>
+                    );
+                  })}
+                </View>
+              </>
+            )}
           </YStack>
         </Pressable>
       </Pressable>
@@ -109,6 +167,9 @@ const styles = StyleSheet.create({
   monthHeader: { alignItems: 'center', flexDirection: 'row', justifyContent: 'space-between' },
   arrowButton: { alignItems: 'center', borderRadius: 20, height: 40, justifyContent: 'center', width: 40 },
   calendarGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  monthPickerGrid: { flexDirection: 'row', flexWrap: 'wrap' },
+  monthPickerCell: { alignItems: 'center', justifyContent: 'center', minHeight: 52, width: '33.333%' },
+  monthButton: { alignItems: 'center', borderRadius: 8, justifyContent: 'center', minHeight: 40, paddingHorizontal: 8, width: '90%' },
   calendarCell: { alignItems: 'center', justifyContent: 'center', minHeight: 44, width: `${100 / 7}%` },
   dayButton: { alignItems: 'center', borderRadius: 22, height: 40, justifyContent: 'center', width: 40 },
   selectedDay: { backgroundColor: '#2563EB' },

@@ -127,14 +127,17 @@ export default function AppointmentConfirmRoute() {
         );
         if (reminder.scheduled) {
           message += ` Đã đặt nhắc trước ${APPOINTMENT_REMINDER_MINUTES} phút.`;
+        } else if (reminder.reason === "web") {
+          message += " Trình duyệt không hỗ trợ lời nhắc native; hãy dùng ứng dụng trên điện thoại.";
         } else if (reminder.reason === "permission-denied") {
           message += " Bạn chưa cấp quyền thông báo nên chưa thể đặt lời nhắc.";
         } else if (reminder.reason === "too-soon") {
           message += ` Thời gian nhận còn dưới ${APPOINTMENT_REMINDER_MINUTES} phút nên không đặt lời nhắc.`;
         }
       } catch (error: unknown) {
-        console.warn("Không thể đặt nhắc lịch hẹn:", error);
-        message += " Không thể đặt lời nhắc, nhưng lịch hẹn vẫn đã được tạo.";
+        const detail = error instanceof Error ? error.message : String(error);
+        console.error("Không thể đặt nhắc lịch hẹn:", error);
+        message += ` Không thể đặt lời nhắc (${detail}), nhưng lịch hẹn vẫn đã được tạo.`;
       }
       setSuccessMessage(message);
       if (Platform.OS === "web") {
