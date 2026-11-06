@@ -172,6 +172,13 @@ Kiểm thử:
 - Phụ trách: Sơn (`server/routes/uploads.cjs` mới, `server/lib`, `server.cjs` phục vụ `/uploads`, `.gitignore` cho `server/uploads/`, `expo-image-picker`); Phú (form đăng và sửa món, `itemService`); Phúc (ảnh đại diện trong màn sửa hồ sơ, `ItemCard`).
 - Kiểm thử: tải ảnh hợp lệ trả URL xem được; file sai định dạng hoặc quá lớn bị từ chối (400); người chưa đăng nhập tải lên bị từ chối (401); đăng món trên máy A thì máy B thấy ảnh; xóa ảnh khỏi bài thì file được dọn; ngắt server giữa chừng không tạo bài chỉ có ảnh ở máy.
 
+## 9.2 Giới hạn của server hiện tại (JSON Server chạy cục bộ)
+- "Server" trong kế hoạch này là JSON Server demo (`server/server.cjs`, dữ liệu trong `server/db.json`) chạy trên máy của người phát triển, không phải server trên mạng. Điện thoại chỉ kết nối được khi cùng Wi-Fi với máy đó, qua `EXPO_PUBLIC_API_URL` (IP LAN đổi theo mạng nên phải cập nhật `.env.local`).
+- Hệ quả: tắt server hoặc tắt máy thì app không đọc và ghi được dữ liệu; mỗi máy phát triển có `db.json` riêng nên dữ liệu không đồng bộ giữa các thành viên. "Máy khác thấy dữ liệu" trong các kiểm thử nghĩa là hai điện thoại cùng kết nối tới một server cục bộ.
+- Mọi thứ mới (bảng `sessions`, `reminderAt`, thư mục `server/uploads/`) cũng nằm trên máy chạy server. `server/uploads/` và dữ liệu test phải được git bỏ qua; không commit thay đổi `db.json` sinh ra khi test (như quy ước hiện nay).
+- Khi mất kết nối server, app phải báo lỗi rõ ràng, không lưu dữ liệu nghiệp vụ tạm ở máy rồi coi như đã thành công.
+- Ngoài phạm vi giai đoạn 5: đưa server lên máy chủ thật hoặc dịch vụ đám mây, dùng cơ sở dữ liệu thật, và lưu ảnh trên kho lưu trữ riêng. Nếu cần demo ngoài mạng nội bộ thì xử lý ở giai đoạn sau (ví dụ tunnel hoặc triển khai server).
+
 ## Đã chốt và còn mở
 Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera, bỏ ô địa điểm khi đặt lịch (mục 6), người đăng đặt hạn trao món (mục 7), khóa sửa món từ khi chủ món xác nhận (mục 8).
 
