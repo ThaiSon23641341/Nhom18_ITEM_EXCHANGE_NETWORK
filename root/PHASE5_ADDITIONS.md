@@ -112,6 +112,35 @@ Kiểm thử: thẻ hiển thị đủ ba thông tin với món có và không c
 - Phụ trách: Phú (`items.cjs`, `itemPermissions`, `MyItemsScreen`, `ItemFormScreen`); Tú cung cấp cách xác định lịch `confirmed` của một món.
 - Kiểm thử: món có lịch `confirmed` sửa hoặc xóa trả 409; hủy lịch thì sửa lại được; món chỉ có lịch `pending` vẫn sửa được.
 
+## 9. Mọi dữ liệu đọc, ghi và chỉnh sửa trên server
+Nguyên tắc: server (`server/db.json` qua các route) là nguồn dữ liệu duy nhất. App không giữ dữ liệu nghiệp vụ chỉ ở máy; đổi máy hoặc cài lại app vẫn thấy đủ thông tin, và mọi chỉnh sửa phải được server lưu rồi app mới hiển thị.
+
+Phạm vi dữ liệu:
+| Dữ liệu | Hiện trạng | Cần đạt |
+|---|---|---|
+| Bài đăng món đồ | Tạo, sửa, xóa đã qua `/items` | Giữ nguyên; thêm `availableUntil` (mục 7); ảnh món đồ hiện chưa upload, cần lưu ảnh trên server hoặc lưu chuỗi ảnh trong bài đăng để máy khác xem được |
+| Lịch hẹn | Lưu trong `appointments` trên server | Mọi đổi trạng thái (xác nhận, hủy, hoàn thành) và địa điểm lấy từ món (mục 6) đều do server ghi và kiểm tra; app luôn tải lại từ server thay vì giữ bản sao |
+| Nhắc lịch | Chỉ đặt cục bộ trên điện thoại, server không biết | Lưu thời điểm nhắc của lịch (ví dụ `reminderAt`) trên server; khi mở app hoặc đăng nhập trên máy khác thì đặt lại nhắc từ dữ liệu server |
+| Tài khoản và hồ sơ | Chưa có luồng sửa; phiên đăng nhập chỉ nằm trong Redux, tắt app là mất | Sửa hồ sơ qua `PATCH /users/:id` (mục 4); lưu phiên đăng nhập ở máy (token hoặc `userId`) và tải lại hồ sơ từ server khi mở app |
+| Yêu thích | Đã qua `/favorites` | Giữ nguyên, kiểm tra không còn cache cục bộ lệch với server |
+| Báo cáo vi phạm | Đã qua `/reports` | Giữ nguyên |
+| Tin nhắn | Chưa có | Lưu trong `messages` trên server (mục 3) |
+
+Quy tắc chung:
+- Ghi thành công mới cập nhật giao diện; ghi lỗi thì báo lỗi và giữ nguyên dữ liệu đang nhập.
+- Chỉ lưu ở máy những thứ không phải dữ liệu nghiệp vụ: phiên đăng nhập, lịch nhắc đã đặt (để hủy khi cần).
+- Giới hạn của demo: server chưa có xác thực phiên, nên quyền "chỉ chủ mới được sửa" vẫn dựa vào `userId` do app gửi (đã ghi ở mục 4).
+
+Việc cần làm:
+1. Kiểm kê: lập danh sách mọi nơi app còn giữ dữ liệu nghiệp vụ ở máy hoặc dữ liệu mẫu (`src/services/api/mockData.ts`, cache trong controller, store) và đối chiếu từng nơi với route trên server.
+2. Phụ trách đề xuất: Sơn (model và `db.json`, `PATCH /users/:id`, lưu phiên đăng nhập trong store và `authService`), Tú (lưu `reminderAt` và đặt lại nhắc từ `appointments`), Phú (ảnh món đồ và `availableUntil`), Phúc (hồ sơ và yêu thích dùng dữ liệu từ server).
+
+Kiểm thử:
+- Đăng nhập, tắt hẳn app rồi mở lại vẫn còn phiên và hồ sơ từ server.
+- Sửa bài đăng, hồ sơ hoặc lịch hẹn ở một máy thì máy khác tải lại thấy đúng nội dung mới.
+- Đặt lịch xong, xóa dữ liệu app và đăng nhập lại: lịch hẹn và nhắc lịch vẫn còn.
+- Ngắt server thì thao tác ghi báo lỗi rõ ràng và không tạo dữ liệu chỉ nằm ở máy.
+
 ## Đã chốt và còn mở
 Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera, bỏ ô địa điểm khi đặt lịch (mục 6), người đăng đặt hạn trao món (mục 7), khóa sửa món từ khi chủ món xác nhận (mục 8).
 
