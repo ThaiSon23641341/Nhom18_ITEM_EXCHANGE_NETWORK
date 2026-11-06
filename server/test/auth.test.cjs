@@ -17,7 +17,9 @@ const login = (email, password) => postJson(context.baseUrl, '/auth/login', { em
 test('seeded accounts log in with the demo password only', async () => {
   const ok = await login('sinhvien001@student.iuh.edu.vn', 'Demo@1234');
   assert.equal(ok.status, 200);
-  assert.equal((await ok.json()).id, 'user-001');
+  const session = await ok.json();
+  assert.equal(session.user.id, 'user-001');
+  assert.match(session.token, /^[0-9a-f]{64}$/);
 
   const wrong = await login('sinhvien001@student.iuh.edu.vn', 'Wrong@1234');
   assert.equal(wrong.status, 401);
@@ -48,7 +50,8 @@ test('register enforces email and password patterns and stores a hash only', asy
 
   const created = await postJson(context.baseUrl, '/auth/register', { email, password: 'Abcd@1234' });
   assert.equal(created.status, 201);
-  const user = await created.json();
+  const { token, user } = await created.json();
+  assert.match(token, /^[0-9a-f]{64}$/);
   assert.equal(user.id, 'student-24000001');
   assert.equal(user.fullName, 'Tran Van');
   assert.equal('password' in user || 'passwordHash' in user, false);

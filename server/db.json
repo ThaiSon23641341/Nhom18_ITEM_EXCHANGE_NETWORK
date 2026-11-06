@@ -8,7 +8,9 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-01T08:00:00.000Z",
-      "updatedAt": "2026-10-01T08:00:00.000Z"
+      "updatedAt": "2026-10-01T08:00:00.000Z",
+      "faculty": "Khoa Công nghệ thông tin",
+      "className": ""
     },
     {
       "id": "user-002",
@@ -18,7 +20,9 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-02T08:00:00.000Z",
-      "updatedAt": "2026-10-02T08:00:00.000Z"
+      "updatedAt": "2026-10-02T08:00:00.000Z",
+      "faculty": "Khoa Công nghệ thông tin",
+      "className": ""
     },
     {
       "id": "user-003",
@@ -28,7 +32,9 @@
       "avatarUrl": "",
       "role": "moderator",
       "createdAt": "2026-10-03T08:00:00.000Z",
-      "updatedAt": "2026-10-03T08:00:00.000Z"
+      "updatedAt": "2026-10-03T08:00:00.000Z",
+      "faculty": "Khoa Điện - Điện tử",
+      "className": ""
     },
     {
       "id": "user-004",
@@ -38,7 +44,9 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-04T08:00:00.000Z",
-      "updatedAt": "2026-10-04T08:00:00.000Z"
+      "updatedAt": "2026-10-04T08:00:00.000Z",
+      "faculty": "Khoa Kế toán",
+      "className": ""
     },
     {
       "id": "user-005",
@@ -48,7 +56,9 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-05T08:00:00.000Z",
-      "updatedAt": "2026-10-05T08:00:00.000Z"
+      "updatedAt": "2026-10-05T08:00:00.000Z",
+      "faculty": "Khoa Cơ khí",
+      "className": ""
     },
     {
       "id": "user-006",
@@ -58,7 +68,9 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-06T08:00:00.000Z",
-      "updatedAt": "2026-10-06T08:00:00.000Z"
+      "updatedAt": "2026-10-06T08:00:00.000Z",
+      "faculty": "Khoa Ngoại ngữ",
+      "className": ""
     },
     {
       "id": "user-007",
@@ -68,7 +80,8 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-07T08:00:00.000Z",
-      "updatedAt": "2026-10-07T08:00:00.000Z"
+      "updatedAt": "2026-10-07T08:00:00.000Z",
+      "className": ""
     },
     {
       "id": "user-008",
@@ -78,7 +91,8 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-08T08:00:00.000Z",
-      "updatedAt": "2026-10-08T08:00:00.000Z"
+      "updatedAt": "2026-10-08T08:00:00.000Z",
+      "className": ""
     },
     {
       "id": "user-009",
@@ -88,7 +102,8 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-09T08:00:00.000Z",
-      "updatedAt": "2026-10-09T08:00:00.000Z"
+      "updatedAt": "2026-10-09T08:00:00.000Z",
+      "className": ""
     },
     {
       "id": "user-010",
@@ -98,7 +113,8 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-10T08:00:00.000Z",
-      "updatedAt": "2026-10-10T08:00:00.000Z"
+      "updatedAt": "2026-10-10T08:00:00.000Z",
+      "className": ""
     },
     {
       "id": "user-011",
@@ -108,7 +124,9 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-31T08:00:00.000Z",
-      "updatedAt": "2026-10-31T08:00:00.000Z"
+      "updatedAt": "2026-10-31T08:00:00.000Z",
+      "faculty": "",
+      "className": ""
     }
   ],
   "items": [
@@ -127,7 +145,8 @@
       "ownerName": "Nguyễn Văn An",
       "ownerFaculty": "Khoa Công nghệ thông tin",
       "createdAt": "2026-09-01T08:00:00.000Z",
-      "updatedAt": "2026-09-01T08:00:00.000Z"
+      "updatedAt": "2026-09-01T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-002",
@@ -144,7 +163,8 @@
       "ownerName": "Trần Minh Thư",
       "ownerFaculty": "Khoa Công nghệ thông tin",
       "createdAt": "2026-09-02T08:00:00.000Z",
-      "updatedAt": "2026-09-02T08:00:00.000Z"
+      "updatedAt": "2026-09-02T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-003",
@@ -161,7 +181,8 @@
       "ownerName": "Lê Quốc Bảo",
       "ownerFaculty": "Khoa Điện - Điện tử",
       "createdAt": "2026-09-03T08:00:00.000Z",
-      "updatedAt": "2026-09-03T08:00:00.000Z"
+      "updatedAt": "2026-09-03T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-004",
@@ -182,7 +203,8 @@
       "ownerName": "Phạm Ngọc Hà",
       "ownerFaculty": "Khoa Kế toán",
       "createdAt": "2026-09-04T08:00:00.000Z",
-      "updatedAt": "2026-09-04T08:00:00.000Z"
+      "updatedAt": "2026-09-04T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-005",
@@ -199,7 +221,8 @@
       "ownerName": "Đỗ Hoàng Nam",
       "ownerFaculty": "Khoa Cơ khí",
       "createdAt": "2026-09-05T08:00:00.000Z",
-      "updatedAt": "2026-09-05T08:00:00.000Z"
+      "updatedAt": "2026-09-05T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-006",
@@ -216,7 +239,8 @@
       "ownerName": "Võ Ngọc Mai",
       "ownerFaculty": "Khoa Ngoại ngữ",
       "createdAt": "2026-09-06T08:00:00.000Z",
-      "updatedAt": "2026-09-06T08:00:00.000Z"
+      "updatedAt": "2026-09-06T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-007",
@@ -228,7 +252,8 @@
       "status": "available",
       "ownerId": "user-007",
       "createdAt": "2026-09-07T08:00:00.000Z",
-      "updatedAt": "2026-09-07T08:00:00.000Z"
+      "updatedAt": "2026-09-07T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-008",
@@ -240,7 +265,8 @@
       "status": "available",
       "ownerId": "user-008",
       "createdAt": "2026-09-08T08:00:00.000Z",
-      "updatedAt": "2026-09-08T08:00:00.000Z"
+      "updatedAt": "2026-09-08T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-009",
@@ -252,7 +278,8 @@
       "status": "reserved",
       "ownerId": "user-009",
       "createdAt": "2026-09-09T08:00:00.000Z",
-      "updatedAt": "2026-09-09T08:00:00.000Z"
+      "updatedAt": "2026-09-09T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-010",
@@ -264,7 +291,8 @@
       "status": "available",
       "ownerId": "user-010",
       "createdAt": "2026-09-10T08:00:00.000Z",
-      "updatedAt": "2026-09-10T08:00:00.000Z"
+      "updatedAt": "2026-09-10T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-011",
@@ -276,7 +304,8 @@
       "status": "available",
       "ownerId": "user-001",
       "createdAt": "2026-09-11T08:00:00.000Z",
-      "updatedAt": "2026-09-11T08:00:00.000Z"
+      "updatedAt": "2026-09-11T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-012",
@@ -288,7 +317,8 @@
       "status": "available",
       "ownerId": "user-002",
       "createdAt": "2026-09-12T08:00:00.000Z",
-      "updatedAt": "2026-09-12T08:00:00.000Z"
+      "updatedAt": "2026-09-12T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-013",
@@ -300,7 +330,8 @@
       "status": "exchanged",
       "ownerId": "user-003",
       "createdAt": "2026-09-13T08:00:00.000Z",
-      "updatedAt": "2026-09-13T08:00:00.000Z"
+      "updatedAt": "2026-09-13T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-014",
@@ -312,7 +343,8 @@
       "status": "available",
       "ownerId": "user-004",
       "createdAt": "2026-09-14T08:00:00.000Z",
-      "updatedAt": "2026-09-14T08:00:00.000Z"
+      "updatedAt": "2026-09-14T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-015",
@@ -324,7 +356,8 @@
       "status": "available",
       "ownerId": "user-005",
       "createdAt": "2026-09-15T08:00:00.000Z",
-      "updatedAt": "2026-09-15T08:00:00.000Z"
+      "updatedAt": "2026-09-15T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-016",
@@ -336,7 +369,8 @@
       "status": "available",
       "ownerId": "user-006",
       "createdAt": "2026-09-16T08:00:00.000Z",
-      "updatedAt": "2026-09-16T08:00:00.000Z"
+      "updatedAt": "2026-09-16T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-017",
@@ -348,7 +382,8 @@
       "status": "available",
       "ownerId": "user-007",
       "createdAt": "2026-09-17T08:00:00.000Z",
-      "updatedAt": "2026-09-17T08:00:00.000Z"
+      "updatedAt": "2026-09-17T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
       "id": "item-018",
@@ -360,7 +395,8 @@
       "status": "reserved",
       "ownerId": "user-008",
       "createdAt": "2026-09-18T08:00:00.000Z",
-      "updatedAt": "2026-09-18T08:00:00.000Z"
+      "updatedAt": "2026-09-18T08:00:00.000Z",
+      "availableUntil": "2027-02-05T16:59:59.000Z"
     }
   ],
   "appointments": [],
@@ -376,5 +412,7 @@
       "createdAt": "2026-10-14T08:00:00.000Z",
       "updatedAt": "2026-10-14T08:00:00.000Z"
     }
-  ]
+  ],
+  "sessions": [],
+  "messages": []
 }

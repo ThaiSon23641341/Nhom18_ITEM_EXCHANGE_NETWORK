@@ -26,6 +26,14 @@ API endpoints are ordinary JSON Server resources:
   (passwords are stored as salted scrypt hashes in `credentials`, which is never served;
   seeded accounts accept the demo password `Demo@1234` until they set their own;
   the reset code is returned in the response because the demo sends no email)
+  Login and register return `{ token, user }`; the token (30 days) is sent as `Authorization: Bearer <token>`.
+  Only a SHA-256 hash is kept in `sessions`, which is never served. A password reset revokes all sessions.
+- `GET /auth/session` restores the signed-in user; `DELETE /auth/session` signs out.
+- `PATCH /users/:id` (own profile only): `faculty`, `className`, `avatarUrl`; any other field is rejected.
+  `GET /users/:id/public` adds `faculty`, `className`, `successfulExchanges` and `reputation`.
+- `POST /uploads` (signed in): raw `image/jpeg` or `image/png` body, max 5 MB, type checked by file signature,
+  stored in `server/uploads/` (git-ignored) under a random name; returns `{ url: '/uploads/<name>' }`.
+  `lib/uploads.cjs` has `removeOrphanUploads` to delete unreferenced files.
 - `GET /reports`, `POST /reports`, `PATCH /reports/:id`
 
 ## Route files and owners
@@ -41,6 +49,8 @@ route file exports `register({ app, router })` and has one owner (see
 | `routes/reports.cjs` | Phú | `POST /reports`, `PATCH /reports/:id` validation |
 | `routes/appointments.cjs` | Tú | `/appointments` (to be added) |
 | `routes/favorites.cjs` | Phúc | `/favorites` (to be added) |
+| `routes/uploads.cjs` | Sơn | `POST /uploads`, static `/uploads` |
+| `routes/messages.cjs` | Tú | `/appointments/:id/messages` (empty placeholder) |
 
 Tests follow the same split in `test/<feature>.test.cjs`; reuse
 `test/helpers.cjs`. Only Sơn edits `db.json`, `package*.json` and `server.cjs`.

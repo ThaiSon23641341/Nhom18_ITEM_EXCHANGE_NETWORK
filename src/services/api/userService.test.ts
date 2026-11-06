@@ -1,5 +1,5 @@
 import { ApiClientError } from './apiClient';
-import { getPublicUser } from './userService';
+import { getPublicUser, updateMyProfile } from './userService';
 
 const mockJsonResponse = (body: unknown, status = 200): Response => ({
   ok: status >= 200 && status < 300,
@@ -19,6 +19,15 @@ describe('userService', () => {
       expect.stringMatching(/\/users\/student%20001\/public$/),
       expect.objectContaining({ headers: expect.objectContaining({ Accept: 'application/json' }) }),
     );
+  });
+
+  test('patches only the editable profile fields', async () => {
+    const fetch = jest.spyOn(globalThis, 'fetch').mockResolvedValue(mockJsonResponse({ id: 'user-001' }));
+    await updateMyProfile('user-001', { faculty: 'CNTT', className: 'DHKTPM17A' });
+    const [url, init] = fetch.mock.calls[0];
+    expect(String(url)).toMatch(/\/users\/user-001$/);
+    expect(init?.method).toBe('PATCH');
+    expect(JSON.parse(String(init?.body))).toEqual({ faculty: 'CNTT', className: 'DHKTPM17A' });
   });
 
   test('maps missing profiles and rejects empty IDs', async () => {

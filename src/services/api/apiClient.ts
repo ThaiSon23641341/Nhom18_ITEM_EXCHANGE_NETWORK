@@ -1,3 +1,5 @@
+import { getAuthToken } from './tokenStorage';
+
 export class ApiClientError extends Error {
   constructor(
     message: string,
@@ -9,7 +11,7 @@ export class ApiClientError extends Error {
   }
 }
 
-const API_BASE_URL = (
+export const API_BASE_URL = (
   process.env.EXPO_PUBLIC_API_URL ?? 'http://localhost:3001'
 ).replace(/\/+$/, '');
 
@@ -17,6 +19,7 @@ export async function apiRequest<T>(
   path: string,
   init?: RequestInit,
 ): Promise<T> {
+  const token = getAuthToken();
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
@@ -24,6 +27,7 @@ export async function apiRequest<T>(
       headers: {
         Accept: 'application/json',
         ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(token ? { Authorization: ['Bearer', token].join(' ') } : {}),
         ...init?.headers,
       },
     });

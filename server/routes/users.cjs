@@ -1,5 +1,6 @@
 // Owner: Sơn. Endpoints: GET /health, GET /users/:id/public, POST /users,
-// POST /auth/login, /auth/register, /auth/forgot-password, /auth/reset-password.
+// POST /auth/login, /auth/register, /auth/forgot-password, /auth/reset-password,
+// GET/DELETE /auth/session, PATCH /users/:id.
 const crypto = require('node:crypto');
 const {
   DEMO_PASSWORD,
@@ -9,6 +10,14 @@ const {
   verifyPassword,
 } = require('../lib/credentials.cjs');
 const { isRecord, isText, sendError } = require('../lib/helpers.cjs');
+const { computeUserStats } = require('../lib/reputation.cjs');
+const {
+  authenticate,
+  createSession,
+  revokeToken,
+  revokeUserSessions,
+} = require('../lib/session.cjs');
+const { UPLOAD_URL_PATTERN } = require('../lib/uploads.cjs');
 
 const RESET_CODE_TTL_MS = 10 * 60 * 1000;
 const RESET_MAX_ATTEMPTS = 5;
@@ -33,6 +42,8 @@ const USER_FIELDS = new Set([
   'updatedAt',
 ]);
 
+const EDITABLE_PROFILE_FIELDS = ['faculty', 'className', 'avatarUrl'];
+
 function register({ app, router }) {
   const resetCodes = new Map();
 
@@ -47,12 +58,24 @@ function register({ app, router }) {
     if (existing) credentials().find({ userId }).assign({ passwordHash }).write();
     else credentials().push({ userId, passwordHash }).write();
   };
+  const toProfile = (user) => ({
+    ...user,
+    faculty: user.faculty ?? '',
+    className: user.className ?? '',
+    ...computeUserStats(router.db, user.id),
+  });
+  const startSession = (user) => ({ ...createSession(router.db, user.id), user: toProfile(user) });
   const readEmail = (body) => (
     isRecord(body) && typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
   );
 
   // Password hashes live in the "credentials" collection and are never served.
   app.use('/credentials', (_request, response) => {
+    sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy tài nguyên.');
+  });
+
+  // Session token hashes are never served either.
+  app.use('/sessions', (_request, response) => {
     sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy tài nguyên.');
   });
 
@@ -80,7 +103,8 @@ function register({ app, router }) {
       sendError(response, 401, 'INVALID_CREDENTIALS', 'Email hoặc mật khẩu không đúng.');
       return;
     }
-    response.json(user);
+    const { token, user: profile } = startSession(user);
+    response.json({ token, user: profile });
   });
 
   app.post('/auth/register', (request, response) => {
@@ -113,7 +137,8 @@ function register({ app, router }) {
     };
     router.db.get('users').push(user).write();
     saveCredential(id, password);
-    response.status(201).json(user);
+    const { token, user: profile } = startSession(user);
+    response.status(201).json({ token, user: profile });
   });
 
   // Demo only: there is no email delivery, so the code is returned to the app.
@@ -157,6 +182,22 @@ function register({ app, router }) {
     }
     resetCodes.delete(email);
     saveCredential(user.id, newPassword);
+    revokeUserSessions(router.db, user.id);
+    response.json({ ok: true });
+  });
+
+  app.get('/auth/session', (request, response) => {
+    const userId = authenticate(router.db, request);
+    const user = userId && router.db.get('users').find({ id: userId }).value();
+    if (!user) {
+      sendError(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hạn.');
+      return;
+    }
+    response.json({ user: toProfile(user) });
+  });
+
+  app.delete('/auth/session', (request, response) => {
+    revokeToken(router.db, request);
     response.json({ ok: true });
   });
 
@@ -170,7 +211,55 @@ function register({ app, router }) {
       id: user.id,
       fullName: user.fullName,
       avatarUrl: user.avatarUrl,
+      faculty: user.faculty ?? '',
+      className: user.className ?? '',
+      ...computeUserStats(router.db, user.id),
     });
+  });
+
+  // Generic PUT/DELETE would bypass the profile rules below.
+  app.put('/users/:id', (_request, response) => {
+    sendError(response, 405, 'METHOD_NOT_ALLOWED', 'Không hỗ trợ thao tác này.');
+  });
+  app.delete('/users/:id', (_request, response) => {
+    sendError(response, 405, 'METHOD_NOT_ALLOWED', 'Không hỗ trợ thao tác này.');
+  });
+
+  app.patch('/users/:id', (request, response) => {
+    const userId = authenticate(router.db, request);
+    if (!userId) {
+      sendError(response, 401, 'UNAUTHORIZED', 'Vui lòng đăng nhập.');
+      return;
+    }
+    if (userId !== request.params.id) {
+      sendError(response, 403, 'FORBIDDEN', 'Bạn chỉ có thể sửa hồ sơ của chính mình.');
+      return;
+    }
+    const body = request.body;
+    const keys = isRecord(body) ? Object.keys(body) : [];
+    if (keys.length === 0 || keys.some((key) => !EDITABLE_PROFILE_FIELDS.includes(key))) {
+      sendError(response, 400, 'BAD_REQUEST', 'Chỉ được sửa khoa, lớp và ảnh đại diện.');
+      return;
+    }
+    if (
+      (body.faculty !== undefined && !isText(body.faculty, 100))
+      || (body.className !== undefined && !isText(body.className, 50))
+      || (body.avatarUrl !== undefined
+        && (typeof body.avatarUrl !== 'string'
+          || (body.avatarUrl !== '' && !UPLOAD_URL_PATTERN.test(body.avatarUrl))))
+    ) {
+      sendError(response, 400, 'BAD_REQUEST', 'Thông tin hồ sơ không hợp lệ.');
+      return;
+    }
+    const changes = {};
+    for (const key of keys) changes[key] = typeof body[key] === 'string' ? body[key].trim() : body[key];
+    const users = router.db.get('users');
+    if (!users.find({ id: userId }).value()) {
+      sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy người dùng.');
+      return;
+    }
+    users.find({ id: userId }).assign({ ...changes, updatedAt: new Date().toISOString() }).write();
+    response.json(toProfile(users.find({ id: userId }).value()));
   });
 
   app.post('/users', (request, response, next) => {

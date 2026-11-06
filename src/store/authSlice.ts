@@ -3,9 +3,10 @@ import type { User } from '../models/userModel';
 
 interface AuthState {
   user: User | null;
+  isRestoring: boolean;
 }
 
-const initialState: AuthState = { user: null };
+const initialState: AuthState = { user: null, isRestoring: false };
 
 const authSlice = createSlice({
   name: 'auth',
@@ -17,8 +18,15 @@ const authSlice = createSlice({
     clearAuthenticatedUser(state) {
       state.user = null;
     },
+    setSessionRestoring(state, action: PayloadAction<boolean>) {
+      state.isRestoring = action.payload;
+    },
   },
 });
 
-export const { clearAuthenticatedUser, setAuthenticatedUser } = authSlice.actions;
+export const {
+  clearAuthenticatedUser,
+  setAuthenticatedUser,
+  setSessionRestoring,
+} = authSlice.actions;
 export default authSlice.reducer;

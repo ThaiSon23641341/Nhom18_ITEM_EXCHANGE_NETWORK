@@ -9,9 +9,12 @@ const routeModules = [
   require('./routes/reports.cjs'),
   require('./routes/appointments.cjs'),
   require('./routes/favorites.cjs'),
+  require('./routes/uploads.cjs'),
+  require('./routes/messages.cjs'),
 ];
 
-function createServer(dbFile = path.join(__dirname, 'db.json')) {
+function createServer(dbFile = path.join(__dirname, 'db.json'), options = {}) {
+  const uploadsDir = options.uploadsDir ?? path.join(__dirname, 'uploads');
   if (!fs.existsSync(dbFile)) {
     throw new Error(`JSON Server database file does not exist: ${dbFile}`);
   }
@@ -22,7 +25,7 @@ function createServer(dbFile = path.join(__dirname, 'db.json')) {
   app.use(jsonServer.bodyParser);
 
   for (const routeModule of routeModules) {
-    routeModule.register({ app, router });
+    routeModule.register({ app, router, uploadsDir });
   }
 
   app.use(router);
