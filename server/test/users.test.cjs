@@ -22,7 +22,9 @@ test('public user response excludes email and student ID', async () => {
   const response = await fetch(`${context.baseUrl}/users/user-001/public`);
   const user = await response.json();
   assert.equal(response.status, 200);
-  assert.deepEqual(Object.keys(user).sort(), ['avatarUrl', 'fullName', 'id']);
+  assert.deepEqual(Object.keys(user).sort(), [
+    'avatarUrl', 'className', 'faculty', 'fullName', 'id', 'reputation', 'successfulExchanges',
+  ]);
 });
 
 test('seeded listing owners have profiles and new demo users reject extra fields', async () => {
@@ -61,7 +63,8 @@ test('seeded listing owners have profiles and new demo users reject extra fields
 });
 
 test('seed database exposes every collection the route files rely on', () => {
-  for (const collection of ['users', 'items', 'reports', 'appointments', 'favorites']) {
+  const collections = ['users', 'items', 'reports', 'appointments', 'favorites', 'sessions', 'messages'];
+  for (const collection of collections) {
     assert.equal(Array.isArray(context.seed[collection]), true, collection);
   }
 });

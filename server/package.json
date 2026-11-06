@@ -8,6 +8,7 @@
     "test": "node --test"
   },
   "dependencies": {
+    "express": "4.22.3",
     "json-server": "0.17.4"
   }
 }
