@@ -5,6 +5,7 @@ import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { useAuthController } from './useAuthController';
 import { notifyItemsChanged, usePaginatedItems } from './usePaginatedItems';
 import type { Item } from '../models/itemModel';
+import { canDeleteItem } from '../utils/itemPermissions';
 
 export function useMyItemsController() {
   const { user } = useAuthController();
@@ -16,13 +17,27 @@ export function useMyItemsController() {
 
   const requestDelete = useCallback((item: Item) => {
     setDeleteError(null);
+    if (!canDeleteItem(item, user?.id)) {
+      setDeleteError(item.status === 'exchanged'
+        ? 'Món đã trao không thể xóa.'
+        : 'Bạn không có quyền xóa bài đăng này.');
+      setPendingDelete(null);
+      return;
+    }
     setPendingDelete(item);
-  }, []);
+  }, [user?.id]);
   const cancelDelete = useCallback(() => setPendingDelete(null), []);
 
   const confirmDelete = useCallback(async (target?: Item) => {
     const itemToDelete = target ?? pendingDelete;
     if (!itemToDelete || deletingId) return;
+    if (!canDeleteItem(itemToDelete, user?.id)) {
+      setDeleteError(itemToDelete.status === 'exchanged'
+        ? 'Món đã trao không thể xóa.'
+        : 'Bạn không có quyền xóa bài đăng này.');
+      setPendingDelete(null);
+      return;
+    }
     setDeletingId(itemToDelete.id);
     setDeleteError(null);
     try {
@@ -35,7 +50,7 @@ export function useMyItemsController() {
     } finally {
       setDeletingId(null);
     }
-  }, [deletingId, pendingDelete, removeItemById]);
+  }, [deletingId, pendingDelete, removeItemById, user?.id]);
 
   const openCreate = useCallback(() => router.push('/item/create'), []);
   const openEdit = useCallback((id: string) => router.push(`/item/${id}/edit` as const), []);

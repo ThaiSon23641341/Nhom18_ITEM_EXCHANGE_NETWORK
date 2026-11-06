@@ -1,5 +1,6 @@
 import {
   createItem,
+  deleteItem,
   getItemById,
   getItems,
   MockApiError,
@@ -100,6 +101,7 @@ describe('itemService', () => {
     };
     const fetch = jest.spyOn(globalThis, 'fetch')
       .mockResolvedValueOnce(mockJsonResponse(item))
+      .mockResolvedValueOnce(mockJsonResponse(item))
       .mockResolvedValueOnce(mockJsonResponse({ ...item, title: 'Sách mới' }));
 
     await expect(getItemById('item-001')).resolves.toMatchObject(item);
@@ -110,6 +112,31 @@ describe('itemService', () => {
       expect.stringMatching(/\/items\/item-001$/),
       expect.objectContaining({ method: 'PATCH' }),
     );
+  });
+
+  test('blocks editing and deleting exchanged items', async () => {
+    const exchanged = {
+      id: 'item-exchanged',
+      title: 'Món đã trao',
+      description: 'Đã hoàn tất trao đổi',
+      category: 'Sách',
+      condition: 'good' as const,
+      imageUrl: '',
+      status: 'exchanged' as const,
+      ownerId: 'user-001',
+      createdAt: '2026-11-01T00:00:00.000Z',
+      updatedAt: '2026-11-01T00:00:00.000Z',
+    };
+    jest.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mockJsonResponse(exchanged))
+      .mockResolvedValueOnce(mockJsonResponse(exchanged));
+
+    await expect(updateItem('item-exchanged', { title: 'Mới' })).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
+    await expect(deleteItem('item-exchanged')).rejects.toMatchObject({
+      code: 'CONFLICT',
+    });
   });
 
   test('rejects invalid listing data before making a request', async () => {
