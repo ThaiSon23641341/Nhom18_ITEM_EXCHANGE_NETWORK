@@ -201,6 +201,76 @@ Kiểm thử:
 - Tên dài, không ảnh, ảnh lỗi, không có giá hoặc không có địa điểm đều không vỡ bố cục trên màn hình nhỏ.
 - Kiểm tra trên Android, iOS và Web; trang chủ vẫn không hiện món đã trao (mục 1).
 
+## 11. Phân công file giai đoạn 5 (mỗi file chỉ một chủ)
+Bảng này là phân công chính thức. Nếu khác phần "Phụ trách đề xuất" ở mục 1 đến 10 thì theo mục 11. Quy ước giữ như giai đoạn 4 (`PHASE4_ASSIGNMENT.md`): file của ai người đó sửa, cần sửa file người khác thì nhờ chủ file; `package*.json`, `app.json` và `server/db.json` chỉ Sơn sửa.
+
+### Sơn
+| Việc | File sửa | File mới |
+|---|---|---|
+| Thư viện, cấu hình | `package.json`, `package-lock.json`, `app.json` (plugin và quyền camera, thư viện ảnh), `.gitignore` (`server/uploads/`), `.env.example` | cài `expo-secure-store`, `expo-image-picker`, `@react-native-async-storage/async-storage` bằng `npx expo install` |
+| Dữ liệu mẫu | `server/db.json`: `faculty`, `className` cho user; `availableUntil` cho món; `reminderAt` cho lịch; collection `sessions` và `messages` | |
+| Gắn route server | `server/server.cjs` (gắn `uploads.cjs`, `messages.cjs`), `server/lib/**` (helper phiên, lấy `userId` từ token, tính uy tín) | `server/routes/uploads.cjs`, `server/lib/session.cjs`, `server/lib/reputation.cjs` |
+| Phiên đăng nhập | `server/routes/users.cjs` (đăng nhập tạo phiên, `GET` và `DELETE /auth/session`, hủy phiên khi đổi mật khẩu), `src/services/authService.ts`, `src/store/**`, `src/controllers/useAuthController.ts`, `src/services/api/apiClient.ts` (gắn `Authorization`), `RegisterScreen.tsx`, `ForgotPasswordScreen.tsx` | `src/controllers/useSessionBootstrap.ts` |
+| Hồ sơ trên server | `src/models/userModel.ts`, `src/models/index.ts`, `server/routes/users.cjs` (`PATCH /users/:id`, mở rộng `GET /users/:id/public`), `src/services/api/userService.ts` | |
+| Tải ảnh | `src/services/api/index.ts` | `src/services/api/uploadService.ts`, `src/services/media/imagePickerService.ts` (chọn ảnh từ thư viện hoặc camera, xin quyền) |
+| Test | `server/test/users.test.cjs`, `server/test/auth.test.cjs` | `server/test/uploads.test.cjs`, `server/test/sessions.test.cjs`, test của `uploadService` và `imagePickerService` đặt cạnh file nguồn |
+| Tài liệu | `root/PROJECT_PROGRESS.md`, `root/PHASE5_ADDITIONS.md`, `server/README.md` | |
+
+### Phú
+| Việc | File sửa | File mới |
+|---|---|---|
+| Món đồ trên server | `server/routes/items.cjs` (lọc `available` và chưa hết hạn ở trang chủ, kiểm `availableUntil`, khóa sửa và xóa khi món có lịch `confirmed`, bắt buộc có `location`), `src/models/itemModel.ts` (thêm `availableUntil`), `src/services/api/itemService.ts`, `src/services/api/mockData.ts`, `src/utils/itemPermissions.ts`, `src/utils/validateItem.ts`, `src/utils/itemOptions.ts`, `src/utils/constants.ts` | `src/utils/availability.ts` (hạn trao, các mức chọn nhanh) |
+| Form đăng và sửa món | `ItemFormScreen.tsx`, `CreateItemScreen.tsx`, `useItemFormController.ts`, `useItemController.ts` (chọn hạn trao, nhập địa điểm, chọn ảnh qua `ImagePickerField` của Phúc và `uploadService` của Sơn) | |
+| Trang chủ và bộ lọc | `ExploreScreen.tsx`, `ItemFilterBar.tsx`, `ItemListRow.tsx` (chọn thẻ 1 cột hoặc 2 cột theo chế độ xem), `ListStateView.tsx`, `useExploreController.ts`, `usePaginatedItems.ts`, `src/utils/itemFilters.ts` | `src/views/screens/ItemFilterSheet.tsx`, `src/utils/viewModePreference.ts` (lưu chế độ 1 hoặc 2 cột) |
+| Đồ của tôi | `MyItemsScreen.tsx`, `useMyItemsController.ts` (ẩn và vô hiệu nút sửa, xóa khi món bị khóa) | |
+| Khởi động app | `src/app/_layout.tsx`, `src/app/(tabs)/_layout.tsx` | `src/controllers/useAppBootstrap.ts` (gom `useSessionBootstrap` của Sơn và `useReminderSyncController` của Tú, `_layout.tsx` chỉ gọi hook này) |
+| Báo cáo | `server/routes/reports.cjs`, `reportService.ts`, `ReportModerationScreen.tsx` | (không đổi trong giai đoạn 5) |
+| Test | `server/test/items.test.cjs`, `server/test/reports.test.cjs`, test của `itemService`, `itemPermissions`, `validateItem`, `itemFilters` | test của `availability.ts` và `viewModePreference.ts` đặt cạnh file nguồn |
+
+### Tú
+| Việc | File sửa | File mới |
+|---|---|---|
+| Lịch hẹn trên server | `server/routes/appointments.cjs` (địa điểm lấy từ món, kiểm ngày hẹn không quá `availableUntil`, `reminderAt` do server tính, xác nhận hai bên và khóa theo mục 2), `src/models/appointmentModel.ts`, `src/services/api/appointmentService.ts` | |
+| Bỏ ô địa điểm | `BookAppointmentScreen.tsx`, `src/app/appointment/create.tsx`, `src/app/appointment/confirm.tsx`, `useAppointmentController.ts` | |
+| Danh sách lịch hẹn | `AppointmentsScreen.tsx`, `useAppointmentsController.ts` (nút mở chat khi đủ hai xác nhận) | |
+| Nhắc lịch từ server | `src/services/device/notificationService.ts` | `src/controllers/useReminderSyncController.ts` (tải lịch `confirmed` còn tương lai rồi đặt lại nhắc khi mở app), `src/services/appointments/reminderSync.ts` |
+| Chat theo lịch hẹn | | `server/routes/messages.cjs` (Sơn tạo file rỗng để gắn route trong bước 0 rồi giao cho Tú), `src/models/messageModel.ts` (import trực tiếp, không sửa `src/models/index.ts`), `src/services/api/messageService.ts`, `src/controllers/useChatController.ts`, `src/views/screens/ChatScreen.tsx`, `src/app/appointment/[id]/chat.tsx` |
+| Số giao dịch thành công | `server/routes/appointments.cjs` bảo đảm lịch `completed` ghi đúng; số này do `server/lib/reputation.cjs` của Sơn đọc ra | |
+| QA | `root/PHASE3_QA_CHECKLIST.md`, `eas.json` | |
+| Test | `server/test/appointments.test.cjs`, `src/__tests__/**`, test của `appointmentService` | `server/test/messages.test.cjs`, test của `messageService` và `useChatController` |
+
+### Phúc
+| Việc | File sửa | File mới |
+|---|---|---|
+| Hồ sơ | `ProfileScreen.tsx`, `src/app/(tabs)/profile.tsx` (hiển thị Khoa, Lớp, số giao dịch, uy tín, nút "Chỉnh sửa hồ sơ", đăng xuất), `usePublicProfileController.ts` | `src/app/profile/edit.tsx`, `src/views/screens/ProfileEditScreen.tsx`, `src/controllers/useProfileEditController.ts` |
+| Thành phần dùng chung | `src/views/components/ItemCard.tsx`, `ExpandableItemCard.tsx`, `ProductCard.tsx` | `src/views/components/ItemCardLarge.tsx` (thẻ 1 cột, ảnh lớn), `src/views/components/ItemCardGrid.tsx` (thẻ 2 cột), `src/views/components/OwnerBadge.tsx` (avatar nhỏ, tên, uy tín), `src/views/components/ImagePickerField.tsx` (chọn và xem trước ảnh, dùng chung cho ảnh đại diện và ảnh món) |
+| Chi tiết món | `ItemDetailScreen.tsx` (hiển thị người đăng, hạn trao, địa điểm), `useItemDetailController.ts` | |
+| Đăng nhập | `LoginScreen.tsx` (chỉ sửa giao diện, không đổi luồng phiên của Sơn) | |
+| Yêu thích | `server/routes/favorites.cjs`, `favoriteService.ts`, `useFavoritesController.ts` | |
+| Báo cáo món | `ItemReportScreen.tsx`, `useItemReportController.ts` | |
+| Giao diện chung | `tamagui.config.ts`, `assets/**` | |
+| Test | `server/test/favorites.test.cjs`, `ProfileScreen.test.tsx`, `ItemDetailScreen.test.tsx`, `LoginScreen.test.tsx`, `ItemReportScreen.test.tsx` | test của `ProfileEditScreen`, `useProfileEditController`, các thẻ mới đặt cạnh file nguồn |
+
+### Chỗ giao nhau và hợp đồng giữa các người
+| Chỗ giao nhau | Cách tránh trùng file |
+|---|---|
+| Thẻ món (mục 5, 10) | Phúc làm `ItemCardLarge`, `ItemCardGrid`, `OwnerBadge` với props `item` và `onPress`; Phú chỉ chọn thẻ trong `ItemListRow.tsx` theo chế độ xem. Không ai sửa file của người kia |
+| Chọn và tải ảnh | Sơn cung cấp `imagePickerService` và `uploadService`; Phúc làm `ImagePickerField` gọi hai service này; Phú dùng `ImagePickerField` trong form món, Phúc dùng trong sửa hồ sơ |
+| Khóa món khi chủ xác nhận (mục 8) | Quy ước: món bị khóa khi trong collection `appointments` có lịch của món đó ở trạng thái `confirmed`. Phú tự đọc `db` trong `items.cjs`, Tú không sửa `items.cjs`; Tú chỉ bảo đảm trạng thái lịch đúng |
+| Hạn trao (mục 7) | Phú kiểm tra và lưu `availableUntil` trong `items.cjs`; Tú đọc `availableUntil` của món trong `appointments.cjs` để từ chối ngày hẹn quá hạn; Sơn chỉ thêm dữ liệu mẫu |
+| Uy tín và số giao dịch (mục 4) | Sơn tính trong `server/lib/reputation.cjs` và trả qua `users.cjs`, chỉ đọc `appointments` và `reports` từ `db`; Tú và Phú không tính lại |
+| Khởi động app (phiên, nhắc lịch) | Sơn viết `useSessionBootstrap`, Tú viết `useReminderSyncController`, Phú gom trong `useAppBootstrap` và gọi một lần ở `_layout.tsx` |
+| Gắn route mới vào server | Chỉ Sơn sửa `server/server.cjs`; Tú và Phú không thêm dòng `require` |
+| Dữ liệu mẫu | Chỉ Sơn sửa `server/db.json`; cần thêm dữ liệu thì nhờ Sơn trước khi mở PR; không commit thay đổi `db.json` sinh ra khi test |
+| Test | Test của tính năng mới đặt cạnh file nguồn hoặc trong `server/test/` của đúng chủ; riêng `src/__tests__/**` chỉ Tú sửa |
+
+### Thứ tự thực hiện để không chờ nhau
+1. **Sơn (bước 0):** thư viện, `app.json`, `db.json`, `server.cjs`, file rỗng `messages.cjs`, phiên đăng nhập, `PATCH /users/:id`, `uploads.cjs`, `imagePickerService`, `uploadService`, `useSessionBootstrap`. Merge trước.
+2. **Phúc và Tú song song** (dựa trên bước 0): Phúc làm `ImagePickerField` và các thẻ dùng chung, Tú làm chat, nhắc lịch từ server, bỏ ô địa điểm.
+3. **Phú** (dựa trên bước 1 và 2): form món với hạn trao và ảnh, lọc và khóa món, trang chủ 1 hoặc 2 cột, `useAppBootstrap`.
+4. **Phúc:** màn hồ sơ và sửa hồ sơ, chi tiết món.
+5. Mỗi người một PR cho mỗi bước, chỉ chứa file trong cột của mình; trước khi mở PR chạy `npm test`, `npm run server:test`, `npx tsc --noEmit`, `npm run lint`.
+
 ## Đã chốt và còn mở
 Đã chốt: công thức uy tín (mục 4), không sửa họ tên và số điện thoại, ảnh đại diện chọn từ thư viện hoặc camera, bỏ ô địa điểm khi đặt lịch (mục 6), người đăng đặt hạn trao món (mục 7), khóa sửa món từ khi chủ món xác nhận (mục 8).
 
