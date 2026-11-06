@@ -3,7 +3,6 @@ import { AndroidImportance, type DateTriggerInput } from 'expo-notifications';
 import { Platform } from 'react-native';
 import type { Appointment } from '../../models/appointmentModel';
 
-export const APPOINTMENT_REMINDER_MINUTES = 1;
 const APPOINTMENT_CHANNEL_ID = 'appointment-reminders';
 
 type NotificationPermissionResult = {
@@ -14,7 +13,7 @@ type NotificationPermissionResult = {
 export type NotificationScheduleResult = {
   scheduled: boolean;
   notificationId?: string;
-  reason?: 'web' | 'permission-denied' | 'past' | 'too-soon';
+  reason?: 'web' | 'permission-denied' | 'past' | 'too-soon' | 'unconfirmed' | 'missing-reminder';
 };
 
 if (Platform.OS !== 'web') {
@@ -64,21 +63,6 @@ async function findNotificationId(appointmentId: string): Promise<string | undef
   return request?.identifier;
 }
 
-function getAppointmentDate(appointment: Appointment): Date {
-  if (appointment.scheduledAt) return new Date(appointment.scheduledAt);
-  const dateMatch = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(appointment.date);
-  if (dateMatch) {
-    return new Date(
-      Number(dateMatch[3]),
-      Number(dateMatch[2]) - 1,
-      Number(dateMatch[1]),
-      Number(appointment.time.slice(0, 2)),
-      Number(appointment.time.slice(3, 5)),
-    );
-  }
-  return new Date(Number.NaN);
-}
-
 export async function getAppointmentReminderId(
   appointmentId: string,
 ): Promise<string | undefined> {
@@ -97,17 +81,19 @@ export async function scheduleAppointmentReminder(
   itemTitle: string,
 ): Promise<NotificationScheduleResult> {
   if (Platform.OS === 'web') return { scheduled: false, reason: 'web' };
-  if (appointment.status === 'cancelled' || appointment.status === 'completed') {
-    return { scheduled: false, reason: 'past' };
-  }
+  if (appointment.status !== 'confirmed') return { scheduled: false, reason: 'unconfirmed' };
+  if (!appointment.reminderAt) return { scheduled: false, reason: 'missing-reminder' };
 
-  const appointmentDate = getAppointmentDate(appointment);
-  const reminderDate = new Date(
-    appointmentDate.getTime() - APPOINTMENT_REMINDER_MINUTES * 60 * 1000,
-  );
+  const appointmentDate = appointment.scheduledAt
+    ? new Date(appointment.scheduledAt)
+    : new Date(Number.NaN);
+  const reminderDate = new Date(appointment.reminderAt);
   const now = Date.now();
   if (!Number.isFinite(appointmentDate.getTime()) || appointmentDate.getTime() <= now) {
     return { scheduled: false, reason: 'past' };
+  }
+  if (!Number.isFinite(reminderDate.getTime())) {
+    return { scheduled: false, reason: 'missing-reminder' };
   }
   if (reminderDate.getTime() <= now) return { scheduled: false, reason: 'too-soon' };
 

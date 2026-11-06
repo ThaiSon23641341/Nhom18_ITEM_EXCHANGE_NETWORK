@@ -13,6 +13,9 @@ export interface Appointment {
   scheduledAt?: string;
   location: string;
   note?: string;
+  confirmedBy?: string[];
+  reminderAt?: string | null;
+  reminderMinutes?: number;
   status: AppointmentStatus;
   createdAt: string;
   updatedAt: string;

@@ -5,7 +5,11 @@
  */
 
 import { AppointmentsScreen } from '../../views/screens/AppointmentsScreen';
+import { useReminderSyncController } from '../../controllers/useReminderSyncController';
+import { useSessionBootstrap } from '../../controllers/useSessionBootstrap';
 
 export default function AppointmentsTab() {
+  useSessionBootstrap();
+  useReminderSyncController();
   return <AppointmentsScreen />;
 }

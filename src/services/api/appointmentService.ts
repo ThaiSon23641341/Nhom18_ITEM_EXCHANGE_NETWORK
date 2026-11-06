@@ -8,8 +8,8 @@ import {
 
 export type CreateAppointmentInput = Pick<
   Appointment,
-  'itemId' | 'requesterId' | 'date' | 'time' | 'location'
->;
+  'itemId' | 'requesterId' | 'date' | 'time'
+> & Partial<Pick<Appointment, 'scheduledAt' | 'note'>>;
 
 export class AppointmentServiceError extends Error {
   constructor(
@@ -52,7 +52,6 @@ export const createAppointment = async (
 ): Promise<Appointment> => {
   const itemId = input.itemId.trim();
   const requesterId = input.requesterId.trim();
-  const location = input.location.trim();
 
   if (
     !itemId
@@ -60,17 +59,18 @@ export const createAppointment = async (
     || !isValidDate(input.date)
     || !/^(?:[01]\d|2[0-3]):[0-5]\d$/.test(input.time)
     || !isFutureDateTime(input.date, input.time)
-    || !location
-    || location.length > 200
   ) {
-    throw new AppointmentServiceError('Ngày, giờ hoặc địa điểm hẹn không hợp lệ.', 'BAD_REQUEST');
+    throw new AppointmentServiceError('Ngày hoặc giờ hẹn không hợp lệ.', 'BAD_REQUEST');
   }
   try {
-    return await createServerAppointment({ ...input, itemId, requesterId, location });
+    return await createServerAppointment({ ...input, itemId, requesterId });
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Không thể tạo lịch hẹn.';
     if (message.includes('không còn khả dụng')) {
       throw new AppointmentServiceError(message, 'CONFLICT');
+    }
+    if (message.includes('vượt quá hạn trao')) {
+      throw new AppointmentServiceError(message, 'BAD_REQUEST');
     }
     if (message.includes('Không tìm thấy đồ dùng')) {
       throw new AppointmentServiceError(message, 'NOT_FOUND');

@@ -5,13 +5,13 @@ import { Image, Button, XStack, YStack, Text, Separator, ScrollView } from 'tama
 import { getItemById } from '../../services/api/itemService';
 import type { Item } from '../../models/itemModel';
 import { getPublicUserById } from '../../services/authService';
-import { router } from 'expo-router';
+import { router, type Href } from 'expo-router';
 import { useAuthController } from '../../controllers/useAuthController';
 import type { AppointmentStatus } from '../../models/appointmentModel';
 
 const appointmentStatusLabels = {
   pending: 'Chờ xác nhận',
-  confirmed: 'Đã xác nhận',
+  confirmed: 'Đang xác nhận',
   cancelled: 'Đã hủy',
   completed: 'Đã hoàn tất',
 } as const;
@@ -178,6 +178,11 @@ export function AppointmentsScreen() {
                 {group.appointments.map((appointment) => {
                   const item = items[appointment.itemId];
                   const isOwner = item?.ownerId === user?.id;
+                  const hasBothConfirmed = Boolean(
+                    item
+                    && appointment.confirmedBy?.includes(item.ownerId)
+                    && appointment.confirmedBy?.includes(appointment.requesterId),
+                  );
                   return (
                     <YStack
                       key={appointment.id}
@@ -212,7 +217,9 @@ export function AppointmentsScreen() {
                       <Text color="color">Địa điểm: {appointment.location}</Text>
                       {appointment.note ? <Text color="color">Ghi chú: {appointment.note}</Text> : null}
                       <Text color="color">
-                        Trạng thái: {appointmentStatusLabels[appointment.status]}
+                        Trạng thái: {appointment.status === 'confirmed' && !hasBothConfirmed
+                          ? 'Chờ người còn lại xác nhận'
+                          : appointmentStatusLabels[appointment.status]}
                       </Text>
                       <Button
                         onPress={() => router.push({
@@ -222,32 +229,34 @@ export function AppointmentsScreen() {
                       >
                         Xem chi tiết món
                       </Button>
-                      {isOwner && appointment.status === 'pending' ? (
-                        <>
+                      {appointment.status === 'pending' || appointment.status === 'confirmed'
+                        ? !appointment.confirmedBy?.includes(user?.id ?? '') ? (
                           <Button
                             disabled={cancellingId === appointment.id}
                             onPress={() => handleOwnerStatus(
                               appointment.id,
                               'confirmed',
-                              'Xác nhận lịch hẹn này?',
+                              'Bạn xác nhận sẽ tham gia lịch hẹn này?',
                             )}
                           >
                             Xác nhận lịch hẹn
                           </Button>
-                          <Button
-                            theme="red"
-                            disabled={cancellingId === appointment.id}
-                            onPress={() => handleOwnerStatus(
-                              appointment.id,
-                              'cancelled',
-                              'Từ chối lịch hẹn này?',
-                            )}
-                          >
-                            Từ chối lịch hẹn
-                          </Button>
-                        </>
+                        ) : null
+                        : null}
+                      {isOwner && appointment.status === 'pending' ? (
+                        <Button
+                          theme="red"
+                          disabled={cancellingId === appointment.id}
+                          onPress={() => handleOwnerStatus(
+                            appointment.id,
+                            'cancelled',
+                            'Từ chối lịch hẹn này?',
+                          )}
+                        >
+                          Từ chối lịch hẹn
+                        </Button>
                       ) : null}
-                      {isOwner && appointment.status === 'confirmed' ? (
+                      {isOwner && appointment.status === 'confirmed' && hasBothConfirmed ? (
                         <Button
                           disabled={cancellingId === appointment.id}
                           onPress={() => handleOwnerStatus(
@@ -259,13 +268,30 @@ export function AppointmentsScreen() {
                           Đã trao đồ
                         </Button>
                       ) : null}
-                      {!isOwner && (appointment.status === 'pending' || appointment.status === 'confirmed') ? (
+                      {hasBothConfirmed ? (
+                        <Button
+                          onPress={() => router.push(
+                            `/appointment/${encodeURIComponent(appointment.id)}/chat` as Href,
+                          )}
+                        >
+                          Mở chat
+                        </Button>
+                      ) : null}
+                      {(appointment.status === 'pending' || appointment.status === 'confirmed') ? (
                         <Button
                           theme="red"
                           disabled={cancellingId === appointment.id}
-                          onPress={() => handleCancel(appointment.id)}
+                          onPress={() => isOwner
+                            ? handleOwnerStatus(
+                              appointment.id,
+                              'cancelled',
+                              'Bạn có chắc muốn hủy lịch hẹn này không?',
+                            )
+                            : handleCancel(appointment.id)}
                         >
-                          {cancellingId === appointment.id ? 'Đang hủy...' : 'Hủy lịch hẹn'}
+                          {cancellingId === appointment.id
+                            ? 'Đang hủy...'
+                            : 'Hủy lịch hẹn'}
                         </Button>
                       ) : null}
                       <Separator />
