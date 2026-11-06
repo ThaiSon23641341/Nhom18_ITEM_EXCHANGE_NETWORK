@@ -6,6 +6,7 @@ import { notifyItemsChanged } from './usePaginatedItems';
 import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { validateItemForm, type ItemFormErrors, type ItemFormValues } from '../utils/validateItem';
 import type { Item, ItemCondition } from '../models/itemModel';
+import { canEditItem } from '../utils/itemPermissions';
 
 export interface UseItemFormControllerOptions {
   mode: 'create' | 'edit';
@@ -46,10 +47,10 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
     try {
       const loaded = await getItemById(itemId);
       setItem(loaded);
-      if (!user || loaded.ownerId !== user.id) {
-        setPermissionError('Bạn không có quyền sửa bài này.');
-      } else if (loaded.status === 'exchanged') {
+      if (loaded.status === 'exchanged') {
         setPermissionError('Món đã trao không thể chỉnh sửa.');
+      } else if (!user || !canEditItem(loaded, user.id)) {
+        setPermissionError('Bạn không có quyền sửa bài này.');
       } else {
         setPermissionError(null);
       }

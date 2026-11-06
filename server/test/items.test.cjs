@@ -41,3 +41,40 @@ test('item CRUD validates prohibited terms and persists valid edits', async () =
   assert.equal(updated.status, 200);
   assert.equal((await updated.json()).status, 'reserved');
 });
+
+test('item API blocks editing and deleting exchanged items', async () => {
+  const created = await postJson(context.baseUrl, '/items', {
+    id: 'item-exchanged-test',
+    ownerId: 'user-001',
+    title: 'Món đã trao',
+    description: 'Mô tả món đã trao',
+    category: 'Sách',
+    condition: 'good',
+    imageUrl: '',
+  });
+  assert.equal(created.status, 201);
+
+  const exchanged = await postJson(
+    context.baseUrl,
+    '/items/item-exchanged-test',
+    { status: 'exchanged' },
+    'PATCH',
+  );
+  assert.equal(exchanged.status, 200);
+
+  const blockedPatch = await postJson(
+    context.baseUrl,
+    '/items/item-exchanged-test',
+    { title: 'Không được sửa' },
+    'PATCH',
+  );
+  assert.equal(blockedPatch.status, 409);
+
+  const blockedDelete = await postJson(
+    context.baseUrl,
+    '/items/item-exchanged-test',
+    {},
+    'DELETE',
+  );
+  assert.equal(blockedDelete.status, 409);
+});

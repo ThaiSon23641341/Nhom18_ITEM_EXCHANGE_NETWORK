@@ -142,12 +142,34 @@ function register({ app, router }) {
   });
 
   app.patch('/items/:id', (request, response, next) => {
+    const item = router.db.get('items').find({ id: request.params.id }).value();
+    if (!item) {
+      sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy bài đăng.');
+      return;
+    }
+    if (item.status === 'exchanged') {
+      sendError(response, 409, 'CONFLICT', 'Món đã trao không thể chỉnh sửa.');
+      return;
+    }
     const error = validateUpdateItem(request.body, router.db, request.params.id);
     if (error) {
       sendError(response, 400, 'BAD_REQUEST', error);
       return;
     }
     request.body.updatedAt = new Date().toISOString();
+    next();
+  });
+
+  app.delete('/items/:id', (request, response, next) => {
+    const item = router.db.get('items').find({ id: request.params.id }).value();
+    if (!item) {
+      sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy bài đăng.');
+      return;
+    }
+    if (item.status === 'exchanged') {
+      sendError(response, 409, 'CONFLICT', 'Món đã trao không thể xóa.');
+      return;
+    }
     next();
   });
 }

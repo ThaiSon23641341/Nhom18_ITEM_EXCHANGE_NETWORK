@@ -8,6 +8,7 @@ import { showConfirmDialog } from '../components/ConfirmDialog';
 import { ItemListRow } from './ItemListRow';
 import { ListStateView } from './ListStateView';
 import { getAccessibilityProps } from '../../utils/accessibility';
+import { canDeleteItem, canEditItem } from '../../utils/itemPermissions';
 
 export function MyItemsScreen() {
   const controller = useMyItemsController();
@@ -15,6 +16,8 @@ export function MyItemsScreen() {
 
   const renderItem = useCallback(({ item }: { item: Item }) => {
     const warning = item.status === 'reserved' ? 'Món đang giữ; hãy cẩn thận khi sửa hoặc xóa.' : undefined;
+    const canEdit = canEditItem(item, controller.user?.id);
+    const canDelete = canDeleteItem(item, controller.user?.id);
     return (
       <ItemListRow
         item={item}
@@ -25,11 +28,11 @@ export function MyItemsScreen() {
               <Text color="color" opacity={0.8} fontSize="2">Món đã trao không thể chỉnh sửa hoặc xóa.</Text>
             ) : null}
             <XStack gap="2" justify="flex-end">
-              <Button theme="active" disabled={item.status === 'exchanged' || controller.deletingId === item.id} onPress={() => controller.openEdit(item.id)}>Sửa</Button>
+              <Button theme="active" disabled={!canEdit || controller.deletingId === item.id} onPress={() => controller.openEdit(item.id)}>Sửa</Button>
               <Button
                 backgroundColor="border-color"
                 color="color"
-                disabled={controller.deletingId === item.id}
+                disabled={!canDelete || controller.deletingId === item.id}
                 onPress={() => {
                   controller.requestDelete(item);
                   const strongWarning = item.status === 'reserved'

@@ -124,6 +124,10 @@ export const createItem = async (itemData: CreateItemInput): Promise<Item> => {
 };
 
 export const updateItem = async (id: string, itemData: UpdateItemInput): Promise<Item> => {
+  const currentItem = await getItemById(id);
+  if (currentItem.status === 'exchanged') {
+    throw new MockApiError('Món đã trao không thể chỉnh sửa.', 'CONFLICT');
+  }
   if (itemData.priceVnd !== undefined && itemData.priceVnd !== null
     && (!Number.isSafeInteger(itemData.priceVnd) || itemData.priceVnd < 0)) {
     throw new MockApiError('Price must be a non-negative integer.', 'BAD_REQUEST');
@@ -143,6 +147,10 @@ export const updateItem = async (id: string, itemData: UpdateItemInput): Promise
 };
 
 export const deleteItem = async (id: string): Promise<void> => {
+  const currentItem = await getItemById(id);
+  if (currentItem.status === 'exchanged') {
+    throw new MockApiError('Món đã trao không thể xóa.', 'CONFLICT');
+  }
   await request<void>(`/items/${encodeURIComponent(id)}`, { method: 'DELETE' });
   notifyItemChanges();
 };
