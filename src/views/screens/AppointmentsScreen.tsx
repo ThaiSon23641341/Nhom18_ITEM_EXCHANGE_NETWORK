@@ -1,12 +1,13 @@
 import { useAppointmentController } from '../../controllers/useAppointmentController';
 import { Alert, Platform } from 'react-native';
 import { useEffect, useState } from 'react';
-import { Image, Button, XStack, YStack, Text, Separator } from 'tamagui';
+import { Image, Button, XStack, YStack, Text, Separator, ScrollView } from 'tamagui';
 import { getItemById } from '../../services/api/itemService';
 import type { Item } from '../../models/itemModel';
 import { getPublicUserById } from '../../services/authService';
 import { router } from 'expo-router';
 import { useAuthController } from '../../controllers/useAuthController';
+import type { AppointmentStatus } from '../../models/appointmentModel';
 
 const appointmentStatusLabels = {
   pending: 'Chờ xác nhận',
@@ -15,6 +16,13 @@ const appointmentStatusLabels = {
   completed: 'Đã hoàn tất',
 } as const;
 
+const appointmentStatusOrder: AppointmentStatus[] = [
+  'pending',
+  'confirmed',
+  'completed',
+  'cancelled',
+];
+
 export function AppointmentsScreen() {
   const { appointments, cancel, updateStatus } = useAppointmentController();
   const { user } = useAuthController();
@@ -22,6 +30,12 @@ export function AppointmentsScreen() {
   const [items, setItems] = useState<Record<string, Item>>({});
   const [userNames, setUserNames] = useState<Record<string, string>>({});
   const [requesterNames, setRequesterNames] = useState<Record<string, string>>({});
+  const groupedAppointments = appointmentStatusOrder
+    .map((status) => ({
+      status,
+      appointments: appointments.filter((appointment) => appointment.status === status),
+    }))
+    .filter((group) => group.appointments.length > 0);
 
   useEffect(() => {
     let active = true;
@@ -146,100 +160,123 @@ export function AppointmentsScreen() {
   return (
     <YStack flex={1} backgroundColor="background" p="5" gap="3">
       <Text fontSize="7" fontWeight="700" color="color">Lịch hẹn nhận đồ</Text>
-      {appointments.length === 0 ? (
-        <Text color="color" opacity={0.7}>Bạn chưa có lịch hẹn nào.</Text>
-      ) : (
-        appointments.map((appointment) => {
-          const item = items[appointment.itemId];
-          const isOwner = item?.ownerId === user?.id;
-          return (
-          <YStack key={appointment.id} gap="2" p="4" borderWidth={1} borderColor="border-color" rounded="4">
-            <XStack gap="3" items="center">
-              {items[appointment.itemId]?.imageUrl ? (
-                <Image
-                  source={{ uri: items[appointment.itemId].imageUrl }}
-                  width={72}
-                  height={72}
-                  style={{ borderRadius: 12 }}
-                />
-              ) : null}
-              <YStack flex={1} gap="1">
-                <Text color="color" fontWeight="700">
-                  {items[appointment.itemId]?.title ?? 'Đang tải tên món đồ...'}
-                </Text>
-                <Text color="color" opacity={0.7}>
-                  {isOwner ? 'Người đặt: ' : 'Người đăng: '}
-                  {isOwner
-                    ? requesterNames[appointment.requesterId] ?? 'Đang tải...'
-                    : userNames[item?.ownerId ?? ''] ?? item?.ownerName ?? 'Không rõ'}
-                </Text>
+      <ScrollView flex={1} showsVerticalScrollIndicator>
+        <YStack gap="3">
+          {appointments.length === 0 ? (
+            <Text color="color" opacity={0.7}>Bạn chưa có lịch hẹn nào.</Text>
+          ) : (
+            groupedAppointments.map((group) => (
+              <YStack key={group.status} gap="2">
+                <XStack items="center" justify="space-between" pt="2">
+                  <Text color="color" fontSize="5" fontWeight="700">
+                    {appointmentStatusLabels[group.status]}
+                  </Text>
+                  <Text color="color" opacity={0.65}>
+                    {group.appointments.length}
+                  </Text>
+                </XStack>
+                {group.appointments.map((appointment) => {
+                  const item = items[appointment.itemId];
+                  const isOwner = item?.ownerId === user?.id;
+                  return (
+                    <YStack
+                      key={appointment.id}
+                      gap="2"
+                      p="4"
+                      borderWidth={1}
+                      borderColor="border-color"
+                      rounded="4"
+                    >
+                      <XStack gap="3" items="center">
+                        {item?.imageUrl ? (
+                          <Image
+                            source={{ uri: item.imageUrl }}
+                            width={72}
+                            height={72}
+                            style={{ borderRadius: 12 }}
+                          />
+                        ) : null}
+                        <YStack flex={1} gap="1">
+                          <Text color="color" fontWeight="700">
+                            {item?.title ?? 'Đang tải tên món đồ...'}
+                          </Text>
+                          <Text color="color" opacity={0.7}>
+                            {isOwner ? 'Người đặt: ' : 'Người đăng: '}
+                            {isOwner
+                              ? requesterNames[appointment.requesterId] ?? 'Đang tải...'
+                              : userNames[item?.ownerId ?? ''] ?? item?.ownerName ?? 'Không rõ'}
+                          </Text>
+                        </YStack>
+                      </XStack>
+                      <Text color="color">Ngày: {appointment.date} - {appointment.time}</Text>
+                      <Text color="color">Địa điểm: {appointment.location}</Text>
+                      {appointment.note ? <Text color="color">Ghi chú: {appointment.note}</Text> : null}
+                      <Text color="color">
+                        Trạng thái: {appointmentStatusLabels[appointment.status]}
+                      </Text>
+                      <Button
+                        onPress={() => router.push({
+                          pathname: '/item/[id]',
+                          params: { id: appointment.itemId, from: 'appointments' },
+                        })}
+                      >
+                        Xem chi tiết món
+                      </Button>
+                      {isOwner && appointment.status === 'pending' ? (
+                        <>
+                          <Button
+                            disabled={cancellingId === appointment.id}
+                            onPress={() => handleOwnerStatus(
+                              appointment.id,
+                              'confirmed',
+                              'Xác nhận lịch hẹn này?',
+                            )}
+                          >
+                            Xác nhận lịch hẹn
+                          </Button>
+                          <Button
+                            theme="red"
+                            disabled={cancellingId === appointment.id}
+                            onPress={() => handleOwnerStatus(
+                              appointment.id,
+                              'cancelled',
+                              'Từ chối lịch hẹn này?',
+                            )}
+                          >
+                            Từ chối lịch hẹn
+                          </Button>
+                        </>
+                      ) : null}
+                      {isOwner && appointment.status === 'confirmed' ? (
+                        <Button
+                          disabled={cancellingId === appointment.id}
+                          onPress={() => handleOwnerStatus(
+                            appointment.id,
+                            'completed',
+                            'Xác nhận đã trao món đồ?',
+                          )}
+                        >
+                          Đã trao đồ
+                        </Button>
+                      ) : null}
+                      {!isOwner && (appointment.status === 'pending' || appointment.status === 'confirmed') ? (
+                        <Button
+                          theme="red"
+                          disabled={cancellingId === appointment.id}
+                          onPress={() => handleCancel(appointment.id)}
+                        >
+                          {cancellingId === appointment.id ? 'Đang hủy...' : 'Hủy lịch hẹn'}
+                        </Button>
+                      ) : null}
+                      <Separator />
+                    </YStack>
+                  );
+                })}
               </YStack>
-            </XStack>
-            <Text color="color">Ngày: {appointment.date} - {appointment.time}</Text>
-            <Text color="color">Địa điểm: {appointment.location}</Text>
-            {appointment.note ? <Text color="color">Ghi chú: {appointment.note}</Text> : null}
-            <Text color="color">
-              Trạng thái: {appointmentStatusLabels[appointment.status]}
-            </Text>
-            <Button
-              onPress={() => router.push({
-                pathname: '/item/[id]',
-                params: { id: appointment.itemId, from: 'appointments' },
-              })}
-            >
-              Xem chi tiết món
-            </Button>
-            {isOwner && appointment.status === 'pending' ? (
-              <>
-                <Button
-                  disabled={cancellingId === appointment.id}
-                  onPress={() => handleOwnerStatus(
-                    appointment.id,
-                    'confirmed',
-                    'Xác nhận lịch hẹn này?',
-                  )}
-                >
-                  Xác nhận lịch hẹn
-                </Button>
-                <Button
-                  theme="red"
-                  disabled={cancellingId === appointment.id}
-                  onPress={() => handleOwnerStatus(
-                    appointment.id,
-                    'cancelled',
-                    'Từ chối lịch hẹn này?',
-                  )}
-                >
-                  Từ chối lịch hẹn
-                </Button>
-              </>
-            ) : null}
-            {isOwner && appointment.status === 'confirmed' ? (
-              <Button
-                disabled={cancellingId === appointment.id}
-                onPress={() => handleOwnerStatus(
-                  appointment.id,
-                  'completed',
-                  'Xác nhận đã trao món đồ?',
-                )}
-              >
-                Đã trao đồ
-              </Button>
-            ) : null}
-            {!isOwner && (appointment.status === 'pending' || appointment.status === 'confirmed') ? (
-              <Button
-                theme="red"
-                disabled={cancellingId === appointment.id}
-                onPress={() => handleCancel(appointment.id)}
-              >
-                {cancellingId === appointment.id ? 'Đang hủy...' : 'Hủy lịch hẹn'}
-              </Button>
-            ) : null}
-            <Separator />
-          </YStack>
-          );
-        })
-      )}
+            ))
+          )}
+        </YStack>
+      </ScrollView>
     </YStack>
   );
 }

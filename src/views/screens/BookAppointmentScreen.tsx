@@ -9,11 +9,12 @@ export interface BookAppointmentScreenProps {
   onSubmit: (date: string, time: string, location: string) => Promise<void>;
 }
 
+const pad = (value: number) => value.toString().padStart(2, '0');
+
 const getDefaultDate = () => {
   const date = new Date();
   date.setDate(date.getDate() + 1);
-  const offset = date.getTimezoneOffset();
-  return new Date(date.getTime() - offset * 60_000).toISOString().slice(0, 10);
+  return `${pad(date.getDate())}/${pad(date.getMonth() + 1)}/${date.getFullYear()}`;
 };
 
 export function BookAppointmentScreen({ item, onBack, onSubmit }: BookAppointmentScreenProps) {
@@ -54,12 +55,12 @@ export function BookAppointmentScreen({ item, onBack, onSubmit }: BookAppointmen
           <YStack gap="2">
             <XStack items="center" gap="2">
               <CalendarClock size={18} color="#16815D" />
-              <Text color="color" fontWeight="700">Ngày nhận (YYYY-MM-DD)</Text>
+              <Text color="color" fontWeight="700">Ngày nhận (DD/MM/YYYY)</Text>
             </XStack>
             <Input
               value={date}
               onChangeText={setDate}
-              placeholder="2026-12-31"
+              placeholder="31/12/2026"
               aria-label="Ngày nhận"
               autoCapitalize="none"
             />
