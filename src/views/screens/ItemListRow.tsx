@@ -25,18 +25,25 @@ export interface ItemListRowProps {
   item: Item;
   onPress?: (item: Item) => void;
   actions?: React.ReactNode;
+  compact?: boolean;
 }
 
 export const ItemListRow = memo(function ItemListRow({
   item,
   onPress,
   actions,
+  compact = false,
 }: ItemListRowProps) {
   const [imageError, setImageError] = useState(false);
 
   const categoryLabel = getCategoryLabel(item.category);
   const conditionLabel = getConditionLabel(item.condition);
   const statusLabel = getStatusLabel(item.status);
+  const priceLabel = item.priceVnd === undefined
+    ? 'Trao đổi'
+    : item.priceVnd === 0
+      ? 'Miễn phí'
+      : `${new Intl.NumberFormat('vi-VN').format(item.priceVnd)}đ`;
 
   const accessibilityText = `Món đồ ${item.title}, danh mục ${categoryLabel}, tình trạng ${conditionLabel}, trạng thái ${statusLabel}`;
 
@@ -53,19 +60,23 @@ export const ItemListRow = memo(function ItemListRow({
       onPress={onPress ? () => onPress(item) : undefined}
       {...getAccessibilityProps({ role: 'button', label: accessibilityText })}
     >
-      <XStack gap="3" items="flex-start">
+      <XStack flexDirection={compact ? 'column' : 'row'} gap="3" items="flex-start">
         {/* Khung ảnh thumbnail hoặc placeholder khi ảnh lỗi/rỗng */}
         {item.imageUrl && !imageError ? (
           <Image
             source={{ uri: item.imageUrl }}
-            style={{ width: 76, height: 76, borderRadius: 8 }}
+            style={compact
+              ? { width: '100%', height: 160, borderRadius: 8 }
+              : { width: 76, height: 76, borderRadius: 8 }}
             resizeMode="cover"
             onError={() => setImageError(true)}
             {...getAccessibilityProps({ label: `Hình ảnh của ${item.title}` })}
           />
         ) : (
           <YStack
-            style={{ width: 76, height: 76 }}
+            style={compact
+              ? { width: '100%', height: 160 }
+              : { width: 76, height: 76 }}
             rounded="3"
             backgroundColor="border-color"
             items="center"
@@ -88,6 +99,20 @@ export const ItemListRow = memo(function ItemListRow({
           <Text color="color" opacity={0.75} fontSize="3" numberOfLines={2}>
             {item.description}
           </Text>
+
+          <XStack gap="2" items="center" flexWrap="wrap">
+            <Text color="color" opacity={0.75} fontSize="2" numberOfLines={1}>
+              Người đăng: {item.ownerName ?? 'Người dùng IUH'}
+            </Text>
+            <Text color="primary" fontSize="2" fontWeight="700" numberOfLines={1}>
+              {priceLabel}
+            </Text>
+            {item.location ? (
+              <Text color="color" opacity={0.65} fontSize="2" numberOfLines={1}>
+                {item.location}
+              </Text>
+            ) : null}
+          </XStack>
 
           {/* Các thẻ nhãn thông tin */}
           <XStack gap="2" items="center" flexWrap="wrap" mt="1">

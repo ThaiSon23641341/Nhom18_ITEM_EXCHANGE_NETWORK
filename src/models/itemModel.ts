@@ -17,6 +17,8 @@ export interface Item {
   ownerName?: string;
   ownerFaculty?: string;
   ownerAvatarUrl?: string;
+  availableUntil?: string;
+  isLocked?: boolean;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +46,7 @@ export type CreateItemInput = Pick<
       | 'ownerName'
       | 'ownerFaculty'
       | 'ownerAvatarUrl'
+      | 'availableUntil'
     >
   >;
 export type UpdateItemInput = Partial<
@@ -58,5 +61,6 @@ export type UpdateItemInput = Partial<
     | 'priceVnd'
     | 'location'
     | 'status'
+    | 'availableUntil'
   >
 >;

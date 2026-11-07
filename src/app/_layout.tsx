@@ -11,7 +11,7 @@
 /**f */
 
 import { useCallback, useEffect, useMemo } from 'react';
-import { Platform, useColorScheme } from 'react-native';
+import { ActivityIndicator, Platform, useColorScheme, View } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { Stack, router } from 'expo-router';
@@ -21,6 +21,27 @@ import { config } from '../../tamagui.config';
 import * as Notifications from 'expo-notifications';
 import { Provider } from 'react-redux';
 import { store } from '../store';
+import { useAppBootstrap } from '../controllers/useAppBootstrap';
+
+function AppNavigator() {
+  const { isRestoring } = useAppBootstrap();
+  const screenOptions = useCallback(
+    () => ({
+      headerShown: false,
+    }),
+    [],
+  );
+
+  if (isRestoring) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
+
+  return <Stack screenOptions={screenOptions()} />;
+}
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -32,13 +53,6 @@ export default function RootLayout() {
   );
 
   // useCallback: hàm ổn định cho screenOptions (CLO2)
-  const screenOptions = useCallback(
-    () => ({
-      headerShown: false,
-    }),
-    [],
-  );
-
   useEffect(() => {
     if (Platform.OS === 'web') return undefined;
     const handleResponse = (response: Notifications.NotificationResponse) => {
@@ -61,7 +75,7 @@ export default function RootLayout() {
           <TamaguiProvider config={config} defaultTheme={tamaguiTheme}>
             <Theme name={tamaguiTheme}>
               <StatusBar style={colorScheme === 'dark' ? 'light' : 'dark'} />
-              <Stack screenOptions={screenOptions()} />
+              <AppNavigator />
             </Theme>
           </TamaguiProvider>
         </GestureHandlerRootView>

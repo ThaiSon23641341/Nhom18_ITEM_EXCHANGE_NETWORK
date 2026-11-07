@@ -9,6 +9,7 @@ const valid: ItemFormValues = {
   imageUrls: [],
   price: '',
   location: 'Sảnh thư viện IUH',
+  availableUntil: '2027-01-31T23:59:59.000Z',
 };
 
 describe('validateItemForm', () => {
@@ -22,6 +23,7 @@ describe('validateItemForm', () => {
       imageUrls: [],
       price: '',
       location: '',
+      availableUntil: '',
     });
     expect(errors.title).toBeTruthy();
     expect(errors.description).toBeTruthy();

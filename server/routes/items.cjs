@@ -4,6 +4,7 @@ const { isRecord, isText, normalizeText, sendError } = require('../lib/helpers.c
 
 const ITEM_CONDITIONS = ['new', 'good', 'fair'];
 const ITEM_STATUSES = ['available', 'reserved', 'exchanged'];
+const MAX_AVAILABLE_DAYS = 90;
 const PROHIBITED_TERMS = ['lua dao', 'vu khi', 'ma tuy', 'hang cam'];
 const ITEM_FIELDS = new Set([
   'id',
@@ -20,6 +21,7 @@ const ITEM_FIELDS = new Set([
   'ownerName',
   'ownerFaculty',
   'ownerAvatarUrl',
+  'availableUntil',
 ]);
 const ITEM_UPDATE_FIELDS = new Set([
   'title',
@@ -31,7 +33,39 @@ const ITEM_UPDATE_FIELDS = new Set([
   'priceVnd',
   'location',
   'status',
+  'availableUntil',
 ]);
+
+function getDefaultAvailableUntil(now = new Date()) {
+  const result = new Date(now);
+  result.setUTCMonth(result.getUTCMonth() + 1);
+  return result.toISOString();
+}
+
+function validateAvailableUntil(value, now = new Date()) {
+  if (value === undefined) return null;
+  if (!isText(value, 64, true)) return 'Hạn trao không hợp lệ.';
+  const deadline = new Date(value);
+  if (Number.isNaN(deadline.getTime())) return 'Hạn trao không hợp lệ.';
+  const latest = new Date(now);
+  latest.setUTCDate(latest.getUTCDate() + MAX_AVAILABLE_DAYS);
+  if (deadline.getTime() <= now.getTime()) return 'Hạn trao phải ở tương lai.';
+  if (deadline.getTime() > latest.getTime()) return 'Hạn trao không được vượt quá 3 tháng.';
+  return null;
+}
+
+function hasConfirmedAppointment(db, itemId) {
+  const appointments = db.get('appointments').value() ?? [];
+  return appointments.some((appointment) =>
+    appointment.itemId === itemId && appointment.status === 'confirmed');
+}
+
+function isExpiredAvailableItem(item, now = new Date()) {
+  if (item.status !== 'available') return false;
+  if (!item.availableUntil) return false;
+  const deadline = new Date(item.availableUntil);
+  return Number.isNaN(deadline.getTime()) ? false : deadline.getTime() <= now.getTime();
+}
 
 function validateCreateItem(body, db) {
   if (!isRecord(body) || Object.keys(body).some((key) => !ITEM_FIELDS.has(key))) {
@@ -44,6 +78,7 @@ function validateCreateItem(body, db) {
     || !isText(body.description, 2000, true)
     || !isText(body.category, 80, true)
     || !ITEM_CONDITIONS.includes(body.condition)
+    || !isText(body.location, 200, true)
     || !isText(body.imageUrl, 2048)
   ) {
     return 'Vui lòng kiểm tra các trường bắt buộc của bài đăng.';
@@ -66,6 +101,8 @@ function validateCreateItem(body, db) {
   if (PROHIBITED_TERMS.some((term) => content.includes(term))) {
     return 'Nội dung bài đăng chứa từ khóa không được phép.';
   }
+  const availableUntilError = validateAvailableUntil(body.availableUntil);
+  if (availableUntilError) return availableUntilError;
   return null;
 }
 
@@ -94,6 +131,8 @@ function validateUpdateItem(body, db, itemId) {
   if (body.status !== undefined && !ITEM_STATUSES.includes(body.status)) {
     return 'Trạng thái bài đăng không hợp lệ.';
   }
+  const availableUntilError = validateAvailableUntil(body.availableUntil);
+  if (availableUntilError) return availableUntilError;
   if (
     body.priceVnd !== undefined
     && body.priceVnd !== null
@@ -129,6 +168,28 @@ function validateUpdateItem(body, db, itemId) {
 }
 
 function register({ app, router }) {
+  app.get('/items', (request, response, next) => {
+    const ownerId = request.query.ownerId;
+    const homeOnly = request.query.homeOnly === 'true';
+    if (!homeOnly && !ownerId) {
+      next();
+      return;
+    }
+    let items = router.db.get('items').value() ?? [];
+    if (ownerId) items = items.filter((item) => item.ownerId === ownerId);
+    if (homeOnly) {
+      items = items.filter((item) => item.status === 'available'
+        && !isExpiredAvailableItem(item));
+    }
+    items = items.map((item) => ({
+      ...item,
+      isLocked: hasConfirmedAppointment(router.db, item.id),
+    }));
+    items = [...items].sort((left, right) =>
+      String(right.createdAt ?? '').localeCompare(String(left.createdAt ?? '')));
+    response.json(items);
+  });
+
   app.post('/items', (request, response, next) => {
     const error = validateCreateItem(request.body, router.db);
     if (error) {
@@ -136,9 +197,22 @@ function register({ app, router }) {
       return;
     }
     request.body.status = 'available';
+    if (!request.body.availableUntil) request.body.availableUntil = getDefaultAvailableUntil();
     request.body.createdAt = new Date().toISOString();
     request.body.updatedAt = request.body.createdAt;
     next();
+  });
+
+  app.get('/items/:id', (request, response, next) => {
+    const item = router.db.get('items').find({ id: request.params.id }).value();
+    if (!item) {
+      next();
+      return;
+    }
+    response.json({
+      ...item,
+      isLocked: hasConfirmedAppointment(router.db, item.id),
+    });
   });
 
   app.patch('/items/:id', (request, response, next) => {
@@ -149,6 +223,10 @@ function register({ app, router }) {
     }
     if (item.status === 'exchanged') {
       sendError(response, 409, 'CONFLICT', 'Món đã trao không thể chỉnh sửa.');
+      return;
+    }
+    if (hasConfirmedAppointment(router.db, item.id)) {
+      sendError(response, 409, 'CONFLICT', 'Món đang có lịch hẹn đã xác nhận không thể chỉnh sửa.');
       return;
     }
     const error = validateUpdateItem(request.body, router.db, request.params.id);
@@ -168,6 +246,10 @@ function register({ app, router }) {
     }
     if (item.status === 'exchanged') {
       sendError(response, 409, 'CONFLICT', 'Món đã trao không thể xóa.');
+      return;
+    }
+    if (hasConfirmedAppointment(router.db, item.id)) {
+      sendError(response, 409, 'CONFLICT', 'Món đang có lịch hẹn đã xác nhận không thể xóa.');
       return;
     }
     next();

@@ -21,6 +21,7 @@ test('item CRUD validates prohibited terms and persists valid edits', async () =
     category: 'Khác',
     condition: 'good',
     imageUrl: '',
+    location: 'Sảnh thư viện IUH',
   });
   assert.equal(rejected.status, 400);
 
@@ -33,6 +34,7 @@ test('item CRUD validates prohibited terms and persists valid edits', async () =
     condition: 'good',
     imageUrl: '',
     imageUrls: [],
+    location: 'Sảnh thư viện IUH',
   });
   assert.equal(created.status, 201);
   assert.equal((await created.json()).status, 'available');
@@ -51,6 +53,7 @@ test('item API blocks editing and deleting exchanged items', async () => {
     category: 'Sách',
     condition: 'good',
     imageUrl: '',
+    location: 'Sảnh thư viện IUH',
   });
   assert.equal(created.status, 201);
 

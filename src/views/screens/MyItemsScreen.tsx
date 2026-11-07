@@ -15,7 +15,7 @@ export function MyItemsScreen() {
   const { items, status, errorMessage, retry, refresh, isRefreshing, loadMore, isLoadingMore, loadMoreError, total } = controller;
 
   const renderItem = useCallback(({ item }: { item: Item }) => {
-    const warning = item.status === 'reserved' ? 'Món đang giữ; hãy cẩn thận khi sửa hoặc xóa.' : undefined;
+    const warning = item.isLocked ? 'Món đang có lịch hẹn xác nhận; không thể sửa hoặc xóa.' : undefined;
     const canEdit = canEditItem(item, controller.user?.id);
     const canDelete = canDeleteItem(item, controller.user?.id);
     return (
@@ -35,7 +35,7 @@ export function MyItemsScreen() {
                 disabled={!canDelete || controller.deletingId === item.id}
                 onPress={() => {
                   controller.requestDelete(item);
-                  const strongWarning = item.status === 'reserved'
+                  const strongWarning = item.isLocked
                     ? ' Món này đang giữ cho người đặt lịch; xóa có thể làm gián đoạn trao đổi.'
                     : '';
                   showConfirmDialog({

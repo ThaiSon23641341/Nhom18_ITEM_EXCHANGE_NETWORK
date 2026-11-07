@@ -95,12 +95,16 @@ export const getItems = async (page: number, limit: number): Promise<ItemPaginat
     throw new MockApiError('Page and limit must be positive integers.', 'BAD_REQUEST');
   }
 
-  const items = await request<Item[]>('/items?_sort=createdAt&_order=desc');
-  const total = items.length;
+  const items = await request<Item[]>('/items?homeOnly=true&_sort=createdAt&_order=desc');
+  const now = Date.now();
+  const availableItems = items.filter((item) =>
+    item.status === 'available'
+    && (!item.availableUntil || new Date(item.availableUntil).getTime() > now));
+  const total = availableItems.length;
   const totalPages = Math.ceil(total / limit);
   const start = (page - 1) * limit;
   return {
-    data: items.slice(start, start + limit).map(cloneItem),
+    data: availableItems.slice(start, start + limit).map(cloneItem),
     page,
     limit,
     total,
@@ -128,6 +132,9 @@ export const updateItem = async (id: string, itemData: UpdateItemInput): Promise
   if (currentItem.status === 'exchanged') {
     throw new MockApiError('Món đã trao không thể chỉnh sửa.', 'CONFLICT');
   }
+  if (currentItem.isLocked) {
+    throw new MockApiError('Món đang có lịch hẹn đã xác nhận không thể chỉnh sửa.', 'CONFLICT');
+  }
   if (itemData.priceVnd !== undefined && itemData.priceVnd !== null
     && (!Number.isSafeInteger(itemData.priceVnd) || itemData.priceVnd < 0)) {
     throw new MockApiError('Price must be a non-negative integer.', 'BAD_REQUEST');
@@ -150,6 +157,9 @@ export const deleteItem = async (id: string): Promise<void> => {
   const currentItem = await getItemById(id);
   if (currentItem.status === 'exchanged') {
     throw new MockApiError('Món đã trao không thể xóa.', 'CONFLICT');
+  }
+  if (currentItem.isLocked) {
+    throw new MockApiError('Món đang có lịch hẹn đã xác nhận không thể xóa.', 'CONFLICT');
   }
   await request<void>(`/items/${encodeURIComponent(id)}`, { method: 'DELETE' });
   notifyItemChanges();

@@ -197,6 +197,22 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
             {controller.errors.location ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.location}</Text> : null}
           </YStack>
 
+          <YStack gap="2">
+            <Text color="color" fontWeight="700">Hạn trao *</Text>
+            <Input
+              value={controller.values.availableUntil.slice(0, 10)}
+              onChangeText={(value) => {
+                controller.setField(
+                  'availableUntil',
+                  value.length === 10 ? `${value}T23:59:59.000Z` : '',
+                );
+              }}
+              placeholder="YYYY-MM-DD"
+              {...getAccessibilityProps({ label: 'Hạn trao' })}
+            />
+            {controller.errors.availableUntil ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.availableUntil}</Text> : null}
+          </YStack>
+
           <YStack gap="2" p="3" borderWidth={1} borderColor="border-color" rounded="3">
             <Text color="color" fontWeight="700">Hình ảnh ({controller.values.imageUrls.length}/5)</Text>
             {controller.values.imageUrls.length > 0 ? (

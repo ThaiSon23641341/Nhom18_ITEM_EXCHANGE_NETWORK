@@ -1,5 +1,6 @@
 import { CATEGORY_OPTIONS, CONDITION_OPTIONS } from './itemOptions';
 import type { ItemCondition } from '../models/itemModel';
+import { isAvailableUntilValid } from './availability';
 
 export interface ItemFormValues {
   title: string;
@@ -10,6 +11,7 @@ export interface ItemFormValues {
   imageUrls: string[];
   price: string;
   location: string;
+  availableUntil: string;
 }
 
 export type ItemFormErrors = Partial<Record<keyof ItemFormValues, string>>;
@@ -43,6 +45,9 @@ export function validateItemForm(values: ItemFormValues): ItemFormErrors {
 
   if (values.location.trim().length > 200) {
     errors.location = 'Địa điểm giao dịch không được vượt quá 200 ký tự.';
+  }
+  if (!isAvailableUntilValid(values.availableUntil)) {
+    errors.availableUntil = 'Hạn trao phải ở tương lai và không quá 3 tháng.';
   }
 
   return errors;
