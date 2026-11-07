@@ -6,10 +6,14 @@ import { ProfileScreen } from './ProfileScreen';
 jest.mock('expo-router', () => ({ router: { replace: jest.fn(), push: jest.fn() } }));
 
 jest.mock('lucide-react-native', () => ({
+  Award: () => null,
+  GraduationCap: () => null,
   Heart: () => null,
   LogOut: () => null,
   MapPin: () => null,
   Package: () => null,
+  Pencil: () => null,
+  ShieldCheck: () => null,
   UserRound: () => null,
 }));
 
@@ -28,7 +32,15 @@ jest.mock('../../controllers/useAuthController', () => ({
 
 jest.mock('../../controllers/usePublicProfileController', () => ({
   usePublicProfileController: () => ({
-    profile: { id: 'user-001', fullName: 'Public profile name', avatarUrl: '' },
+    profile: {
+      id: 'user-001',
+      fullName: 'Public profile name',
+      avatarUrl: '',
+      faculty: 'Khoa Công nghệ thông tin',
+      className: 'DHKTPM17A',
+      successfulExchanges: 2,
+      reputation: 60,
+    },
     isLoading: false,
     error: null,
     retry: jest.fn(),
@@ -77,7 +89,20 @@ describe('ProfileScreen', () => {
 
     expect(getByText('Public profile name')).toBeTruthy();
     expect(getByText('21036001.nguyen@student.iuh.edu.vn')).toBeTruthy();
+    expect(getByText('Khoa: Khoa Công nghệ thông tin')).toBeTruthy();
+    expect(getByText('Lớp: DHKTPM17A')).toBeTruthy();
+    expect(getByText('Giao dịch thành công: 2')).toBeTruthy();
+    expect(getByText('Uy tín: 60')).toBeTruthy();
+    expect(getByLabelText('Chỉnh sửa hồ sơ')).toBeTruthy();
     expect(getByLabelText('Khám phá đồ dùng')).toBeTruthy();
+  });
+
+  test('opens the profile editor', async () => {
+    const { getByLabelText } = await render(<ProfileScreen />);
+
+    fireEvent.press(getByLabelText('Chỉnh sửa hồ sơ'));
+
+    expect(router.push).toHaveBeenCalledWith('/profile/edit');
   });
 
   test('logs out and navigates to the login screen', async () => {
