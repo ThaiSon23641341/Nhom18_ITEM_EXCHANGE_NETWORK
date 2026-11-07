@@ -53,6 +53,7 @@ export const ItemCardLarge = memo(function ItemCardLarge({
               name={item.ownerName}
               avatarUrl={item.ownerAvatarUrl}
               faculty={item.ownerFaculty}
+              reputation={item.ownerReputation}
             />
           </YStack>
 

@@ -49,11 +49,11 @@ export function OwnerBadge({
       </XStack>
 
       <YStack flex={1} style={{ minWidth: 0 }}>
-        <Text color="color" fontSize={compact ? '1' : '2'} fontWeight="700" numberOfLines={1}>
+        <Text color="#0D6247" fontSize={compact ? '1' : '2'} fontWeight="700" numberOfLines={1}>
           {name?.trim() || 'Người đăng'}
         </Text>
         {faculty?.trim() ? (
-          <Text color="color" opacity={0.65} fontSize="1" numberOfLines={1}>
+          <Text color="#475467" fontSize="1" numberOfLines={1}>
             {faculty.trim()}
           </Text>
         ) : null}

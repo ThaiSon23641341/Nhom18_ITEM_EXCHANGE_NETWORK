@@ -98,6 +98,7 @@ export const ItemCardGrid = memo(function ItemCardGrid({
               name={item.ownerName}
               avatarUrl={item.ownerAvatarUrl}
               faculty={item.ownerFaculty}
+              reputation={item.ownerReputation}
               compact
             />
           </YStack>

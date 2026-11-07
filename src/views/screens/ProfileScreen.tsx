@@ -58,11 +58,7 @@ export function ProfileScreen() {
     ...localUser,
     ...profile,
     fullName: profile?.fullName ?? localUser.fullName,
-    avatarUrl: localUser.avatarUrl || profile?.avatarUrl || '',
-    faculty: localUser.faculty ?? profile?.faculty,
-    className: localUser.className ?? profile?.className,
-    successfulExchanges: localUser.successfulExchanges ?? profile?.successfulExchanges,
-    reputation: localUser.reputation ?? profile?.reputation,
+    avatarUrl: profile?.avatarUrl ?? localUser.avatarUrl ?? '',
   };
 
   useEffect(() => {

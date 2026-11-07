@@ -24,7 +24,11 @@ jest.mock('../../controllers/useAuthController', () => ({
       email: '21036001.nguyen@student.iuh.edu.vn',
       fullName: 'Local login name',
       studentId: '21036001',
-      avatarUrl: '',
+      avatarUrl: '/uploads/old-avatar.jpg',
+      faculty: 'Khoa cũ',
+      className: 'Lớp cũ',
+      successfulExchanges: 1,
+      reputation: 20,
     },
     logout: jest.fn(),
   })),
@@ -85,7 +89,7 @@ describe('ProfileScreen', () => {
   });
 
   test('shows the public profile name with the local account details', async () => {
-    const { getByText, getByLabelText } = await render(<ProfileScreen />);
+    const { getByText, getByLabelText, queryByText } = await render(<ProfileScreen />);
 
     expect(getByText('Public profile name')).toBeTruthy();
     expect(getByText('21036001.nguyen@student.iuh.edu.vn')).toBeTruthy();
@@ -93,6 +97,8 @@ describe('ProfileScreen', () => {
     expect(getByText('Lớp: DHKTPM17A')).toBeTruthy();
     expect(getByText('Giao dịch thành công: 2')).toBeTruthy();
     expect(getByText('Uy tín: 60')).toBeTruthy();
+    expect(queryByText('Khoa: Khoa cũ')).toBeNull();
+    expect(queryByText('Giao dịch thành công: 1')).toBeNull();
     expect(getByLabelText('Chỉnh sửa hồ sơ')).toBeTruthy();
     expect(getByLabelText('Khám phá đồ dùng')).toBeTruthy();
   });

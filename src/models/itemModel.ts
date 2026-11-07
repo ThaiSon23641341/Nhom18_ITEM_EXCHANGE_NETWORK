@@ -18,6 +18,7 @@ export interface Item {
   ownerName?: string;
   ownerFaculty?: string;
   ownerAvatarUrl?: string;
+  ownerReputation?: number;
   createdAt: string;
   updatedAt: string;
 }
