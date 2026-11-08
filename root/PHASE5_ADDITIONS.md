@@ -257,6 +257,12 @@ Bảng này là phân công chính thức. Nếu khác phần "Phụ trách đ�
 | Dữ liệu mẫu | Chỉ Sơn sửa `server/db.json`; cần thêm dữ liệu thì nhờ Sơn trước khi mở PR; không commit thay đổi `db.json` sinh ra khi test |
 | Test | Test của tính năng mới đặt cạnh file nguồn hoặc trong `server/test/` của đúng chủ; riêng `src/__tests__/**` chỉ Tú sửa |
 
+### Bổ sung: phạt hủy sau khi xác nhận giao
+- Sơn cung cấp `calculateCancellationPenalty(count)` trong `server/lib/reputation.cjs`: tổng điểm phạt cho số lần hủy bị phạt, theo mức lần lượt 5, 7,5, 10, 12,5 điểm; mỗi lần tăng nửa số điểm của một giao dịch thành công.
+- Hàm hiện chưa được nối vào `computeUserStats`; điểm hồ sơ không bị trừ cho đến khi Tú hoàn thiện luồng hủy được xác thực và hai bên thống nhất dữ liệu phạt do server ghi. Không lấy số lần hủy do client cung cấp.
+- Chủ món xác nhận đã giao trước khi người nhận được xác nhận đã nhận. Người nhận hủy trước khi chủ xác nhận giao không bị phạt; sau đó cả hai bên muốn hủy đều phải nhập lý do và người hủy bị phạt.
+- Khi chủ món hủy sau xác nhận giao, món về `available`; khi người nhận hủy sau xác nhận giao, món giữ `reserved`. Cách xử lý tiếp món `reserved` còn cần thống nhất.
+
 ### Thứ tự thực hiện để không chờ nhau
 1. **Sơn (bước 0):** thư viện, `app.json`, `db.json`, `server.cjs`, file rỗng `messages.cjs`, phiên đăng nhập, `PATCH /users/:id`, `uploads.cjs`, `imagePickerService`, `uploadService`, `useSessionBootstrap`. Merge trước.
 2. **Phúc và Tú song song** (dựa trên bước 0): Phúc làm `ImagePickerField` và các thẻ dùng chung, Tú làm chat, nhắc lịch từ server, bỏ ô địa điểm.
