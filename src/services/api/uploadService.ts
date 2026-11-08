@@ -15,8 +15,28 @@ export function resolveMediaUrl(url: string): string {
   return url.startsWith('/uploads/') ? `${API_BASE_URL}${url}` : url;
 }
 
+function normalizeMimeType(mimeType: string | undefined, uri: string): string {
+  const normalized = mimeType?.toLowerCase().split(';')[0].trim();
+  if (normalized?.startsWith('image/')) return normalized;
+  if (/\.png(?:$|[?#])/i.test(uri)) return 'image/png';
+  return 'image/jpeg';
+}
+
 // Uploads one prepared image using multipart on native to avoid reading file:// through Blob.
-export async function uploadImage(file: UploadImageFile): Promise<string> {
+export async function uploadImage(file: UploadImageFile | string, mimeType?: string): Promise<string> {
+  if (typeof file === 'string') {
+    if (!file.trim()) {
+      throw new ApiClientError('Chưa chọn ảnh để tải lên.', 'BAD_REQUEST', 400);
+    }
+    const blob = await (await fetch(file)).blob();
+    const type = normalizeMimeType(mimeType ?? blob.type, file);
+    const { url } = await apiRequest<{ url: string }>('/uploads', {
+      method: 'POST',
+      headers: { 'Content-Type': type },
+      body: blob,
+    });
+    return url;
+  }
   if (!file.uri.trim()) {
     throw new ApiClientError('Chưa chọn ảnh để tải lên.', 'BAD_REQUEST', 400);
   }

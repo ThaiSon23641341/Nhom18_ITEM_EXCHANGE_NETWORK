@@ -11,6 +11,7 @@ import { CustomButton } from '../components/CustomButton';
 import { pickImagesFromLibrary } from '../../services/device/imagePickerService';
 import { getAccessibilityProps } from '../../utils/accessibility';
 import { goBackOrReplace } from '../../utils/navigation';
+import { resolveMediaUrl } from '../../services/api/uploadService';
 import {
   availableUntilToDate,
   combineAvailableUntil,
@@ -299,7 +300,7 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
                 <XStack gap="2">
                   {controller.values.imageUrls.map((uri, index) => (
                     <YStack key={`${uri}-${index}`} gap="1">
-                      <Image source={{ uri }} style={styles.thumbnail} {...getAccessibilityProps({ label: `Ảnh ${index + 1} của món đồ` })} />
+                      <Image source={{ uri: resolveMediaUrl(uri) }} style={styles.thumbnail} {...getAccessibilityProps({ label: `Ảnh ${index + 1} của món đồ` })} />
                       <Button px="2" py="1" onPress={() => removeImage(uri)} {...getAccessibilityProps({ label: `Xóa ảnh ${index + 1}` })}>
                         Xóa ảnh
                       </Button>

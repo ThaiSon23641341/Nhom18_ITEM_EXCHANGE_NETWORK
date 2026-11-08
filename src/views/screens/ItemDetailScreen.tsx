@@ -22,6 +22,7 @@ import { useFavoritesController } from '../../controllers/useFavoritesController
 import { useItemDetailController } from '../../controllers/useItemDetailController';
 import { shareItem } from '../../services/shareService';
 import { OwnerBadge } from '../components/OwnerBadge';
+import { resolveMediaUrl } from '../../services/api/uploadService';
 import { MOCK_USER } from '../../utils/constants';
 
 const DESCRIPTION_COLLAPSED_HEIGHT = 72;
@@ -242,7 +243,7 @@ export function ItemDetailScreen() {
         <YStack px="4" pt="2" pb="4" gap="4">
           <YStack w="100%" aspectRatio={1.6} rounded="5" overflow="hidden" backgroundColor="#E8F5EF" position="relative" items="center" justify="center">
             {images.length > 0 ? (
-              <Image src={images[activeImageIndex]} style={{ width: '100%', height: '100%' }} objectFit="cover" accessibilityLabel={`Ảnh ${item.title}`} />
+              <Image src={resolveMediaUrl(images[activeImageIndex])} style={{ width: '100%', height: '100%' }} objectFit="cover" accessibilityLabel={`Ảnh ${item.title}`} />
             ) : (
               <PackageCheck size={44} color="#16815D" />
             )}

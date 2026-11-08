@@ -44,6 +44,20 @@ describe('uploadService', () => {
     expect(requestHeaders.get('authorization')).toBe('Bearer tok');
   });
 
+  test('uses the blob MIME type for picker URIs without an extension', async () => {
+    const blob = { type: 'image/png' } as Blob;
+    const fetch = jest.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce({ blob: async () => blob } as Response)
+      .mockResolvedValueOnce({
+        ok: true,
+        status: 201,
+        text: async () => JSON.stringify({ url: '/uploads/x.png' }),
+      } as Response);
+
+    await uploadImage('blob:https://app.example/uuid');
+    expect(fetch.mock.calls[1][1]?.headers).toMatchObject({ 'Content-Type': 'image/png' });
+  });
+
   test('rejects an empty uri and resolves only upload paths against the server', async () => {
     await expect(uploadImage({ uri: ' ', name: 'avatar.jpg', type: 'image/jpeg' }))
       .rejects.toMatchObject({ status: 400 });

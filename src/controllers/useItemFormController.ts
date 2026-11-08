@@ -8,6 +8,7 @@ import { validateItemForm, type ItemFormErrors, type ItemFormValues } from '../u
 import type { Item, ItemCondition } from '../models/itemModel';
 import { canEditItem } from '../utils/itemPermissions';
 import { defaultAvailableUntil } from '../utils/availability';
+import { uploadImage } from '../services/api/uploadService';
 
 export interface UseItemFormControllerOptions {
   mode: 'create' | 'edit';
@@ -26,6 +27,24 @@ const EMPTY_VALUES: ItemFormValues = {
   location: '',
   availableUntil: defaultAvailableUntil(),
 };
+
+function isLocalImageUri(uri: string): boolean {
+  return /^(?:file|content|blob|data):/i.test(uri);
+}
+
+async function uploadItemImages(imageUris: string[]): Promise<string[]> {
+  const uploaded: string[] = [];
+  for (const uri of imageUris) {
+    uploaded.push(isLocalImageUri(uri)
+      ? await uploadImage({
+          uri,
+          name: 'item-image.jpg',
+          type: uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg',
+        })
+      : uri);
+  }
+  return uploaded;
+}
 
 export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormControllerOptions) {
   const { user } = useAuthController();
@@ -116,8 +135,8 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
     setSubmitError(null);
     try {
       let saved: Item;
+      const imageUrls = await uploadItemImages(values.imageUrls);
       if (mode === 'create') {
-        const imageUrls = values.imageUrls;
         saved = await createItem({
           title: values.title.trim(),
           description: values.description.trim(),
@@ -143,8 +162,8 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
         if (values.location !== initialValues.location) changed.location = values.location.trim();
         if (values.availableUntil !== initialValues.availableUntil) changed.availableUntil = values.availableUntil;
         if (values.imageUrls !== initialValues.imageUrls) {
-          changed.imageUrls = [...values.imageUrls];
-          changed.imageUrl = values.imageUrls[0] ?? '';
+          changed.imageUrls = imageUrls;
+          changed.imageUrl = imageUrls[0] ?? '';
         }
         if (values.price !== initialValues.price) {
           changed.priceVnd = values.price.trim() ? Number(values.price) : undefined;

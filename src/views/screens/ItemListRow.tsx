@@ -20,6 +20,7 @@ import {
   getStatusLabel,
 } from '../../utils/itemOptions';
 import { getAccessibilityProps } from '../../utils/accessibility';
+import { resolveMediaUrl } from '../../services/api/uploadService';
 
 export interface ItemListRowProps {
   item: Item;
@@ -64,7 +65,7 @@ export const ItemListRow = memo(function ItemListRow({
         {/* Khung ảnh thumbnail hoặc placeholder khi ảnh lỗi/rỗng */}
         {item.imageUrl && !imageError ? (
           <Image
-            source={{ uri: item.imageUrl }}
+            source={{ uri: resolveMediaUrl(item.imageUrl) }}
             style={compact
               ? { width: '100%', height: 160, borderRadius: 8 }
               : { width: 76, height: 76, borderRadius: 8 }}

@@ -5,6 +5,7 @@ export interface DeviceImage {
   uri: string;
   width?: number;
   height?: number;
+  mimeType?: string;
 }
 
 export async function pickImagesFromLibrary(limit: number): Promise<DeviceImage[]> {
