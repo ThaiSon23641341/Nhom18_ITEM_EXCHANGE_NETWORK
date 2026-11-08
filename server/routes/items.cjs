@@ -45,6 +45,18 @@ function getDefaultAvailableUntil(now = new Date()) {
 function validateAvailableUntil(value, now = new Date()) {
   if (value === undefined) return null;
   if (!isText(value, 64, true)) return 'Hạn trao không hợp lệ.';
+  const datePrefixMatch = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (datePrefixMatch) {
+    const year = Number(datePrefixMatch[1]);
+    const month = Number(datePrefixMatch[2]);
+    const day = Number(datePrefixMatch[3]);
+    const parsed = new Date(Date.UTC(year, month - 1, day));
+    if (
+      parsed.getUTCFullYear() !== year
+      || parsed.getUTCMonth() !== month - 1
+      || parsed.getUTCDate() !== day
+    ) return 'Hạn trao không hợp lệ.';
+  }
   const deadline = new Date(value);
   if (Number.isNaN(deadline.getTime())) return 'Hạn trao không hợp lệ.';
   const latest = new Date(now);

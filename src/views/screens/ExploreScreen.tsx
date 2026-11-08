@@ -12,7 +12,7 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl } from 'react-native';
-import { Button, XStack, YStack } from 'tamagui';
+import { YStack } from 'tamagui';
 import type { Item } from '../../models/itemModel';
 import { useItemController } from '../../controllers/useItemController';
 import { ItemFilterBar } from './ItemFilterBar';
@@ -118,14 +118,6 @@ export function ExploreScreen() {
   return (
     <YStack flex={1} backgroundColor="background" p="3">
       {/* Thanh tìm kiếm và bộ lọc cố định phía trên */}
-      <XStack justify="flex-end" pb="2">
-        <Button
-          onPress={toggleViewMode}
-          aria-label={viewMode === 'list' ? 'Chuyển sang xem 2 cột' : 'Chuyển sang xem 1 cột'}
-        >
-          {viewMode === 'list' ? '2 cột' : '1 cột'}
-        </Button>
-      </XStack>
       <ItemFilterBar
         keyword={keyword}
         onKeywordChange={setKeyword}
@@ -136,6 +128,8 @@ export function ExploreScreen() {
         hasActiveFilters={hasActiveFilters}
         onClearFilters={clearFilters}
         totalResults={total}
+        viewMode={viewMode}
+        onToggleViewMode={toggleViewMode}
       />
 
       {/* Danh sách phân trang bên dưới */}

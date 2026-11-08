@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Alert, Image, KeyboardAvoidingView, Modal, Platform, Pressable, ScrollView as RNScrollView, StyleSheet, View } from 'react-native';
 import { CameraView, useCameraPermissions, type CameraView as CameraViewComponent } from 'expo-camera';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import { Redirect, router } from 'expo-router';
 import { Button, Input, Text, TextArea, XStack, YStack } from 'tamagui';
 import type { ItemCondition } from '../../models/itemModel';
@@ -10,6 +11,12 @@ import { CustomButton } from '../components/CustomButton';
 import { pickImagesFromLibrary } from '../../services/device/imagePickerService';
 import { getAccessibilityProps } from '../../utils/accessibility';
 import { goBackOrReplace } from '../../utils/navigation';
+import {
+  availableUntilToDate,
+  combineAvailableUntil,
+  formatAvailableUntilDate,
+  formatAvailableUntilTime,
+} from '../../utils/availability';
 
 interface ItemFormScreenProps {
   mode: 'create' | 'edit';
@@ -31,6 +38,7 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
   const [cameraPermission, requestCameraPermission] = useCameraPermissions();
   const [cameraVisible, setCameraVisible] = useState(false);
   const [isPickingImage, setIsPickingImage] = useState(false);
+  const [pickerMode, setPickerMode] = useState<'date' | 'time' | null>(null);
 
   const openCamera = async () => {
     try {
@@ -107,6 +115,30 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
   );
 
   const isEdit = mode === 'edit';
+  const currentDeadline = availableUntilToDate(controller.values.availableUntil) ?? new Date();
+  const minimumDeadline = new Date();
+  const maximumDeadline = new Date();
+  maximumDeadline.setDate(maximumDeadline.getDate() + 90);
+
+  const handleDeadlinePickerChange = (_event: unknown, selectedDate?: Date) => {
+    if (!selectedDate) {
+      setPickerMode(null);
+      return;
+    }
+    setPickerMode(null);
+    if (pickerMode === 'date') {
+      const year = selectedDate.getFullYear();
+      const month = String(selectedDate.getMonth() + 1).padStart(2, '0');
+      const day = String(selectedDate.getDate()).padStart(2, '0');
+      const time = formatAvailableUntilTime(controller.values.availableUntil) || '23:59';
+      controller.setField('availableUntil', combineAvailableUntil(`${year}-${month}-${day}`, time));
+    } else if (pickerMode === 'time') {
+      const hours = String(selectedDate.getHours()).padStart(2, '0');
+      const minutes = String(selectedDate.getMinutes()).padStart(2, '0');
+      const date = formatAvailableUntilDate(controller.values.availableUntil);
+      controller.setField('availableUntil', combineAvailableUntil(date, `${hours}:${minutes}`));
+    }
+  };
 
   return (
     <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
@@ -199,17 +231,64 @@ export function ItemFormScreen({ mode, itemId }: ItemFormScreenProps) {
 
           <YStack gap="2">
             <Text color="color" fontWeight="700">Hạn trao *</Text>
-            <Input
-              value={controller.values.availableUntil.slice(0, 10)}
-              onChangeText={(value) => {
-                controller.setField(
-                  'availableUntil',
-                  value.length === 10 ? `${value}T23:59:59.000Z` : '',
-                );
-              }}
-              placeholder="YYYY-MM-DD"
-              {...getAccessibilityProps({ label: 'Hạn trao' })}
-            />
+            <XStack gap="2">
+              <YStack flex={1} gap="1">
+                <Text color="color" fontSize="2">Ngày</Text>
+                <Button
+                  onPress={() => setPickerMode('date')}
+                  {...getAccessibilityProps({ label: 'Chọn ngày hạn trao' })}
+                >
+                  {formatAvailableUntilDate(controller.values.availableUntil) || 'Chọn ngày'}
+                </Button>
+              </YStack>
+              <YStack flex={1} gap="1">
+                <Text color="color" fontSize="2">Giờ</Text>
+                <Button
+                  onPress={() => setPickerMode('time')}
+                  {...getAccessibilityProps({ label: 'Chọn giờ hạn trao' })}
+                >
+                  {formatAvailableUntilTime(controller.values.availableUntil) || 'HH:MM'}
+                </Button>
+              </YStack>
+            </XStack>
+            {Platform.OS === 'web' ? (
+              <XStack gap="2">
+                {React.createElement('input', {
+                  type: 'date',
+                  value: formatAvailableUntilDate(controller.values.availableUntil),
+                  min: `${minimumDeadline.getFullYear()}-${String(minimumDeadline.getMonth() + 1).padStart(2, '0')}-${String(minimumDeadline.getDate()).padStart(2, '0')}`,
+                  max: `${maximumDeadline.getFullYear()}-${String(maximumDeadline.getMonth() + 1).padStart(2, '0')}-${String(maximumDeadline.getDate()).padStart(2, '0')}`,
+                  onChange: (event: { target: { value: string } }) => {
+                    if (!event.target.value) return;
+                    const time = formatAvailableUntilTime(controller.values.availableUntil) || '23:59';
+                    controller.setField('availableUntil', combineAvailableUntil(event.target.value, time));
+                  },
+                  style: { flex: 1, minWidth: 0, minHeight: 44, padding: 10, fontSize: 16, borderRadius: 8 },
+                  'aria-label': 'Chọn ngày hạn trao',
+                })}
+                {React.createElement('input', {
+                  type: 'time',
+                  value: formatAvailableUntilTime(controller.values.availableUntil),
+                  onChange: (event: { target: { value: string } }) => {
+                    if (!event.target.value) return;
+                    const date = formatAvailableUntilDate(controller.values.availableUntil);
+                    controller.setField('availableUntil', combineAvailableUntil(date, event.target.value));
+                  },
+                  style: { flex: 1, minWidth: 0, minHeight: 44, padding: 10, fontSize: 16, borderRadius: 8 },
+                  'aria-label': 'Chọn giờ hạn trao',
+                })}
+              </XStack>
+            ) : pickerMode ? (
+              <DateTimePicker
+                value={currentDeadline}
+                mode={pickerMode}
+                display={Platform.OS === 'ios' ? 'spinner' : 'default'}
+                is24Hour
+                minimumDate={pickerMode === 'date' ? minimumDeadline : undefined}
+                maximumDate={pickerMode === 'date' ? maximumDeadline : undefined}
+                onChange={handleDeadlinePickerChange}
+              />
+            ) : null}
             {controller.errors.availableUntil ? <Text color="color" fontSize="2" {...getAccessibilityProps({ role: 'alert' })}>{controller.errors.availableUntil}</Text> : null}
           </YStack>
 
