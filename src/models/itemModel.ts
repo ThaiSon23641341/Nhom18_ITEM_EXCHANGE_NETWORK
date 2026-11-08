@@ -13,12 +13,13 @@ export interface Item {
   ownerId: string;
   priceVnd?: number;
   location?: string;
+  availableUntil?: string;
   distance?: string;
   ownerName?: string;
   ownerFaculty?: string;
   ownerAvatarUrl?: string;
-  availableUntil?: string;
   isLocked?: boolean;
+  ownerReputation?: number;
   createdAt: string;
   updatedAt: string;
 }

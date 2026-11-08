@@ -1,8 +1,9 @@
 import { useState } from 'react';
 import { Platform, Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { Heart, MapPin, Tag, UserRound } from 'lucide-react-native';
+import { Heart, MapPin, Tag } from 'lucide-react-native';
 import { Button, Card, Image, Text, XStack, YStack } from 'tamagui';
+import { OwnerBadge } from './OwnerBadge';
 
 export interface ProductCardProps {
   itemId: string;
@@ -14,12 +15,27 @@ export interface ProductCardProps {
   ownerName: string;
   faculty: string;
   imageUrl: string;
+  avatarUrl?: string;
+  reputation?: number;
   available?: boolean;
   createdAt?: string;
   priceVnd?: number;
 }
 
-export function ProductCard({ itemId, title, category, location, distance, price, ownerName, faculty, imageUrl, available = true }: ProductCardProps) {
+export function ProductCard({
+  itemId,
+  title,
+  category,
+  location,
+  distance,
+  price,
+  ownerName,
+  faculty,
+  imageUrl,
+  avatarUrl,
+  reputation,
+  available = true,
+}: ProductCardProps) {
   const [isFavorite, setIsFavorite] = useState(false);
 
   return (
@@ -74,13 +90,13 @@ export function ProductCard({ itemId, title, category, location, distance, price
               </XStack>
               <Text color="primary" fontSize="2" fontWeight="800" numberOfLines={1}>{price}</Text>
             </XStack>
-            <XStack items="center" gap="2" pt="1">
-              <YStack w={28} h={28} rounded="10" backgroundColor="#E8F5EF" items="center" justify="center"><UserRound size={15} color="#16815D" /></YStack>
-              <YStack flex={1}>
-                <Text color="color" fontSize="2" fontWeight="600" numberOfLines={1}>{ownerName}</Text>
-                <Text color="color" opacity={0.65} fontSize="1" numberOfLines={1}>{faculty}</Text>
-              </YStack>
-            </XStack>
+            <OwnerBadge
+              name={ownerName}
+              avatarUrl={avatarUrl}
+              faculty={faculty}
+              reputation={reputation}
+              compact
+            />
           </YStack>
         </YStack>
       </Card>

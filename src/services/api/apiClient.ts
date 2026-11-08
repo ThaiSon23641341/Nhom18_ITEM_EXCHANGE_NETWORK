@@ -20,13 +20,14 @@ export async function apiRequest<T>(
   init?: RequestInit,
 ): Promise<T> {
   const token = getAuthToken();
+  const isFormData = typeof FormData !== 'undefined' && init?.body instanceof FormData;
   let response: Response;
   try {
     response = await fetch(`${API_BASE_URL}${path}`, {
       ...init,
       headers: {
         Accept: 'application/json',
-        ...(init?.body ? { 'Content-Type': 'application/json' } : {}),
+        ...(init?.body && !isFormData ? { 'Content-Type': 'application/json' } : {}),
         ...(token ? { Authorization: ['Bearer', token].join(' ') } : {}),
         ...init?.headers,
       },

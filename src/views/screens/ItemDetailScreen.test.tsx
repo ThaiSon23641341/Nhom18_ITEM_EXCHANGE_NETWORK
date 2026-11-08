@@ -11,7 +11,6 @@ jest.mock('expo-router', () => ({
 jest.mock('lucide-react-native', () => ({
   ArrowLeft: () => null,
   CalendarDays: () => null,
-  ChevronRight: () => null,
   Heart: () => null,
   MapPin: () => null,
   PackageCheck: () => null,
@@ -44,9 +43,19 @@ jest.mock('../../controllers/useItemDetailController', () => ({
       imageUrl: '',
       status: 'available',
       ownerId: 'user-001',
+      location: 'Khu A, IUH',
+      availableUntil: '2027-02-05T16:59:59.000Z',
       createdAt: '2026-11-01T00:00:00.000Z',
       updatedAt: '2026-11-01T00:00:00.000Z',
     },
+    ownerProfile: {
+      id: 'user-001',
+      fullName: 'Owner Sample',
+      avatarUrl: '',
+      faculty: 'Khoa Công nghệ thông tin',
+      reputation: 75,
+    },
+    ownerProfileError: null,
     isLoading: false,
     loadError: null,
     retry: jest.fn(),
@@ -91,5 +100,17 @@ describe('ItemDetailScreen favorite accessibility', () => {
     expect(getByRole('button', { name: 'Lưu Sample item vào danh sách yêu thích' })).toBeTruthy();
     await fireEvent.press(favoriteButton);
     expect(mockToggleFavorite).toHaveBeenCalledWith('item-001');
+  });
+
+  test('shows owner reputation, exchange deadline, and transaction location accessibly', async () => {
+    const { getByText, getByLabelText } = await render(<ItemDetailScreen />);
+
+    expect(getByText('Owner Sample')).toBeTruthy();
+    expect(getByText('Khoa Công nghệ thông tin')).toBeTruthy();
+    expect(getByText('75')).toBeTruthy();
+    expect(getByText('Hạn trao đổi: 05/02/2027')).toBeTruthy();
+    expect(getByText('Khu A, IUH')).toBeTruthy();
+    expect(getByLabelText('Địa điểm giao dịch: Khu A, IUH')).toBeTruthy();
+    expect(getByLabelText('Hạn trao đổi: 05/02/2027')).toBeTruthy();
   });
 });

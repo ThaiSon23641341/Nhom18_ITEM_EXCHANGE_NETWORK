@@ -24,6 +24,20 @@ const upload = (body, contentType, headers = {}) => fetch(`${context.baseUrl}/up
   body,
 });
 
+const multipartUpload = (image, headers = {}) => {
+  const boundary = '----profile-upload-test-boundary';
+  const body = Buffer.concat([
+    Buffer.from(
+      `--${boundary}\r\n`
+        + 'Content-Disposition: form-data; name="file"; filename="avatar.jpg"\r\n'
+        + 'Content-Type: image/jpeg\r\n\r\n',
+    ),
+    image,
+    Buffer.from(`\r\n--${boundary}--\r\n`),
+  ]);
+  return upload(body, `multipart/form-data; boundary=${boundary}`, headers);
+};
+
 test('upload requires a signed-in user', async () => {
   assert.equal((await upload(JPEG, 'image/jpeg')).status, 401);
 });
@@ -41,11 +55,22 @@ test('jpeg and png uploads are stored under a random name and served back', asyn
   }
 });
 
+test('native multipart image uploads are stored from validated image bytes', async () => {
+  const { headers } = await loginAs(context.baseUrl);
+  const response = await multipartUpload(JPEG, headers);
+  assert.equal(response.status, 201);
+  const { url } = await response.json();
+  assert.match(url, /^\/uploads\/[0-9a-f]{32}\.jpg$/);
+  const served = await fetch(`${context.baseUrl}${url}`);
+  assert.deepEqual(Buffer.from(await served.arrayBuffer()), JPEG);
+});
+
 test('uploads reject wrong content, wrong type and oversized files', async () => {
   const { headers } = await loginAs(context.baseUrl);
   assert.equal((await upload(Buffer.from('<script>1</script>'), 'image/png', headers)).status, 415);
   assert.equal((await upload(JPEG, 'text/plain', headers)).status, 415);
   assert.equal((await upload(Buffer.alloc(0), 'image/png', headers)).status, 415);
+  assert.equal((await multipartUpload(Buffer.from('not an image'), headers)).status, 415);
   const big = Buffer.concat([JPEG, Buffer.alloc(5 * 1024 * 1024)]);
   assert.equal((await upload(big, 'image/jpeg', headers)).status, 413);
 });
