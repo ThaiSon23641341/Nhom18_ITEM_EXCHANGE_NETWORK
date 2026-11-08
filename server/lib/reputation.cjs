@@ -2,6 +2,13 @@ const BASE_REPUTATION = 50;
 const POINTS_PER_EXCHANGE = 5;
 const POINTS_PER_ACTIONED_REPORT = 10;
 
+function calculateCancellationPenalty(count) {
+  if (!Number.isSafeInteger(count) || count < 0) {
+    throw new RangeError('Cancellation count must be a non-negative safe integer.');
+  }
+  return POINTS_PER_EXCHANGE * count * (count + 3) / 4;
+}
+
 // Stats are always derived from appointments and reports, never stored.
 function computeUserStats(db, userId) {
   const ownedItemIds = new Set(
@@ -27,4 +34,4 @@ function computeUserStats(db, userId) {
   };
 }
 
-module.exports = { computeUserStats };
+module.exports = { calculateCancellationPenalty, computeUserStats };
