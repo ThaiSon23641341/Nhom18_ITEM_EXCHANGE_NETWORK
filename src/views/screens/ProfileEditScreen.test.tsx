@@ -16,13 +16,15 @@ const mockController = {
   submitError: null,
   setFaculty: jest.fn(),
   setClassName: jest.fn(),
-  setAvatarUrl: jest.fn(),
+  setLocalAvatar: jest.fn(),
+  localAvatarUri: null,
   retry: jest.fn(),
   submit: mockSubmit,
 };
 
 jest.mock('lucide-react-native', () => ({
   ArrowLeft: () => null,
+  LockKeyhole: () => null,
   UserRound: () => null,
 }));
 

@@ -4,7 +4,7 @@ import {
   Platform,
   ScrollView,
 } from 'react-native';
-import { ArrowLeft, UserRound } from 'lucide-react-native';
+import { ArrowLeft, LockKeyhole, UserRound } from 'lucide-react-native';
 import { Button, Input, Text, XStack, YStack } from 'tamagui';
 import { useProfileEditController } from '../../controllers/useProfileEditController';
 import { resolveMediaUrl } from '../../services/api/uploadService';
@@ -93,6 +93,9 @@ export function ProfileEditScreen() {
                 >
                   <Text color="color" fontSize="4" fontWeight="700">
                     Ảnh đại diện
+                    <Text color="color" opacity={0.55} fontSize="2">
+                      {' '}(có thể thay đổi)
+                    </Text>
                   </Text>
                   <ImagePickerField
                     initialImageUrl={
@@ -102,7 +105,7 @@ export function ProfileEditScreen() {
                     }
                     shape="circle"
                     isUploading={controller.isSubmitting}
-                    onImageSelected={(uploadedUrl) => controller.setAvatarUrl(uploadedUrl)}
+                    onImageSelected={controller.setLocalAvatar}
                   />
                 </YStack>
 
@@ -115,14 +118,24 @@ export function ProfileEditScreen() {
                   backgroundColor="background"
                 >
                   <Text color="color" fontSize="4" fontWeight="700">
-                    Thông tin chỉ đọc
+                    Thông tin cá nhân
                   </Text>
-                  <ReadOnlyField label="Họ và tên" value={controller.user?.fullName} />
+                  <ReadOnlyField
+                    label="Họ và tên"
+                    value={controller.user?.fullName}
+                    readOnly
+                  />
                   <ReadOnlyField label="Mã sinh viên" value={controller.user?.studentId} />
-                  <ReadOnlyField label="Số điện thoại" value={controller.user?.phoneNumber} />
+                  <ReadOnlyField
+                    label="Số điện thoại"
+                    value={controller.user?.phoneNumber}
+                    readOnly
+                  />
 
                   <YStack gap="2">
-                    <Text color="color" fontSize="3" fontWeight="700">Khoa</Text>
+                    <Text color="color" fontSize="3" fontWeight="700">
+                      Khoa <Text color="color" opacity={0.55} fontSize="2">(có thể thay đổi)</Text>
+                    </Text>
                     <Input
                       value={controller.values.faculty}
                       onChangeText={controller.setFaculty}
@@ -138,7 +151,9 @@ export function ProfileEditScreen() {
                   </YStack>
 
                   <YStack gap="2">
-                    <Text color="color" fontSize="3" fontWeight="700">Lớp</Text>
+                    <Text color="color" fontSize="3" fontWeight="700">
+                      Lớp <Text color="color" opacity={0.55} fontSize="2">(có thể thay đổi)</Text>
+                    </Text>
                     <Input
                       value={controller.values.className}
                       onChangeText={controller.setClassName}
@@ -188,10 +203,24 @@ export function ProfileEditScreen() {
   );
 }
 
-function ReadOnlyField({ label, value }: { label: string; value?: string }) {
+function ReadOnlyField({
+  label,
+  value,
+  readOnly = false,
+}: {
+  label: string;
+  value?: string;
+  readOnly?: boolean;
+}) {
   return (
     <YStack gap="1">
-      <Text color="color" opacity={0.65} fontSize="2">{label}</Text>
+      <XStack items="center" gap="1">
+        <Text color="color" opacity={0.65} fontSize="2">{label}</Text>
+        {readOnly ? <LockKeyhole size={12} color="#667085" /> : null}
+        {readOnly ? (
+          <Text color="color" opacity={0.55} fontSize="1">(Không thể thay đổi)</Text>
+        ) : null}
+      </XStack>
       <XStack items="center" gap="2" minH={40}>
         <UserRound size={16} color="#667085" />
         <Text color="color" fontSize="3">

@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { EditableProfile, User } from '../models/userModel';
+import type { PickedImage } from '../services/media/imagePickerService';
 import { ApiClientError } from '../services/api/apiClient';
+import { uploadImage } from '../services/api/uploadService';
 import { updateMyProfile } from '../services/api/userService';
 import { fetchSession } from '../services/authService';
 import { setAuthenticatedUser } from '../store/authSlice';
@@ -22,7 +24,8 @@ export interface ProfileEditController {
   submitError: string | null;
   setFaculty: (value: string) => void;
   setClassName: (value: string) => void;
-  setAvatarUrl: (value: string) => void;
+  setLocalAvatar: (image: PickedImage) => void;
+  localAvatarUri: string | null;
   retry: () => void;
   submit: () => Promise<boolean>;
 }
@@ -49,6 +52,7 @@ export function useProfileEditController(): ProfileEditController {
   const [loadError, setLoadError] = useState<string | null>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [localAvatar, setLocalAvatar] = useState<PickedImage | null>(null);
 
   useEffect(() => {
     let active = true;
@@ -58,6 +62,7 @@ export function useProfileEditController(): ProfileEditController {
         if (!active) return;
         setUser(loadedUser);
         setValues(toProfileValues(loadedUser));
+        setLocalAvatar(null);
         dispatch(setAuthenticatedUser(loadedUser));
         setLoadError(null);
       })
@@ -84,8 +89,8 @@ export function useProfileEditController(): ProfileEditController {
     setSubmitError(null);
   }, []);
 
-  const setAvatarUrl = useCallback((avatarUrl: string) => {
-    setValues((current) => ({ ...current, avatarUrl }));
+  const selectAvatar = useCallback((image: PickedImage) => {
+    setLocalAvatar(image);
     setSubmitError(null);
   }, []);
 
@@ -114,11 +119,20 @@ export function useProfileEditController(): ProfileEditController {
       const changes: Partial<EditableProfile> = {
         faculty,
         className,
-        avatarUrl: values.avatarUrl,
+        avatarUrl: user.avatarUrl,
       };
+      if (localAvatar && localAvatar.uri !== user.avatarUrl) {
+        const cleanFileToUpload = {
+          uri: localAvatar.uri,
+          name: 'avatar.jpg',
+          type: 'image/jpeg',
+        };
+        changes.avatarUrl = await uploadImage(cleanFileToUpload);
+      }
       const updatedUser = await updateMyProfile(user.id, changes);
       setUser(updatedUser);
       setValues(toProfileValues(updatedUser));
+      setLocalAvatar(null);
       dispatch(setAuthenticatedUser(updatedUser));
       return true;
     } catch (error) {
@@ -130,7 +144,7 @@ export function useProfileEditController(): ProfileEditController {
     } finally {
       setIsSubmitting(false);
     }
-  }, [dispatch, user, values]);
+  }, [dispatch, localAvatar, user, values]);
 
   return {
     user,
@@ -141,7 +155,8 @@ export function useProfileEditController(): ProfileEditController {
     submitError,
     setFaculty,
     setClassName,
-    setAvatarUrl,
+    setLocalAvatar: selectAvatar,
+    localAvatarUri: localAvatar?.uri ?? null,
     retry,
     submit,
   };

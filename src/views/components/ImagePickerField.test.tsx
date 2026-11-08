@@ -1,7 +1,6 @@
 import { fireEvent, render, waitFor } from '@testing-library/react-native';
 import type { PickedImage } from '../../services/media/imagePickerService';
 import { pickImageFromLibrary, takePhoto } from '../../services/media/imagePickerService';
-import { uploadImage } from '../../services/api/uploadService';
 import { ImagePickerField } from './ImagePickerField';
 
 jest.mock('lucide-react-native', () => ({
@@ -16,7 +15,6 @@ jest.mock('../../services/media/imagePickerService', () => ({
 
 jest.mock('../../services/api/uploadService', () => ({
   resolveMediaUrl: (url: string) => url,
-  uploadImage: jest.fn(),
 }));
 
 jest.mock('tamagui', () => {
@@ -30,6 +28,11 @@ jest.mock('tamagui', () => {
     Button,
     Spinner: () => null,
     Text: Native.Text,
+    useTheme: () => ({
+      background: { val: '#101827' },
+      color: { val: '#F3F4F6' },
+      primary: { val: '#4ADE80' },
+    }),
     XStack: Native.View,
     YStack: Native.View,
   };
@@ -38,6 +41,19 @@ jest.mock('tamagui', () => {
 const pickedImage: PickedImage = {
   uri: 'file:///picked-image.jpg',
   mimeType: 'image/jpeg',
+  fileName: 'picked-image.jpg',
+  asset: {
+    uri: 'file:///picked-image.jpg',
+    fileName: 'picked-image.jpg',
+    mimeType: 'image/jpeg',
+    width: 10,
+    height: 10,
+    type: 'image',
+    assetId: null,
+    base64: null,
+    duration: null,
+    exif: null,
+  },
 };
 
 describe('ImagePickerField', () => {
@@ -45,34 +61,28 @@ describe('ImagePickerField', () => {
     jest.clearAllMocks();
   });
 
-  test('uploads a camera photo and returns its server URL', async () => {
+  test('selects a camera photo and returns its local file', async () => {
     const onImageSelected = jest.fn();
     jest.mocked(takePhoto).mockResolvedValue(pickedImage);
-    jest.mocked(uploadImage).mockResolvedValue('/uploads/profile.jpg');
     const { getByLabelText } = await render(
       <ImagePickerField shape="circle" onImageSelected={onImageSelected} />,
     );
 
     fireEvent.press(getByLabelText('Chụp ảnh'));
 
-    await waitFor(() => {
-      expect(onImageSelected).toHaveBeenCalledWith('/uploads/profile.jpg', pickedImage);
-    });
-    expect(uploadImage).toHaveBeenCalledWith(pickedImage.uri, pickedImage.mimeType);
+    await waitFor(() => expect(onImageSelected).toHaveBeenCalledWith(pickedImage));
   });
 
-  test('uploads a gallery selection and reports upload errors without selecting the image', async () => {
+  test('selects a gallery image without uploading it before profile save', async () => {
     const onImageSelected = jest.fn();
     jest.mocked(pickImageFromLibrary).mockResolvedValue(pickedImage);
-    jest.mocked(uploadImage).mockRejectedValue(new Error('Server unavailable'));
-    const { getByLabelText, findByText } = await render(
+    const { getByLabelText } = await render(
       <ImagePickerField onImageSelected={onImageSelected} />,
     );
 
     fireEvent.press(getByLabelText('Chọn từ thư viện'));
 
-    expect(await findByText('Server unavailable')).toBeTruthy();
-    expect(onImageSelected).not.toHaveBeenCalled();
+    await waitFor(() => expect(onImageSelected).toHaveBeenCalledWith(pickedImage));
   });
 
   test('does not upload or call back when the picker is cancelled', async () => {
@@ -85,7 +95,6 @@ describe('ImagePickerField', () => {
     fireEvent.press(getByLabelText('Chọn từ thư viện'));
 
     await waitFor(() => expect(pickImageFromLibrary).toHaveBeenCalledTimes(1));
-    expect(uploadImage).not.toHaveBeenCalled();
     expect(onImageSelected).not.toHaveBeenCalled();
   });
 });

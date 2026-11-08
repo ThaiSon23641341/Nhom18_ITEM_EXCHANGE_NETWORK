@@ -58,7 +58,9 @@ export function ProfileScreen() {
     ...localUser,
     ...profile,
     fullName: profile?.fullName ?? localUser.fullName,
-    avatarUrl: profile?.avatarUrl ?? localUser.avatarUrl ?? '',
+    // The signed-in account is authoritative for its own profile; the public
+    // profile request may still contain a cached/older avatar after editing.
+    avatarUrl: localUser.avatarUrl?.trim() || profile?.avatarUrl || '',
   };
 
   useEffect(() => {

@@ -14,6 +14,7 @@ import { Platform, Pressable, useColorScheme, View } from 'react-native';
 import { useTheme } from 'tamagui';
 import { CalendarClock, Compass, Package, Plus, User } from 'lucide-react-native';
 import { AppHeaderBrand, AppHeaderProfileAction } from '../../views/components/AppHeader';
+import { notifyPublicProfileFocused } from '../../controllers/usePublicProfileController';
 
 export default function TabsLayout() {
   // useTheme() trả về object theme hiện tại (light hoặc dark) — CLO5
@@ -199,6 +200,9 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="profile"
+        listeners={{
+          focus: () => notifyPublicProfileFocused(),
+        }}
         options={{
           title: 'Cá nhân',
           tabBarIcon: ({ color, size, focused }) => (

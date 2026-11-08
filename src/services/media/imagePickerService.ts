@@ -1,20 +1,31 @@
 import * as ImagePicker from 'expo-image-picker';
+import { convertImageForUpload } from './imageConversionService';
 
 export interface PickedImage {
   uri: string;
   mimeType?: string;
+  fileName?: string | null;
+  asset: ImagePicker.ImagePickerAsset;
 }
 
 const PICKER_OPTIONS: ImagePicker.ImagePickerOptions = {
   mediaTypes: ['images'],
-  allowsEditing: true,
+  // Avoid the native crop screen where its confirmation action can be inaccessible on some Android devices.
+  allowsEditing: false,
   quality: 0.7,
 };
 
-const toPickedImage = (result: ImagePicker.ImagePickerResult): PickedImage | null => {
+const toPickedImage = async (
+  result: ImagePicker.ImagePickerResult,
+): Promise<PickedImage | null> => {
   if (result.canceled || result.assets.length === 0) return null;
   const [asset] = result.assets;
-  return { uri: asset.uri, mimeType: asset.mimeType };
+  const convertedImage = await convertImageForUpload(asset.uri, asset.mimeType);
+  return {
+    ...convertedImage,
+    fileName: asset.fileName,
+    asset,
+  };
 };
 
 // Returns null when the user cancels; throws a readable error when permission is denied.

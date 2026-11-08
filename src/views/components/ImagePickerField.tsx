@@ -1,20 +1,17 @@
 import { useState } from 'react';
 import { Image, StyleSheet, View } from 'react-native';
 import { Camera, Plus } from 'lucide-react-native';
-import { Button, Spinner, Text, XStack, YStack } from 'tamagui';
+import { Button, Spinner, Text, useTheme, XStack, YStack } from 'tamagui';
 import {
   pickImageFromLibrary,
   takePhoto,
   type PickedImage,
 } from '../../services/media/imagePickerService';
-import {
-  resolveMediaUrl,
-  uploadImage,
-} from '../../services/api/uploadService';
+import { resolveMediaUrl } from '../../services/api/uploadService';
 
 export interface ImagePickerFieldProps {
   initialImageUrl?: string;
-  onImageSelected: (uri: string, file: PickedImage) => void;
+  onImageSelected: (file: PickedImage) => void;
   shape?: 'circle' | 'square';
   isUploading?: boolean;
 }
@@ -25,6 +22,7 @@ export function ImagePickerField({
   shape = 'square',
   isUploading = false,
 }: ImagePickerFieldProps) {
+  const theme = useTheme();
   const [selectedImageUrl, setSelectedImageUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
@@ -41,9 +39,8 @@ export function ImagePickerField({
       const pickedImage = await pickImage();
       if (!pickedImage) return;
 
-      const uploadedUrl = await uploadImage(pickedImage.uri, pickedImage.mimeType);
-      setSelectedImageUrl(uploadedUrl);
-      onImageSelected(uploadedUrl, pickedImage);
+      setSelectedImageUrl(pickedImage.uri);
+      onImageSelected(pickedImage);
     } catch (error) {
       setErrorMessage(
         error instanceof Error ? error.message : 'Không thể xử lý ảnh. Vui lòng thử lại.',
@@ -96,28 +93,38 @@ export function ImagePickerField({
       <XStack gap="2">
         <Button
           flex={1}
+          minH={48}
+          borderWidth={1}
+          borderColor="primary"
+          backgroundColor="background"
           disabled={isBusy}
           onPress={() => { void selectImage(takePhoto); }}
           accessibilityRole="button"
           accessibilityLabel="Chụp ảnh"
+          accessibilityState={{ disabled: isBusy, busy: isBusy }}
         >
           <XStack items="center" gap="2">
-            <Camera size={18} color="#17634B" />
-            <Text color="#17634B" fontSize="3" fontWeight="600">
+            <Camera size={18} color={theme.primary.val} />
+            <Text color="color" fontSize="3" fontWeight="600">
               Chụp ảnh
             </Text>
           </XStack>
         </Button>
         <Button
           flex={1}
+          minH={48}
+          borderWidth={1}
+          borderColor="primary"
+          backgroundColor="background"
           disabled={isBusy}
           onPress={() => { void selectImage(pickImageFromLibrary); }}
           accessibilityRole="button"
           accessibilityLabel="Chọn từ thư viện"
+          accessibilityState={{ disabled: isBusy, busy: isBusy }}
         >
           <XStack items="center" gap="2">
-            <Plus size={18} color="#17634B" />
-            <Text color="#17634B" fontSize="3" fontWeight="600">
+            <Plus size={18} color={theme.primary.val} />
+            <Text color="color" fontSize="3" fontWeight="600">
               Chọn từ thư viện
             </Text>
           </XStack>

@@ -1,4 +1,5 @@
 import * as ImagePicker from 'expo-image-picker';
+import { convertImageForUpload } from '../media/imageConversionService';
 
 export interface DeviceImage {
   uri: string;
@@ -20,11 +21,19 @@ export async function pickImagesFromLibrary(limit: number): Promise<DeviceImage[
     mediaTypes: ['images'],
     allowsMultipleSelection: limit > 1,
     selectionLimit: limit,
-    allowsEditing: limit === 1,
-    ...(limit === 1 ? { aspect: [4, 3] as [number, number] } : {}),
+    allowsEditing: false,
     quality: 0.85,
   });
 
   if (result.canceled || result.assets.length === 0) return [];
-  return result.assets.map(({ uri, width, height }) => ({ uri, width, height }));
+  const images: DeviceImage[] = [];
+  for (const asset of result.assets) {
+    const convertedImage = await convertImageForUpload(asset.uri, asset.mimeType);
+    images.push({
+      ...convertedImage,
+      width: asset.width,
+      height: asset.height,
+    });
+  }
+  return images;
 }

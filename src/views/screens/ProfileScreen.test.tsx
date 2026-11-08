@@ -39,7 +39,7 @@ jest.mock('../../controllers/usePublicProfileController', () => ({
     profile: {
       id: 'user-001',
       fullName: 'Public profile name',
-      avatarUrl: '',
+      avatarUrl: '/uploads/old-avatar.jpg',
       faculty: 'Khoa Công nghệ thông tin',
       className: 'DHKTPM17A',
       successfulExchanges: 2,
@@ -101,6 +101,30 @@ describe('ProfileScreen', () => {
     expect(queryByText('Giao dịch thành công: 1')).toBeNull();
     expect(getByLabelText('Chỉnh sửa hồ sơ')).toBeTruthy();
     expect(getByLabelText('Khám phá đồ dùng')).toBeTruthy();
+  });
+
+  test('shows the newly saved account avatar when the public profile is stale', async () => {
+    jest.mocked(useAuthController).mockReturnValue({
+      user: {
+        id: '21036001',
+        email: '21036001.nguyen@student.iuh.edu.vn',
+        fullName: 'Local login name',
+        studentId: '21036001',
+        phoneNumber: '0900000000',
+        avatarUrl: '/uploads/new-avatar.jpg',
+        faculty: 'Khoa cũ',
+        className: 'Lớp cũ',
+        role: 'student',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+      logout: jest.fn(),
+    } as unknown as ReturnType<typeof useAuthController>);
+
+    const { getByLabelText } = await render(<ProfileScreen />);
+    const avatar = getByLabelText('Ảnh đại diện Public profile name');
+
+    expect(avatar.props.src).toContain('/uploads/new-avatar.jpg');
   });
 
   test('opens the profile editor', async () => {
