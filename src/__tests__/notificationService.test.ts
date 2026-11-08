@@ -4,7 +4,7 @@ const mockScheduled = new Map<string, {
 }>();
 const mockScheduleNotificationAsync = jest.fn(async (request: {
   content: { data: { appointmentId: string }; body?: string };
-  trigger: { channelId?: string };
+  trigger: { channelId?: string; date?: Date };
 }) => {
   const identifier = `notification-${mockScheduled.size + 1}`;
   mockScheduled.set(identifier, { identifier, content: request.content });
@@ -59,8 +59,10 @@ describe('notificationService', () => {
       date: '30/10/2030',
       time: '15:00',
       scheduledAt: '2030-10-30T08:00:00.000Z',
+      reminderAt: '2030-10-30T07:00:00.000Z',
+      reminderMinutes: 60,
       location: 'Cổng trường',
-      status: 'pending',
+      status: 'confirmed',
       createdAt: '2030-01-01T00:00:00.000Z',
       updatedAt: '2030-01-01T00:00:00.000Z',
     }, 'Balo học tập');
@@ -69,6 +71,27 @@ describe('notificationService', () => {
     expect(mockScheduleNotificationAsync).toHaveBeenCalledTimes(1);
     expect(mockScheduleNotificationAsync.mock.calls[0][0].content.body).toContain('Balo học tập');
     expect(mockScheduleNotificationAsync.mock.calls[0][0].trigger.channelId).toBe('appointment-reminders');
+    expect(mockScheduleNotificationAsync.mock.calls[0][0].trigger.date)
+      .toEqual(new Date('2030-10-30T07:00:00.000Z'));
+  });
+
+  it('does not schedule reminders before an appointment is confirmed', async () => {
+    const result = await scheduleAppointmentReminder({
+      id: 'appointment-pending',
+      itemId: 'item-1',
+      requesterId: 'user-1',
+      date: '30/10/2030',
+      time: '15:00',
+      scheduledAt: '2030-10-30T08:00:00.000Z',
+      reminderAt: '2030-10-30T07:00:00.000Z',
+      location: 'Cổng trường',
+      status: 'pending',
+      createdAt: '2030-01-01T00:00:00.000Z',
+      updatedAt: '2030-01-01T00:00:00.000Z',
+    }, 'Balo học tập');
+
+    expect(result).toEqual({ scheduled: false, reason: 'unconfirmed' });
+    expect(mockScheduleNotificationAsync).not.toHaveBeenCalled();
   });
 
   it('schedules a reminder using the Android default channel when channel creation fails', async () => {
@@ -83,8 +106,10 @@ describe('notificationService', () => {
       date: '30/10/2030',
       time: '15:00',
       scheduledAt: '2030-10-30T08:00:00.000Z',
+      reminderAt: '2030-10-30T07:00:00.000Z',
+      reminderMinutes: 60,
       location: 'Cổng trường',
-      status: 'pending',
+      status: 'confirmed',
       createdAt: '2030-01-01T00:00:00.000Z',
       updatedAt: '2030-01-01T00:00:00.000Z',
     }, 'Balo học tập');
@@ -106,8 +131,10 @@ describe('notificationService', () => {
       date: '30/10/2030',
       time: '15:00',
       scheduledAt: '2030-10-30T08:00:00.000Z',
+      reminderAt: '2030-10-30T07:00:00.000Z',
+      reminderMinutes: 60,
       location: 'Cổng trường',
-      status: 'pending',
+      status: 'confirmed',
       createdAt: '2030-01-01T00:00:00.000Z',
       updatedAt: '2030-01-01T00:00:00.000Z',
     }, 'Balo học tập');
@@ -125,8 +152,10 @@ describe('notificationService', () => {
       date: '30/10/2026',
       time: '01:40',
       scheduledAt: '2026-10-29T18:00:00.000Z',
+      reminderAt: '2026-10-29T17:00:00.000Z',
+      reminderMinutes: 60,
       location: 'Khu A',
-      status: 'pending',
+      status: 'confirmed',
       createdAt: '2026-10-29T00:00:00.000Z',
       updatedAt: '2026-10-29T00:00:00.000Z',
     }, 'Sách');
@@ -143,8 +172,10 @@ describe('notificationService', () => {
       date: '30/10/2030',
       time: '15:00',
       scheduledAt: '2030-10-30T08:00:00.000Z',
+      reminderAt: '2030-10-30T07:00:00.000Z',
+      reminderMinutes: 60,
       location: 'Khu A',
-      status: 'pending',
+      status: 'confirmed',
       createdAt: '2030-01-01T00:00:00.000Z',
       updatedAt: '2030-01-01T00:00:00.000Z',
     }, 'Sách');

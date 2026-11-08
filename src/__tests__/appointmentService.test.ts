@@ -1,7 +1,17 @@
 import {
   createAppointment,
   getAppointments,
+  loadAppointments,
+  updateAppointmentStatus,
 } from '../services/appointments/appointmentService';
+
+jest.mock('../services/device/notificationService', () => ({
+  cancelAppointmentReminder: jest.fn(),
+  scheduleAppointmentReminder: jest.fn().mockResolvedValue({
+    scheduled: false,
+    reason: 'web',
+  }),
+}));
 
 const mockJsonResponse = (body: unknown): Response =>
   ({
@@ -45,7 +55,6 @@ describe('appointmentService', () => {
         date,
         time,
         scheduledAt,
-        location: 'Sảnh thư viện IUH',
         note: 'Tôi sẽ đến sau giờ học.',
         status: 'pending',
         createdAt: new Date().toISOString(),
@@ -58,12 +67,54 @@ describe('appointmentService', () => {
       date,
       time,
       scheduledAt,
-      location: 'Sảnh thư viện IUH',
       note: 'Tôi sẽ đến sau giờ học.',
     });
 
     expect(appointment.status).toBe('pending');
     expect(appointment.note).toBe('Tôi sẽ đến sau giờ học.');
     expect(getAppointments()).toContainEqual(appointment);
+  });
+
+  it('sends a second confirmation when the appointment is already confirmed', async () => {
+    const appointment = {
+      id: 'appointment-test',
+      itemId: 'item-002',
+      requesterId: 'requester-001',
+      date: '07/11/2026',
+      time: '10:00',
+      scheduledAt: '2026-11-07T03:00:00.000Z',
+      location: 'IUH',
+      status: 'confirmed',
+      confirmedBy: ['requester-001'],
+      createdAt: '2026-11-06T08:00:00.000Z',
+      updatedAt: '2026-11-06T08:00:00.000Z',
+    };
+    const item = {
+      id: 'item-002',
+      title: 'Textbook',
+    };
+    const updatedAppointment = {
+      ...appointment,
+      confirmedBy: ['requester-001', 'owner-001'],
+      updatedAt: '2026-11-06T08:05:00.000Z',
+    };
+    const fetchMock = jest.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mockJsonResponse([appointment]))
+      .mockResolvedValueOnce(mockJsonResponse(updatedAppointment))
+      .mockResolvedValueOnce(mockJsonResponse(item));
+
+    await loadAppointments('owner-001');
+    const result = await updateAppointmentStatus('appointment-test', 'confirmed');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining('/appointments/appointment-test/status'),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ status: 'confirmed' }),
+      }),
+    );
+    expect(result.confirmedBy).toEqual(['requester-001', 'owner-001']);
+    expect(getAppointments()[0].confirmedBy).toEqual(['requester-001', 'owner-001']);
   });
 });

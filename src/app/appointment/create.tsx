@@ -16,6 +16,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Input, Text, TextArea, XStack, YStack } from 'tamagui';
 import type { Item } from '../../models/itemModel';
 import { getItemById } from '../../services/api/itemService';
+import { getItemAvailabilityDeadline } from '../../services/appointments/appointmentService';
 import { getPublicUserById } from '../../services/authService';
 import { combineAppointmentDate, isAppointmentDateInFuture } from '../../controllers/useAppointmentController';
 import { CustomButton } from '../../views/components/CustomButton';
@@ -188,7 +189,6 @@ export default function AppointmentCreateRoute() {
   const [date, setDate] = useState('');
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [time, setTime] = useState('');
-  const [location, setLocation] = useState('');
   const [note, setNote] = useState('');
   const [datePickerVisible, setDatePickerVisible] = useState(false);
 
@@ -226,6 +226,18 @@ export default function AppointmentCreateRoute() {
   }
   if (loading || !item) return <YStack flex={1} backgroundColor="background" items="center" justify="center"><ActivityIndicator /></YStack>;
 
+  const appointmentDateForForm = combineAppointmentDate(date, time);
+  const availableUntil = getItemAvailabilityDeadline(item);
+  const isPastAppointment = Boolean(
+    appointmentDateForForm && !isAppointmentDateInFuture(appointmentDateForForm),
+  );
+  const isAfterAvailability = Boolean(
+    appointmentDateForForm
+    && availableUntil
+    && appointmentDateForForm.getTime() > Date.parse(availableUntil),
+  );
+  const location = item.location || 'Trong khuôn viên IUH';
+
   const continueToConfirmation = () => {
     const appointmentDate = combineAppointmentDate(date, time);
     if (!appointmentDate) {
@@ -239,6 +251,13 @@ export default function AppointmentCreateRoute() {
       );
       return;
     }
+    if (availableUntil && appointmentDate.getTime() > Date.parse(availableUntil)) {
+      Alert.alert(
+        'Không thể đặt lịch',
+        'Ngày nhận phải trước hoặc đúng hạn trao của món đồ.',
+      );
+      return;
+    }
     router.push({
       pathname: '/appointment/confirm',
       params: {
@@ -247,16 +266,11 @@ export default function AppointmentCreateRoute() {
         time,
         timeLabel: time,
         scheduledAt: appointmentDate.toISOString(),
-        location: location.trim(),
         note: note.trim(),
       },
     });
   };
-  const appointmentDateForForm = combineAppointmentDate(date, time);
-  const isPastAppointment = Boolean(
-    appointmentDateForForm && !isAppointmentDateInFuture(appointmentDateForForm),
-  );
-  const canContinue = Boolean(date && time && location.trim());
+  const canContinue = Boolean(date && time && !isPastAppointment && !isAfterAvailability);
 
   return (
     <SafeAreaView style={{ flex: 1 }} edges={['top', 'bottom']}>
@@ -264,7 +278,7 @@ export default function AppointmentCreateRoute() {
         <ScrollView contentContainerStyle={{ flexGrow: 1, paddingTop: 12 }}>
           <YStack flex={1} backgroundColor="background" p="4" gap="3">
           <Text color="color" fontSize="7" fontWeight="700" text="center">Đặt lịch nhận đồ</Text>
-          <Text color="color" opacity={0.65} fontSize="3" text="center">Chọn thời gian và địa điểm nhận đồ</Text>
+          <Text color="color" opacity={0.65} fontSize="3" text="center">Chọn thời gian nhận đồ</Text>
           <XStack gap="3" p="3" borderWidth={1} borderColor="border-color" rounded="6" items="center">
             <Image source={{ uri: item.imageUrl }} style={{ width: 86, height: 86, borderRadius: 10 }} />
             <YStack flex={1} gap="1">
@@ -323,14 +337,15 @@ export default function AppointmentCreateRoute() {
               Ngày và giờ nhận đồ đã qua. Vui lòng chọn thời gian khác.
             </Text>
           ) : null}
+          {isAfterAvailability ? (
+            <Text color="red" fontSize="3" fontWeight="700">
+              Ngày nhận phải trước hoặc đúng hạn trao của món đồ.
+            </Text>
+          ) : null}
           <Text color="primary" fontWeight="700" fontSize="5">Địa điểm nhận đồ</Text>
-          <Input
-            h={40}
-            value={location}
-            onChangeText={setLocation}
-            placeholder="Nhập địa điểm nhận đồ"
-            maxLength={200}
-          />
+          <Text color="color" backgroundColor="background-hover" p="3" rounded="3">
+            {location}
+          </Text>
           <TextArea value={note} onChangeText={setNote} placeholder="Ghi chú (không bắt buộc)" height={58} />
           <CustomButton disabled={!canContinue} onPress={continueToConfirmation}>Xác nhận lịch hẹn →</CustomButton>
           <CustomButton onPress={backToItem}>Quay lại</CustomButton>

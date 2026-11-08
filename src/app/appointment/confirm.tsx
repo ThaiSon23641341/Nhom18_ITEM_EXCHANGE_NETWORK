@@ -11,6 +11,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { Text, YStack } from "tamagui";
 import type { Item } from "../../models/itemModel";
 import { getItemById } from "../../services/api/itemService";
+import { getItemAvailabilityDeadline } from "../../services/appointments/appointmentService";
 import { getPublicUserById } from "../../services/authService";
 import {
   combineAppointmentDate,
@@ -19,10 +20,6 @@ import {
 } from "../../controllers/useAppointmentController";
 import { useAuthController } from "../../controllers/useAuthController";
 import { CustomButton } from "../../views/components/CustomButton";
-import {
-  APPOINTMENT_REMINDER_MINUTES,
-  scheduleAppointmentReminder,
-} from "../../services/device/notificationService";
 import { goBackOrReplace } from "../../utils/navigation";
 
 export default function AppointmentConfirmRoute() {
@@ -32,7 +29,6 @@ export default function AppointmentConfirmRoute() {
     time?: string;
     timeLabel?: string;
     scheduledAt?: string;
-    location?: string;
     note?: string;
   }>();
   const itemId = typeof params.itemId === "string" ? params.itemId : undefined;
@@ -42,7 +38,6 @@ export default function AppointmentConfirmRoute() {
     typeof params.timeLabel === "string" ? params.timeLabel : time;
   const scheduledAt =
     typeof params.scheduledAt === "string" ? params.scheduledAt : "";
-  const location = typeof params.location === "string" ? params.location : "";
   const note = typeof params.note === "string" ? params.note : "";
   const backToAppointmentForm = () =>
     goBackOrReplace(
@@ -90,19 +85,21 @@ export default function AppointmentConfirmRoute() {
   }, [item]);
 
   const appointmentDate = combineAppointmentDate(date, time);
+  const location = item?.location || "Trong khuôn viên IUH";
+  const availableUntil = item ? getItemAvailabilityDeadline(item) : undefined;
   const isValid = Boolean(
     item &&
     itemId &&
-    location &&
     appointmentDate &&
-    isAppointmentDateInFuture(appointmentDate),
+    isAppointmentDateInFuture(appointmentDate) &&
+    (!availableUntil || appointmentDate.getTime() <= Date.parse(availableUntil)),
   );
 
   const submit = async () => {
     if (!isValid || !item || !itemId || !appointmentDate || submitting) {
       Alert.alert(
         "Thông tin chưa hợp lệ",
-        "Vui lòng quay lại và kiểm tra ngày, giờ và địa điểm.",
+        "Vui lòng quay lại và kiểm tra ngày, giờ nhận.",
       );
       return;
     }
@@ -110,35 +107,15 @@ export default function AppointmentConfirmRoute() {
     setSubmitError(null);
     setSuccessMessage(null);
     try {
-      const appointment = await create({
+      await create({
         itemId,
-        requesterId: user?.id ?? "user-001",
+        requesterId: user?.id ?? "",
         date,
         time,
         scheduledAt: scheduledAt || appointmentDate.toISOString(),
-        location,
         note: note || undefined,
       });
-      let message = "Lịch hẹn đang chờ chủ món đồ xác nhận.";
-      try {
-        const reminder = await scheduleAppointmentReminder(
-          appointment,
-          item.title,
-        );
-        if (reminder.scheduled) {
-          message += ` Đã đặt nhắc trước ${APPOINTMENT_REMINDER_MINUTES} phút.`;
-        } else if (reminder.reason === "web") {
-          message += " Trình duyệt không hỗ trợ lời nhắc native; hãy dùng ứng dụng trên điện thoại.";
-        } else if (reminder.reason === "permission-denied") {
-          message += " Bạn chưa cấp quyền thông báo nên chưa thể đặt lời nhắc.";
-        } else if (reminder.reason === "too-soon") {
-          message += ` Thời gian nhận còn dưới ${APPOINTMENT_REMINDER_MINUTES} phút nên không đặt lời nhắc.`;
-        }
-      } catch (error: unknown) {
-        const detail = error instanceof Error ? error.message : String(error);
-        console.error("Không thể đặt nhắc lịch hẹn:", error);
-        message += ` Không thể đặt lời nhắc (${detail}), nhưng lịch hẹn vẫn đã được tạo.`;
-      }
+      const message = "Lịch hẹn đang chờ chủ món đồ xác nhận. Lời nhắc sẽ được đặt khi lịch được xác nhận.";
       setSuccessMessage(message);
       if (Platform.OS === "web") {
         window.alert(`Đặt lịch thành công\n\n${message}`);

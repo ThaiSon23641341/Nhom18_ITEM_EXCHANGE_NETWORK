@@ -1,5 +1,10 @@
 import { createAppointment, getAppointments } from './appointmentService';
 
+jest.mock('../device/notificationService', () => ({
+  cancelAppointmentReminder: jest.fn(),
+  scheduleAppointmentReminder: jest.fn(),
+}));
+
 const mockJsonResponse = (body: unknown): Response =>
   ({
     ok: true,
@@ -62,7 +67,6 @@ describe('appointmentService', () => {
       requesterId: 'student-12345678',
       date,
       time,
-      location: 'Thư viện IUH',
     });
 
     await expect(getAppointments('student-12345678')).resolves.toContainEqual(
@@ -105,7 +109,6 @@ describe('appointmentService', () => {
       requesterId: 'user-001',
       date,
       time,
-      location: 'Thư viện IUH',
     })).rejects.toMatchObject({ code: 'BAD_REQUEST' });
   });
 });
