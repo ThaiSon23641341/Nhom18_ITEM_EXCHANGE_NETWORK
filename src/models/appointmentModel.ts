@@ -14,6 +14,12 @@ export interface Appointment {
   location: string;
   note?: string;
   confirmedBy?: string[];
+  completionConfirmedBy?: string[];
+  cancelledBy?: string;
+  cancellationReason?: string;
+  cancellationPenalized?: boolean;
+  cancellationPenaltyCount?: number;
+  cancellationPenaltyPoints?: number;
   reminderAt?: string | null;
   reminderMinutes?: number;
   status: AppointmentStatus;

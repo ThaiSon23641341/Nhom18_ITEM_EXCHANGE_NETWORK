@@ -5,9 +5,7 @@
  */
 
 import { AppointmentsScreen } from '../../views/screens/AppointmentsScreen';
-import { useReminderSyncController } from '../../controllers/useReminderSyncController';
 
 export default function AppointmentsTab() {
-  useReminderSyncController();
   return <AppointmentsScreen />;
 }

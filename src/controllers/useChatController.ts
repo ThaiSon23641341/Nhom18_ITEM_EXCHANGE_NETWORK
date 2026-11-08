@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import type { Appointment } from '../models/appointmentModel';
 import type { Message } from '../models/messageModel';
 import {
@@ -11,12 +11,22 @@ import {
 } from '../services/api/messageService';
 import { useAuthController } from './useAuthController';
 
+const MESSAGE_POLL_INTERVAL_MS = 5000;
+
 async function loadConversation(userId: string, appointmentId: string) {
   await loadAppointments(userId);
   const appointment = getAppointments().find((value) => value.id === appointmentId);
   if (!appointment) throw new Error('Không tìm thấy lịch hẹn của bạn.');
   const messages = await getAppointmentMessages(appointmentId);
   return { appointment, messages };
+}
+
+function mergeMessages(current: Message[], incoming: Message[]): Message[] {
+  const messagesById = new Map(current.map((message) => [message.id, message]));
+  incoming.forEach((message) => messagesById.set(message.id, message));
+  return [...messagesById.values()].sort((left, right) =>
+    left.createdAt.localeCompare(right.createdAt),
+  );
 }
 
 export function useChatController(appointmentId: string) {
@@ -27,6 +37,7 @@ export function useChatController(appointmentId: string) {
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const refreshInFlight = useRef(false);
 
   const hasBothConfirmed = Boolean(
     appointment?.confirmedBy?.includes(appointment.requesterId)
@@ -38,42 +49,39 @@ export function useChatController(appointmentId: string) {
     || appointment.status !== 'confirmed'
     || !hasBothConfirmed;
 
-  const reload = useCallback(async () => {
-    if (!userId || !appointmentId) return;
-    setIsLoading(true);
+  const refresh = useCallback(async (showLoading: boolean) => {
+    if (!userId || !appointmentId || refreshInFlight.current) return;
+    refreshInFlight.current = true;
+    if (showLoading) setIsLoading(true);
     setError(null);
     try {
       const conversation = await loadConversation(userId, appointmentId);
       setAppointment(conversation.appointment);
-      setMessages(conversation.messages);
+      setMessages((current) => mergeMessages(current, conversation.messages));
     } catch (loadError: unknown) {
       setError(loadError instanceof Error ? loadError.message : 'Không thể tải cuộc chat.');
     } finally {
-      setIsLoading(false);
+      refreshInFlight.current = false;
+      if (showLoading) setIsLoading(false);
     }
   }, [appointmentId, userId]);
+
+  const reload = useCallback(() => refresh(true), [refresh]);
 
   useEffect(() => {
     if (!userId || !appointmentId) return;
     let active = true;
-    void loadConversation(userId, appointmentId)
-      .then((conversation) => {
-        if (!active) return;
-        setAppointment(conversation.appointment);
-        setMessages(conversation.messages);
-      })
-      .catch((loadError: unknown) => {
-        if (active) {
-          setError(loadError instanceof Error ? loadError.message : 'Không thể tải cuộc chat.');
-        }
-      })
-      .finally(() => {
-        if (active) setIsLoading(false);
-      });
+    void Promise.resolve().then(() => {
+      if (active) void refresh(true);
+    });
+    const intervalId = setInterval(() => {
+      if (active) void refresh(false);
+    }, MESSAGE_POLL_INTERVAL_MS);
     return () => {
       active = false;
+      clearInterval(intervalId);
     };
-  }, [appointmentId, userId]);
+  }, [appointmentId, refresh, userId]);
 
   const send = useCallback(async (text: string) => {
     const normalizedText = text.trim();

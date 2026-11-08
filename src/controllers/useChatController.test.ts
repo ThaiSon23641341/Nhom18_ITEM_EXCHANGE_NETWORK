@@ -99,4 +99,41 @@ describe('useChatController', () => {
     });
     expect(sendAppointmentMessage).not.toHaveBeenCalled();
   });
+
+  it('loads messages sent by the other participant without a manual refresh', async () => {
+    jest.useFakeTimers();
+    let unmount: (() => void) | undefined;
+    try {
+      const incomingMessage: Message = {
+        id: 'message-2',
+        appointmentId: appointment.id,
+        senderId: 'owner-1',
+        text: 'Mình đang đến.',
+        createdAt: '2026-11-06T08:12:00.000Z',
+      };
+      jest.mocked(getAppointmentMessages)
+        .mockResolvedValueOnce([initialMessage])
+        .mockResolvedValue([initialMessage, incomingMessage]);
+
+      const hook = await renderHook(() => useChatController(appointment.id));
+      unmount = hook.unmount;
+      await act(async () => {
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+        await Promise.resolve();
+      });
+
+      expect(hook.result.current.messages).toEqual([initialMessage]);
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(5000);
+      });
+
+      expect(hook.result.current.messages).toEqual([initialMessage, incomingMessage]);
+      expect(getAppointmentMessages).toHaveBeenCalledTimes(2);
+    } finally {
+      unmount?.();
+      jest.useRealTimers();
+    }
+  });
 });

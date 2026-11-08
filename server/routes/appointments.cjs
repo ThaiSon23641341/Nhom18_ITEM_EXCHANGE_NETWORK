@@ -1,6 +1,7 @@
 // Owner: Tú. Appointment scheduling, confirmation, and reminder lifecycle.
 const { authenticate } = require('../lib/session.cjs');
 const { isRecord, isText, sendError } = require('../lib/helpers.cjs');
+const { calculateCancellationPenalty } = require('../lib/reputation.cjs');
 
 const APPOINTMENT_STATUSES = ['confirmed', 'cancelled', 'completed'];
 const APPOINTMENT_FIELDS = new Set([
@@ -117,6 +118,32 @@ function register({ app, router }) {
     response.json(appointment);
   });
 
+  app.patch('/appointments/:id', (request, response) => {
+    const userId = authenticate(router.db, request);
+    if (!userId) {
+      sendError(response, 401, 'UNAUTHORIZED', 'Cần đăng nhập để cập nhật lịch hẹn.');
+      return;
+    }
+    const appointment = router.db.get('appointments').find({ id: request.params.id }).value();
+    if (!appointment) {
+      sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy lịch hẹn.');
+      return;
+    }
+    const { ownerId, requesterId } = getParticipants(router.db, appointment);
+    if (userId !== ownerId && userId !== requesterId) {
+      sendError(response, 403, 'FORBIDDEN', 'Bạn không tham gia lịch hẹn này.');
+      return;
+    }
+    if (
+      appointment.status === 'confirmed'
+      && hasConfirmedBoth(appointment, ownerId)
+    ) {
+      sendError(response, 409, 'CONFLICT', 'Không thể chỉnh sửa lịch đã được cả hai bên xác nhận.');
+      return;
+    }
+    sendError(response, 405, 'METHOD_NOT_ALLOWED', 'Lịch hẹn không hỗ trợ chỉnh sửa.');
+  });
+
   app.post('/appointments', (request, response) => {
     const userId = authenticate(router.db, request);
     if (!userId) {
@@ -142,6 +169,7 @@ function register({ app, router }) {
       reminderMinutes: REMINDER_MINUTES,
       reminderAt: new Date(scheduledAt.getTime() - REMINDER_MINUTES * 60 * 1000).toISOString(),
       confirmedBy: [],
+      completionConfirmedBy: [],
       id: `appointment-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
       status: 'pending',
       createdAt: now,
@@ -155,6 +183,87 @@ function register({ app, router }) {
     response.status(201).json(appointment);
   });
 
+  app.patch('/appointments/:id/completion', (request, response) => {
+    const userId = authenticate(router.db, request);
+    if (!userId) {
+      sendError(response, 401, 'UNAUTHORIZED', 'Cần đăng nhập để xác nhận giao nhận.');
+      return;
+    }
+    if (
+      !isRecord(request.body)
+      || Object.keys(request.body).some((key) => key !== 'action')
+      || !['delivered', 'received'].includes(request.body.action)
+    ) {
+      sendError(response, 400, 'BAD_REQUEST', 'Thao tác giao nhận không hợp lệ.');
+      return;
+    }
+    const appointment = router.db.get('appointments').find({ id: request.params.id }).value();
+    if (!appointment) {
+      sendError(response, 404, 'NOT_FOUND', 'Không tìm thấy lịch hẹn.');
+      return;
+    }
+    const { ownerId, requesterId } = getParticipants(router.db, appointment);
+    if (userId !== ownerId && userId !== requesterId) {
+      sendError(response, 403, 'FORBIDDEN', 'Bạn không tham gia lịch hẹn này.');
+      return;
+    }
+    const completionConfirmedBy = Array.isArray(appointment.completionConfirmedBy)
+      ? [...appointment.completionConfirmedBy]
+      : [];
+    if (appointment.status === 'completed') {
+      const repeatedAction = request.body.action === 'delivered'
+        ? userId === ownerId && completionConfirmedBy.includes(ownerId)
+        : userId === requesterId && completionConfirmedBy.includes(requesterId);
+      if (repeatedAction) {
+        response.json(appointment);
+        return;
+      }
+      sendError(response, 409, 'CONFLICT', 'Giao dịch đã hoàn tất.');
+      return;
+    }
+    if (appointment.status !== 'confirmed' || !hasConfirmedBoth(appointment, ownerId)) {
+      sendError(response, 409, 'CONFLICT', 'Cả hai bên phải xác nhận lịch trước khi giao nhận.');
+      return;
+    }
+    const now = new Date().toISOString();
+    if (request.body.action === 'delivered') {
+      if (userId !== ownerId) {
+        sendError(response, 403, 'FORBIDDEN', 'Chỉ chủ món mới có thể xác nhận đã giao.');
+        return;
+      }
+      if (completionConfirmedBy.includes(ownerId)) {
+        response.json(appointment);
+        return;
+      }
+      const updated = router.db.get('appointments').find({ id: appointment.id }).assign({
+        completionConfirmedBy: [...completionConfirmedBy, ownerId],
+        updatedAt: now,
+      }).write();
+      response.json(updated);
+      return;
+    }
+    if (userId !== requesterId) {
+      sendError(response, 403, 'FORBIDDEN', 'Chỉ người nhận mới có thể xác nhận đã nhận.');
+      return;
+    }
+    if (!completionConfirmedBy.includes(ownerId)) {
+      sendError(response, 409, 'CONFLICT', 'Chủ món cần xác nhận đã giao trước.');
+      return;
+    }
+    if (!completionConfirmedBy.includes(requesterId)) completionConfirmedBy.push(requesterId);
+    const updated = router.db.get('appointments').find({ id: appointment.id }).assign({
+      status: 'completed',
+      completionConfirmedBy,
+      reminderAt: null,
+      updatedAt: now,
+    }).write();
+    router.db.get('items').find({ id: appointment.itemId }).assign({
+      status: 'exchanged',
+      updatedAt: now,
+    }).write();
+    response.json(updated);
+  });
+
   app.patch('/appointments/:id/status', (request, response) => {
     const userId = authenticate(router.db, request);
     if (!userId) {
@@ -162,10 +271,12 @@ function register({ app, router }) {
       return;
     }
     const status = request.body?.status;
+    const allowedFields = status === 'cancelled' ? ['status', 'reason'] : ['status'];
     if (
       !isRecord(request.body)
-      || Object.keys(request.body).some((key) => key !== 'status')
+      || Object.keys(request.body).some((key) => !allowedFields.includes(key))
       || !APPOINTMENT_STATUSES.includes(status)
+      || (request.body.reason !== undefined && !isText(request.body.reason, 500, true))
     ) {
       sendError(response, 400, 'BAD_REQUEST', 'Trạng thái lịch hẹn không hợp lệ.');
       return;
@@ -199,41 +310,68 @@ function register({ app, router }) {
       return;
     }
     if (status === 'cancelled') {
-      if (appointment.status !== 'pending' && appointment.status !== 'confirmed') {
+      if (appointment.status === 'cancelled') {
+        if (appointment.cancelledBy === userId) {
+          response.json(appointment);
+          return;
+        }
+        sendError(response, 409, 'CONFLICT', 'Lịch hẹn đã được hủy.');
+        return;
+      }
+      if (appointment.status === 'completed') {
         sendError(response, 409, 'CONFLICT', 'Không thể hủy lịch hẹn này.');
         return;
       }
+      const completionConfirmedBy = Array.isArray(appointment.completionConfirmedBy)
+        ? appointment.completionConfirmedBy
+        : [];
+      const ownerDelivered = completionConfirmedBy.includes(ownerId);
+      const penaltyRequired = ownerDelivered;
+      const requestAllowed = userId === requesterId;
+      const ownerCancellingBeforeDelivery = userId === ownerId
+        && (appointment.status === 'pending' || appointment.status === 'confirmed');
+      if (!penaltyRequired && !requestAllowed && !ownerCancellingBeforeDelivery) {
+        sendError(response, 409, 'CONFLICT', 'Không thể hủy lịch hẹn này.');
+        return;
+      }
+      if (penaltyRequired && !isText(request.body.reason, 500, true)) {
+        sendError(response, 400, 'BAD_REQUEST', 'Vui lòng nhập lý do hủy sau khi đã xác nhận giao.');
+        return;
+      }
+      const now = new Date().toISOString();
+      const previousPenaltyCount = penaltyRequired
+        ? router.db.get('appointments')
+          .filter((record) => record.cancellationPenalized === true && record.cancelledBy === userId)
+          .size()
+          .value()
+        : 0;
+      const penaltyCount = penaltyRequired ? previousPenaltyCount + 1 : undefined;
+      const penaltyPoints = penaltyRequired
+        ? calculateCancellationPenalty(penaltyCount)
+          - calculateCancellationPenalty(previousPenaltyCount)
+        : undefined;
       const updated = router.db.get('appointments').find({ id: appointment.id }).assign({
         status,
+        cancelledBy: userId,
+        cancellationReason: request.body.reason?.trim() || null,
+        cancellationPenalized: penaltyRequired,
+        ...(penaltyRequired ? {
+          cancellationPenaltyCount: penaltyCount,
+          cancellationPenaltyPoints: penaltyPoints,
+        } : {}),
         reminderAt: null,
         updatedAt: now,
       }).write();
-      router.db.get('items').find({ id: appointment.itemId, status: 'reserved' }).assign({
-        status: 'available',
-        updatedAt: now,
-      }).write();
+      if (userId === ownerId || !ownerDelivered) {
+        router.db.get('items').find({ id: appointment.itemId, status: 'reserved' }).assign({
+          status: 'available',
+          updatedAt: now,
+        }).write();
+      }
       response.json(updated);
       return;
     }
-    if (
-      status !== 'completed'
-      || userId !== ownerId
-      || appointment.status !== 'confirmed'
-      || !hasConfirmedBoth(appointment, ownerId)
-    ) {
-      sendError(response, 409, 'CONFLICT', 'Chỉ chủ món mới có thể hoàn tất lịch đã được cả hai bên xác nhận.');
-      return;
-    }
-    const updated = router.db.get('appointments').find({ id: appointment.id }).assign({
-      status: 'completed',
-      reminderAt: null,
-      updatedAt: now,
-    }).write();
-    router.db.get('items').find({ id: appointment.itemId }).assign({
-      status: 'exchanged',
-      updatedAt: now,
-    }).write();
-    response.json(updated);
+    sendError(response, 409, 'CONFLICT', 'Chỉ người nhận mới có thể hoàn tất sau khi xác nhận đã nhận.');
   });
 
   app.all('/appointments/:id', (_request, response) => {

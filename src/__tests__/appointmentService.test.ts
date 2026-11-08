@@ -1,5 +1,6 @@
 import {
   createAppointment,
+  confirmAppointmentCompletion,
   getAppointments,
   loadAppointments,
   updateAppointmentStatus,
@@ -116,5 +117,134 @@ describe('appointmentService', () => {
     );
     expect(result.confirmedBy).toEqual(['requester-001', 'owner-001']);
     expect(getAppointments()[0].confirmedBy).toEqual(['requester-001', 'owner-001']);
+  });
+
+  it('records owner delivery without completing the appointment', async () => {
+    const appointment = {
+      id: 'appointment-delivery',
+      itemId: 'item-002',
+      requesterId: 'requester-001',
+      date: '07/11/2026',
+      time: '10:00',
+      location: 'IUH',
+      status: 'confirmed',
+      confirmedBy: ['requester-001', 'owner-001'],
+      completionConfirmedBy: [],
+      createdAt: '2026-11-06T08:00:00.000Z',
+      updatedAt: '2026-11-06T08:00:00.000Z',
+    };
+    const delivered = {
+      ...appointment,
+      completionConfirmedBy: ['owner-001'],
+      updatedAt: '2026-11-06T08:10:00.000Z',
+    };
+    const fetchMock = jest.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mockJsonResponse([appointment]))
+      .mockResolvedValueOnce(mockJsonResponse(delivered));
+
+    await loadAppointments('owner-001');
+    await expect(confirmAppointmentCompletion(appointment.id, 'delivered'))
+      .resolves.toEqual(delivered);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining(`/appointments/${appointment.id}/completion`),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ action: 'delivered' }),
+      }),
+    );
+    expect(getAppointments()[0]).toEqual(delivered);
+  });
+
+  it('confirms receipt and clears the local reminder only when the server completes the exchange', async () => {
+    const appointment = {
+      id: 'appointment-receipt',
+      itemId: 'item-002',
+      requesterId: 'requester-001',
+      date: '07/11/2026',
+      time: '10:00',
+      location: 'IUH',
+      status: 'confirmed',
+      confirmedBy: ['requester-001', 'owner-001'],
+      completionConfirmedBy: ['owner-001'],
+      reminderAt: '2026-11-07T09:00:00.000Z',
+      createdAt: '2026-11-06T08:00:00.000Z',
+      updatedAt: '2026-11-06T08:10:00.000Z',
+    };
+    const completed = {
+      ...appointment,
+      status: 'completed',
+      completionConfirmedBy: ['owner-001', 'requester-001'],
+      reminderAt: null,
+    };
+    const fetchMock = jest.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mockJsonResponse([appointment]))
+      .mockResolvedValueOnce(mockJsonResponse(completed));
+    const { cancelAppointmentReminder } = jest.requireMock(
+      '../services/device/notificationService',
+    ) as { cancelAppointmentReminder: jest.Mock };
+
+    await loadAppointments('requester-001');
+    await expect(confirmAppointmentCompletion(appointment.id, 'received'))
+      .resolves.toEqual(completed);
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining(`/appointments/${appointment.id}/completion`),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({ action: 'received' }),
+      }),
+    );
+    expect(cancelAppointmentReminder).toHaveBeenCalledWith(appointment.id);
+  });
+
+  it('sends cancellation reason without accepting client-generated penalty metadata', async () => {
+    const appointment = {
+      id: 'appointment-cancel',
+      itemId: 'item-002',
+      requesterId: 'requester-001',
+      date: '07/11/2026',
+      time: '10:00',
+      location: 'IUH',
+      status: 'confirmed',
+      confirmedBy: ['requester-001', 'owner-001'],
+      completionConfirmedBy: ['owner-001'],
+      createdAt: '2026-11-06T08:00:00.000Z',
+      updatedAt: '2026-11-06T08:10:00.000Z',
+    };
+    const cancelled = {
+      ...appointment,
+      status: 'cancelled',
+      cancelledBy: 'requester-001',
+      cancellationReason: 'Không thể đến nhận',
+      cancellationPenalized: true,
+      cancellationPenaltyCount: 1,
+      cancellationPenaltyPoints: 5,
+    };
+    const fetchMock = jest.spyOn(globalThis, 'fetch')
+      .mockResolvedValueOnce(mockJsonResponse([appointment]))
+      .mockResolvedValueOnce(mockJsonResponse(cancelled));
+    const { cancelAppointmentReminder } = jest.requireMock(
+      '../services/device/notificationService',
+    ) as { cancelAppointmentReminder: jest.Mock };
+
+    await loadAppointments('requester-001');
+    await updateAppointmentStatus(appointment.id, 'cancelled', 'Không thể đến nhận');
+
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      expect.stringContaining(`/appointments/${appointment.id}/status`),
+      expect.objectContaining({
+        method: 'PATCH',
+        body: JSON.stringify({
+          status: 'cancelled',
+          reason: 'Không thể đến nhận',
+        }),
+      }),
+    );
+    expect(getAppointments()[0]).toEqual(cancelled);
+    expect(cancelAppointmentReminder).toHaveBeenCalledWith(appointment.id);
   });
 });
