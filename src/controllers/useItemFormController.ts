@@ -7,6 +7,8 @@ import { getApiErrorMessage } from '../utils/apiErrorMessage';
 import { validateItemForm, type ItemFormErrors, type ItemFormValues } from '../utils/validateItem';
 import type { Item, ItemCondition } from '../models/itemModel';
 import { canEditItem } from '../utils/itemPermissions';
+import { defaultAvailableUntil } from '../utils/availability';
+import { uploadImage } from '../services/api/uploadService';
 
 export interface UseItemFormControllerOptions {
   mode: 'create' | 'edit';
@@ -23,7 +25,26 @@ const EMPTY_VALUES: ItemFormValues = {
   imageUrls: [],
   price: '',
   location: '',
+  availableUntil: defaultAvailableUntil(),
 };
+
+function isLocalImageUri(uri: string): boolean {
+  return /^(?:file|content|blob|data):/i.test(uri);
+}
+
+async function uploadItemImages(imageUris: string[]): Promise<string[]> {
+  const uploaded: string[] = [];
+  for (const uri of imageUris) {
+    uploaded.push(isLocalImageUri(uri)
+      ? await uploadImage({
+          uri,
+          name: 'item-image.jpg',
+          type: uri.toLowerCase().endsWith('.png') ? 'image/png' : 'image/jpeg',
+        })
+      : uri);
+  }
+  return uploaded;
+}
 
 export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormControllerOptions) {
   const { user } = useAuthController();
@@ -49,6 +70,8 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
       setItem(loaded);
       if (loaded.status === 'exchanged') {
         setPermissionError('Món đã trao không thể chỉnh sửa.');
+      } else if (loaded.isLocked) {
+        setPermissionError('Món đang có lịch hẹn đã xác nhận không thể chỉnh sửa.');
       } else if (!user || !canEditItem(loaded, user.id)) {
         setPermissionError('Bạn không có quyền sửa bài này.');
       } else {
@@ -63,6 +86,7 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
         imageUrls: loaded.imageUrls?.length ? [...loaded.imageUrls] : loaded.imageUrl ? [loaded.imageUrl] : [],
         price: loaded.priceVnd === undefined ? '' : String(loaded.priceVnd),
         location: loaded.location ?? '',
+        availableUntil: loaded.availableUntil ?? defaultAvailableUntil(),
       };
       setValues(next);
       setInitialValues(next);
@@ -111,8 +135,8 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
     setSubmitError(null);
     try {
       let saved: Item;
+      const imageUrls = await uploadItemImages(values.imageUrls);
       if (mode === 'create') {
-        const imageUrls = values.imageUrls;
         saved = await createItem({
           title: values.title.trim(),
           description: values.description.trim(),
@@ -125,19 +149,21 @@ export function useItemFormController({ mode, itemId, onSuccess }: UseItemFormCo
           ownerAvatarUrl: user.avatarUrl,
           priceVnd: values.price.trim() ? Number(values.price) : undefined,
           location: values.location.trim(),
+          availableUntil: values.availableUntil,
         });
       } else {
         if (!itemId) throw new Error('Thiếu mã món đồ.');
-        const changed: Partial<Pick<Item, 'title' | 'description' | 'category' | 'condition' | 'imageUrl' | 'imageUrls' | 'priceVnd' | 'location'>> = {};
+        const changed: Partial<Pick<Item, 'title' | 'description' | 'category' | 'condition' | 'imageUrl' | 'imageUrls' | 'priceVnd' | 'location' | 'availableUntil'>> = {};
         if (values.title !== initialValues.title) changed.title = values.title.trim();
         if (values.description !== initialValues.description) changed.description = values.description.trim();
         if (values.category !== initialValues.category) changed.category = values.category;
         if (values.condition !== initialValues.condition) changed.condition = values.condition as ItemCondition;
         if (values.imageUrl !== initialValues.imageUrl) changed.imageUrl = values.imageUrl;
         if (values.location !== initialValues.location) changed.location = values.location.trim();
+        if (values.availableUntil !== initialValues.availableUntil) changed.availableUntil = values.availableUntil;
         if (values.imageUrls !== initialValues.imageUrls) {
-          changed.imageUrls = [...values.imageUrls];
-          changed.imageUrl = values.imageUrls[0] ?? '';
+          changed.imageUrls = imageUrls;
+          changed.imageUrl = imageUrls[0] ?? '';
         }
         if (values.price !== initialValues.price) {
           changed.priceVnd = values.price.trim() ? Number(values.price) : undefined;

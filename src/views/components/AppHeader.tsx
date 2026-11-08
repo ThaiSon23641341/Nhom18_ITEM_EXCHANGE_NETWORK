@@ -1,7 +1,9 @@
 import { Link } from 'expo-router';
 import { BookOpen, UserRound } from 'lucide-react-native';
-import { Platform, Pressable } from 'react-native';
+import { Image as NativeImage, Platform, Pressable } from 'react-native';
 import { Button, Text, XStack, YStack } from 'tamagui';
+import { useAuthController } from '../../controllers/useAuthController';
+import { resolveMediaUrl } from '../../services/api/uploadService';
 
 export function AppHeaderBrand() {
   return (
@@ -37,17 +39,28 @@ export function AppHeaderBrand() {
 }
 
 export function AppHeaderProfileAction() {
+  const { user } = useAuthController();
+  const avatarUrl = user?.avatarUrl?.trim();
+
   return (
     <Link href="/(tabs)/profile" asChild>
       <Button
         w={40}
         h={40}
         circular
+        p={0}
+        overflow="hidden"
         backgroundColor="#E8F5EF"
         borderWidth={0}
         aria-label="Mở tài khoản"
       >
-        <UserRound size={20} color="#16815D" />
+        {avatarUrl ? (
+          <NativeImage
+            source={{ uri: resolveMediaUrl(avatarUrl) }}
+            style={{ width: 40, height: 40, borderRadius: 20 }}
+            accessibilityLabel={`Ảnh đại diện ${user?.fullName ?? ''}`}
+          />
+        ) : <UserRound size={20} color="#16815D" />}
       </Button>
     </Link>
   );

@@ -1,13 +1,24 @@
 import { useEffect, useState } from 'react';
 import { Pressable } from 'react-native';
 import { router } from 'expo-router';
-import { Heart, LogOut, MapPin, Package, UserRound } from 'lucide-react-native';
+import {
+  Award,
+  GraduationCap,
+  Heart,
+  LogOut,
+  MapPin,
+  Package,
+  Pencil,
+  ShieldCheck,
+  UserRound,
+} from 'lucide-react-native';
 import { Button, Image, ScrollView, Text, XStack, YStack } from 'tamagui';
 import { useAuthController } from '../../controllers/useAuthController';
 import { useFavoritesController } from '../../controllers/useFavoritesController';
 import { usePublicProfileController } from '../../controllers/usePublicProfileController';
 import type { Item } from '../../models/itemModel';
 import { getItemById, MockApiError } from '../../services/api/itemService';
+import { resolveMediaUrl } from '../../services/api/uploadService';
 import { MOCK_USER } from '../../utils/constants';
 
 interface FavoriteItem {
@@ -45,8 +56,11 @@ export function ProfileScreen() {
   const localUser = user ?? MOCK_USER;
   const displayedUser = {
     ...localUser,
+    ...profile,
     fullName: profile?.fullName ?? localUser.fullName,
-    avatarUrl: profile?.avatarUrl ?? localUser.avatarUrl,
+    // The signed-in account is authoritative for its own profile; the public
+    // profile request may still contain a cached/older avatar after editing.
+    avatarUrl: localUser.avatarUrl?.trim() || profile?.avatarUrl || '',
   };
 
   useEffect(() => {
@@ -106,7 +120,7 @@ export function ProfileScreen() {
             <YStack w={64} h={64} rounded="full" backgroundColor="#E8F5EF" items="center" justify="center">
               {displayedUser.avatarUrl ? (
                 <Image
-                  src={displayedUser.avatarUrl}
+                  src={resolveMediaUrl(displayedUser.avatarUrl)}
                   style={{ width: 64, height: 64, borderRadius: 32 }}
                   objectFit="cover"
                   accessibilityLabel={`Ảnh đại diện ${displayedUser.fullName}`}
@@ -118,10 +132,33 @@ export function ProfileScreen() {
               <Text color="color" opacity={0.7} fontSize="3">{displayedUser.email}</Text>
             </YStack>
           </XStack>
-          <XStack items="center" gap="2" borderTopWidth={1} borderTopColor="border-color" pt="3">
-            <UserRound size={17} color="#16815D" />
-            <Text color="color" fontSize="3">Mã sinh viên: {displayedUser.studentId}</Text>
-          </XStack>
+          {displayedUser.studentId ? (
+            <ProfileInfoRow
+              icon={<UserRound size={17} color="#16815D" />}
+              label="Mã sinh viên"
+              value={displayedUser.studentId}
+            />
+          ) : null}
+          <ProfileInfoRow
+            icon={<GraduationCap size={17} color="#16815D" />}
+            label="Khoa"
+            value={displayedUser.faculty}
+          />
+          <ProfileInfoRow
+            icon={<GraduationCap size={17} color="#16815D" />}
+            label="Lớp"
+            value={displayedUser.className}
+          />
+          <ProfileInfoRow
+            icon={<Award size={17} color="#16815D" />}
+            label="Giao dịch thành công"
+            value={displayedUser.successfulExchanges?.toString()}
+          />
+          <ProfileInfoRow
+            icon={<ShieldCheck size={17} color="#16815D" />}
+            label="Uy tín"
+            value={displayedUser.reputation?.toString()}
+          />
           {profileError ? (
             <XStack items="center" justify="space-between" gap="3">
               <Text color="color" flex={1} accessibilityRole="alert">{profileError}</Text>
@@ -135,7 +172,17 @@ export function ProfileScreen() {
         </YStack>
 
         {user ? (
-          <XStack>
+          <XStack gap="3" flexWrap="wrap">
+            <Button
+              minH={48}
+              theme="active"
+              icon={<Pencil size={18} color="white" />}
+              onPress={() => router.push('/profile/edit')}
+              accessibilityRole="button"
+              accessibilityLabel="Chỉnh sửa hồ sơ"
+            >
+              Chỉnh sửa hồ sơ
+            </Button>
             <Button
               minH={48}
               borderColor="#D92D20"
@@ -255,6 +302,31 @@ export function ProfileScreen() {
         </YStack>
       </YStack>
     </ScrollView>
+  );
+}
+
+function ProfileInfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ReactNode;
+  label: string;
+  value?: string;
+}) {
+  return (
+    <XStack
+      items="center"
+      gap="2"
+      borderTopWidth={1}
+      borderTopColor="border-color"
+      pt="3"
+    >
+      {icon}
+      <Text color="color" fontSize="3">
+        {label}: {value?.trim() || 'Chưa cập nhật'}
+      </Text>
+    </XStack>
   );
 }
 

@@ -3,6 +3,7 @@ import { useFocusEffect } from 'expo-router';
 import type { Appointment } from '../models/appointmentModel';
 import {
   cancelAppointment,
+  confirmAppointmentCompletion,
   createAppointment,
   getAppointments,
   loadAppointments,
@@ -41,8 +42,10 @@ export function isAppointmentDateInFuture(date: Date): boolean {
 export interface AppointmentController {
   appointments: Appointment[];
   create: (input: CreateAppointmentInput) => Promise<Appointment>;
-  cancel: (appointmentId: string) => Promise<Appointment>;
+  cancel: (appointmentId: string, reason?: string) => Promise<Appointment>;
   updateStatus: (appointmentId: string, status: Appointment['status']) => Promise<Appointment>;
+  confirmDelivery: (appointmentId: string) => Promise<Appointment>;
+  confirmReceipt: (appointmentId: string) => Promise<Appointment>;
 }
 
 export function useAppointmentController(): AppointmentController {
@@ -69,5 +72,20 @@ export function useAppointmentController(): AppointmentController {
       updateAppointmentStatus(appointmentId, status),
     [],
   );
-  return { appointments, create, cancel: cancelAppointment, updateStatus };
+  const confirmDelivery = useCallback(
+    (appointmentId: string) => confirmAppointmentCompletion(appointmentId, 'delivered'),
+    [],
+  );
+  const confirmReceipt = useCallback(
+    (appointmentId: string) => confirmAppointmentCompletion(appointmentId, 'received'),
+    [],
+  );
+  return {
+    appointments,
+    create,
+    cancel: cancelAppointment,
+    updateStatus,
+    confirmDelivery,
+    confirmReceipt,
+  };
 }

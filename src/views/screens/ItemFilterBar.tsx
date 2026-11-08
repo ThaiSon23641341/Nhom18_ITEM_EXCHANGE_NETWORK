@@ -13,6 +13,7 @@ import { Button, Input, ScrollView, Text, XStack, YStack } from 'tamagui';
 import { Platform } from 'react-native';
 import type { ItemCondition } from '../../models/itemModel';
 import { CATEGORY_OPTIONS, CONDITION_OPTIONS } from '../../utils/itemOptions';
+import type { ItemViewMode } from '../../utils/viewModePreference';
 
 const accessibilityLabelProps = (label: string) =>
   Platform.OS === 'web' ? { 'aria-label': label } : { accessibilityLabel: label };
@@ -32,6 +33,8 @@ export interface ItemFilterBarProps {
   hasActiveFilters: boolean;
   onClearFilters: () => void;
   totalResults: number;
+  viewMode: ItemViewMode;
+  onToggleViewMode: () => void;
 }
 
 export function ItemFilterBar({
@@ -44,6 +47,8 @@ export function ItemFilterBar({
   hasActiveFilters,
   onClearFilters,
   totalResults,
+  viewMode,
+  onToggleViewMode,
 }: ItemFilterBarProps) {
   return (
     <YStack gap="2" pb="2">
@@ -149,16 +154,26 @@ export function ItemFilterBar({
         <Text color="color" opacity={0.75} fontSize="2">
           Tìm thấy {totalResults} món đồ
         </Text>
-        {hasActiveFilters ? (
+        <XStack items="center" gap="2">
+          {hasActiveFilters ? (
+            <Button
+              px="2.5"
+              py="1"
+              onPress={onClearFilters}
+              {...accessibilityLabelProps('Xóa toàn bộ bộ lọc')}
+            >
+              Xóa bộ lọc
+            </Button>
+          ) : null}
           <Button
-            px="2.5"
+            px="3"
             py="1"
-            onPress={onClearFilters}
-            {...accessibilityLabelProps('Xóa toàn bộ bộ lọc')}
+            onPress={onToggleViewMode}
+            {...accessibilityLabelProps(viewMode === 'list' ? 'Chuyển sang xem 2 cột' : 'Chuyển sang xem 1 cột')}
           >
-            Xóa bộ lọc
+            {viewMode === 'list' ? '2 cột' : '1 cột'}
           </Button>
-        ) : null}
+        </XStack>
       </XStack>
     </YStack>
   );

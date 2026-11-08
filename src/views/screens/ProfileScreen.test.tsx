@@ -6,10 +6,14 @@ import { ProfileScreen } from './ProfileScreen';
 jest.mock('expo-router', () => ({ router: { replace: jest.fn(), push: jest.fn() } }));
 
 jest.mock('lucide-react-native', () => ({
+  Award: () => null,
+  GraduationCap: () => null,
   Heart: () => null,
   LogOut: () => null,
   MapPin: () => null,
   Package: () => null,
+  Pencil: () => null,
+  ShieldCheck: () => null,
   UserRound: () => null,
 }));
 
@@ -20,7 +24,11 @@ jest.mock('../../controllers/useAuthController', () => ({
       email: '21036001.nguyen@student.iuh.edu.vn',
       fullName: 'Local login name',
       studentId: '21036001',
-      avatarUrl: '',
+      avatarUrl: '/uploads/old-avatar.jpg',
+      faculty: 'Khoa cũ',
+      className: 'Lớp cũ',
+      successfulExchanges: 1,
+      reputation: 20,
     },
     logout: jest.fn(),
   })),
@@ -28,7 +36,15 @@ jest.mock('../../controllers/useAuthController', () => ({
 
 jest.mock('../../controllers/usePublicProfileController', () => ({
   usePublicProfileController: () => ({
-    profile: { id: 'user-001', fullName: 'Public profile name', avatarUrl: '' },
+    profile: {
+      id: 'user-001',
+      fullName: 'Public profile name',
+      avatarUrl: '/uploads/old-avatar.jpg',
+      faculty: 'Khoa Công nghệ thông tin',
+      className: 'DHKTPM17A',
+      successfulExchanges: 2,
+      reputation: 60,
+    },
     isLoading: false,
     error: null,
     retry: jest.fn(),
@@ -73,11 +89,50 @@ describe('ProfileScreen', () => {
   });
 
   test('shows the public profile name with the local account details', async () => {
-    const { getByText, getByLabelText } = await render(<ProfileScreen />);
+    const { getByText, getByLabelText, queryByText } = await render(<ProfileScreen />);
 
     expect(getByText('Public profile name')).toBeTruthy();
     expect(getByText('21036001.nguyen@student.iuh.edu.vn')).toBeTruthy();
+    expect(getByText('Khoa: Khoa Công nghệ thông tin')).toBeTruthy();
+    expect(getByText('Lớp: DHKTPM17A')).toBeTruthy();
+    expect(getByText('Giao dịch thành công: 2')).toBeTruthy();
+    expect(getByText('Uy tín: 60')).toBeTruthy();
+    expect(queryByText('Khoa: Khoa cũ')).toBeNull();
+    expect(queryByText('Giao dịch thành công: 1')).toBeNull();
+    expect(getByLabelText('Chỉnh sửa hồ sơ')).toBeTruthy();
     expect(getByLabelText('Khám phá đồ dùng')).toBeTruthy();
+  });
+
+  test('shows the newly saved account avatar when the public profile is stale', async () => {
+    jest.mocked(useAuthController).mockReturnValue({
+      user: {
+        id: '21036001',
+        email: '21036001.nguyen@student.iuh.edu.vn',
+        fullName: 'Local login name',
+        studentId: '21036001',
+        phoneNumber: '0900000000',
+        avatarUrl: '/uploads/new-avatar.jpg',
+        faculty: 'Khoa cũ',
+        className: 'Lớp cũ',
+        role: 'student',
+        createdAt: '2026-01-01T00:00:00.000Z',
+        updatedAt: '2026-01-01T00:00:00.000Z',
+      },
+      logout: jest.fn(),
+    } as unknown as ReturnType<typeof useAuthController>);
+
+    const { getByLabelText } = await render(<ProfileScreen />);
+    const avatar = getByLabelText('Ảnh đại diện Public profile name');
+
+    expect(avatar.props.src).toContain('/uploads/new-avatar.jpg');
+  });
+
+  test('opens the profile editor', async () => {
+    const { getByLabelText } = await render(<ProfileScreen />);
+
+    fireEvent.press(getByLabelText('Chỉnh sửa hồ sơ'));
+
+    expect(router.push).toHaveBeenCalledWith('/profile/edit');
   });
 
   test('logs out and navigates to the login screen', async () => {

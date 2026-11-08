@@ -13,10 +13,13 @@ export interface Item {
   ownerId: string;
   priceVnd?: number;
   location?: string;
+  availableUntil?: string;
   distance?: string;
   ownerName?: string;
   ownerFaculty?: string;
   ownerAvatarUrl?: string;
+  isLocked?: boolean;
+  ownerReputation?: number;
   createdAt: string;
   updatedAt: string;
 }
@@ -44,6 +47,7 @@ export type CreateItemInput = Pick<
       | 'ownerName'
       | 'ownerFaculty'
       | 'ownerAvatarUrl'
+      | 'availableUntil'
     >
   >;
 export type UpdateItemInput = Partial<
@@ -58,5 +62,6 @@ export type UpdateItemInput = Partial<
     | 'priceVnd'
     | 'location'
     | 'status'
+    | 'availableUntil'
   >
 >;

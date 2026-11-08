@@ -1,11 +1,28 @@
 import type { Appointment } from '../../models/appointmentModel';
+import type { Item } from '../../models/itemModel';
 import { getItemById, MockApiError } from '../api/itemService';
 import { apiRequest } from '../api/apiClient';
+import {
+  cancelAppointmentReminder,
+  scheduleAppointmentReminder,
+} from '../device/notificationService';
 
 export type CreateAppointmentInput = Omit<
   Appointment,
-  'id' | 'status' | 'createdAt' | 'updatedAt'
+  'id' | 'status' | 'createdAt' | 'updatedAt' | 'location' | 'confirmedBy'
+  | 'completionConfirmedBy' | 'cancelledBy' | 'cancellationReason'
+  | 'cancellationPenalized' | 'cancellationPenaltyCount' | 'cancellationPenaltyPoints'
+  | 'reminderAt' | 'reminderMinutes'
 >;
+
+export type CompletionAction = 'delivered' | 'received';
+
+export function getItemAvailabilityDeadline(item: Item): string | undefined {
+  if ('availableUntil' in item && typeof item.availableUntil === 'string') {
+    return item.availableUntil;
+  }
+  return undefined;
+}
 
 let appointments: Appointment[] = [];
 const listeners = new Set<() => void>();
@@ -24,26 +41,69 @@ export function getAppointments(): Appointment[] {
 export async function updateAppointmentStatus(
   appointmentId: string,
   status: Appointment['status'],
+  reason?: string,
 ): Promise<Appointment> {
   const appointment = appointments.find((candidate) => candidate.id === appointmentId);
   if (!appointment) throw new Error('Không tìm thấy lịch hẹn.');
-  if (appointment.status === status) return { ...appointment };
+  if (appointment.status === status && status !== 'confirmed') {
+    return { ...appointment };
+  }
 
   const updated = await apiRequest<Appointment>(
     `/appointments/${encodeURIComponent(appointmentId)}/status`,
     {
       method: 'PATCH',
-      body: JSON.stringify({ status }),
+      body: JSON.stringify({
+        status,
+        ...(status === 'cancelled' && reason !== undefined ? { reason } : {}),
+      }),
     },
   );
-  if (status === 'cancelled') {
-    const { cancelAppointmentReminder } = await import('../device/notificationService');
-    await cancelAppointmentReminder(appointmentId);
-  }
   appointments = appointments.map((candidate) =>
     candidate.id === appointmentId ? updated : candidate,
   );
   notify();
+  try {
+    if (status === 'cancelled' || status === 'completed') {
+      await cancelAppointmentReminder(appointmentId);
+    } else if (status === 'confirmed') {
+      const item = await getItemById(updated.itemId);
+      const result = await scheduleAppointmentReminder(updated, item.title);
+      if (!result.scheduled && result.reason !== 'too-soon' && result.reason !== 'web') {
+        console.warn('Chưa thể đặt nhắc lịch:', result.reason);
+      }
+    }
+  } catch (error: unknown) {
+    console.error('Lịch hẹn đã cập nhật nhưng không đồng bộ được thông báo trên thiết bị:', error);
+  }
+  return { ...updated };
+}
+
+export async function confirmAppointmentCompletion(
+  appointmentId: string,
+  action: CompletionAction,
+): Promise<Appointment> {
+  const appointment = appointments.find((candidate) => candidate.id === appointmentId);
+  if (!appointment) throw new Error('Không tìm thấy lịch hẹn.');
+
+  const updated = await apiRequest<Appointment>(
+    `/appointments/${encodeURIComponent(appointmentId)}/completion`,
+    {
+      method: 'PATCH',
+      body: JSON.stringify({ action }),
+    },
+  );
+  appointments = appointments.map((candidate) =>
+    candidate.id === appointmentId ? updated : candidate,
+  );
+  notify();
+  if (updated.status === 'completed') {
+    try {
+      await cancelAppointmentReminder(appointmentId);
+    } catch (error: unknown) {
+      console.error('Giao dịch đã hoàn tất nhưng không thể hủy nhắc lịch trên thiết bị:', error);
+    }
+  }
   return { ...updated };
 }
 
@@ -56,7 +116,10 @@ export async function loadAppointments(requesterId: string): Promise<Appointment
   return appointments;
 }
 
-export async function cancelAppointment(appointmentId: string): Promise<Appointment> {
+export async function cancelAppointment(
+  appointmentId: string,
+  reason?: string,
+): Promise<Appointment> {
   const appointment = appointments.find((candidate) => candidate.id === appointmentId);
   if (!appointment) {
     throw new Error('Không tìm thấy lịch hẹn.');
@@ -65,7 +128,7 @@ export async function cancelAppointment(appointmentId: string): Promise<Appointm
     throw new Error('Lịch hẹn này không thể hủy.');
   }
 
-  return updateAppointmentStatus(appointment.id, 'cancelled');
+  return updateAppointmentStatus(appointment.id, 'cancelled', reason);
 }
 
 function parseLocalDate(date: string, time: string): Date | null {
@@ -95,7 +158,6 @@ function parseLocalDate(date: string, time: string): Date | null {
 export async function createAppointment(input: CreateAppointmentInput): Promise<Appointment> {
   const itemId = input.itemId.trim();
   const requesterId = input.requesterId.trim();
-  const location = input.location.trim();
   const scheduledAt = input.scheduledAt
     ? new Date(input.scheduledAt)
     : parseLocalDate(input.date, input.time);
@@ -106,11 +168,9 @@ export async function createAppointment(input: CreateAppointmentInput): Promise<
     || !scheduledAt
     || !Number.isFinite(scheduledAt.getTime())
     || scheduledAt.getTime() <= Date.now()
-    || !location
-    || location.length > 200
     || (input.note?.length ?? 0) > 500
   ) {
-    throw new Error('Ngày, giờ hoặc địa điểm hẹn không hợp lệ.');
+    throw new Error('Ngày hoặc giờ hẹn không hợp lệ.');
   }
 
   let item;
@@ -129,6 +189,10 @@ export async function createAppointment(input: CreateAppointmentInput): Promise<
   if (item.status !== 'available') {
     throw new Error('Đồ dùng này không còn khả dụng để đặt lịch.');
   }
+  const availableUntil = getItemAvailabilityDeadline(item);
+  if (availableUntil && scheduledAt.getTime() > Date.parse(availableUntil)) {
+    throw new Error('Ngày hẹn vượt quá hạn trao của món đồ.');
+  }
 
   const appointment = await apiRequest<Appointment>('/appointments', {
     method: 'POST',
@@ -136,7 +200,7 @@ export async function createAppointment(input: CreateAppointmentInput): Promise<
       ...input,
       itemId,
       requesterId,
-      location,
+      scheduledAt: scheduledAt.toISOString(),
     }),
   });
   appointments = [appointment, ...appointments];

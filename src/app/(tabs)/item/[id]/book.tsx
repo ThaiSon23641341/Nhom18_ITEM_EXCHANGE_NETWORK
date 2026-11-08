@@ -36,13 +36,12 @@ export default function BookAppointmentRoute() {
     <BookAppointmentScreen
       item={item}
       onBack={() => goBackOrReplace('/(tabs)')}
-      onSubmit={async (date, time, location) => {
+      onSubmit={async (date, time) => {
         await createAppointment({
           itemId: item.id,
           requesterId: user.id,
           date,
           time,
-          location,
         });
         router.replace('/(tabs)/appointments');
       }}

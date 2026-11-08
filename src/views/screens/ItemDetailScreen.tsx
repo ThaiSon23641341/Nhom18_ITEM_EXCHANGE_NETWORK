@@ -2,14 +2,12 @@ import { router, useLocalSearchParams } from 'expo-router';
 import {
   ArrowLeft,
   CalendarDays,
-  ChevronRight,
   Heart,
   MapPin,
   PackageCheck,
   Share2,
   ShieldCheck,
   Tag,
-  UserRound,
 } from 'lucide-react-native';
 import { useState } from 'react';
 import { Alert } from 'react-native';
@@ -23,6 +21,8 @@ import { useAuthController } from '../../controllers/useAuthController';
 import { useFavoritesController } from '../../controllers/useFavoritesController';
 import { useItemDetailController } from '../../controllers/useItemDetailController';
 import { shareItem } from '../../services/shareService';
+import { OwnerBadge } from '../components/OwnerBadge';
+import { resolveMediaUrl } from '../../services/api/uploadService';
 import { MOCK_USER } from '../../utils/constants';
 
 const DESCRIPTION_COLLAPSED_HEIGHT = 72;
@@ -44,6 +44,21 @@ const formatPrice = (priceVnd?: number) => {
   if (priceVnd === undefined) return 'Trao đổi';
   if (priceVnd === 0) return 'Miễn phí';
   return `${new Intl.NumberFormat('vi-VN').format(priceVnd)}đ`;
+};
+
+const formatAvailableUntil = (value: string): string | null => {
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(value);
+  if (!match) return null;
+  const [, year, month, day] = match;
+  const parsed = new Date(Number(year), Number(month) - 1, Number(day));
+  if (
+    parsed.getFullYear() !== Number(year)
+    || parsed.getMonth() !== Number(month) - 1
+    || parsed.getDate() !== Number(day)
+  ) {
+    return null;
+  }
+  return `${day}/${month}/${year}`;
 };
 
 interface ExpandableDescriptionProps {
@@ -141,7 +156,14 @@ export function ItemDetailScreen() {
   const navigateBackToSource = () => {
     router.replace(returnTo === 'profile' ? '/(tabs)/profile' : '/(tabs)');
   };
-  const { item, isLoading, loadError, retry } = useItemDetailController(itemId);
+  const {
+    item,
+    ownerProfile,
+    ownerProfileError,
+    isLoading,
+    loadError,
+    retry,
+  } = useItemDetailController(itemId);
   const { user } = useAuthController();
   const [activeImageIndex, setActiveImageIndex] = useState(0);
   const {
@@ -166,6 +188,9 @@ export function ItemDetailScreen() {
       ? [item.imageUrl]
       : [];
   const canBookItem = item?.status === 'available' && item.ownerId !== user?.id;
+  const availableUntil = item?.availableUntil
+    ? formatAvailableUntil(item.availableUntil)
+    : null;
 
   if (isLoading) {
     return (
@@ -218,7 +243,7 @@ export function ItemDetailScreen() {
         <YStack px="4" pt="2" pb="4" gap="4">
           <YStack w="100%" aspectRatio={1.6} rounded="5" overflow="hidden" backgroundColor="#E8F5EF" position="relative" items="center" justify="center">
             {images.length > 0 ? (
-              <Image src={images[activeImageIndex]} style={{ width: '100%', height: '100%' }} objectFit="cover" accessibilityLabel={`Ảnh ${item.title}`} />
+              <Image src={resolveMediaUrl(images[activeImageIndex])} style={{ width: '100%', height: '100%' }} objectFit="cover" accessibilityLabel={`Ảnh ${item.title}`} />
             ) : (
               <PackageCheck size={44} color="#16815D" />
             )}
@@ -287,6 +312,18 @@ export function ItemDetailScreen() {
                 <Text color="primary" fontSize="2" fontWeight="600">{item.category}</Text>
               </XStack>
             </XStack>
+            {availableUntil ? (
+              <XStack
+                items="center"
+                gap="2"
+                accessibilityLabel={`Hạn trao đổi: ${availableUntil}`}
+              >
+                <CalendarDays size={17} color="#667085" />
+                <Text color="color" fontSize="2">
+                  Hạn trao đổi: {availableUntil}
+                </Text>
+              </XStack>
+            ) : null}
           </YStack>
 
           <YStack py="3" gap="3" borderTopWidth={1} borderBottomWidth={1} borderColor="border-color">
@@ -304,24 +341,56 @@ export function ItemDetailScreen() {
           </YStack>
 
           <YStack gap="3">
-            <Text color="secondary" fontSize="5" fontWeight="800">Người đăng</Text>
-            <XStack items="center" gap="3" p="3" rounded="5" borderWidth={1} borderColor="border-color" backgroundColor="#F4F8F5">
-              <YStack w={54} h={54} rounded="10" overflow="hidden" backgroundColor="#E8F5EF" items="center" justify="center">
-                {item.ownerAvatarUrl ? (
-                  <Image src={item.ownerAvatarUrl} style={{ width: '100%', height: '100%' }} objectFit="cover" accessibilityLabel={`Ảnh ${item.ownerName ?? 'người đăng'}`} />
-                ) : (
-                  <UserRound size={25} color="#16815D" />
-                )}
-              </YStack>
+            <Text
+              color="secondary"
+              fontSize="5"
+              fontWeight="800"
+              accessibilityLabel="Thông tin người đăng"
+            >
+              Người đăng
+            </Text>
+            <XStack
+              p="3"
+              rounded="5"
+              borderWidth={1}
+              borderColor="border-color"
+              backgroundColor="#F4F8F5"
+              accessibilityLabel={`Người đăng: ${ownerProfile?.fullName ?? item.ownerName ?? 'Sinh viên IUH'}`}
+            >
+              <OwnerBadge
+                name={item.ownerName ?? ownerProfile?.fullName}
+                avatarUrl={item.ownerAvatarUrl ?? ownerProfile?.avatarUrl}
+                faculty={ownerProfile?.faculty ?? item.ownerFaculty}
+                reputation={ownerProfile?.reputation}
+              />
+            </XStack>
+            {ownerProfileError ? (
+              <Text
+                color="color"
+                opacity={0.65}
+                fontSize="2"
+                accessibilityLabel="Không tải được thêm thông tin người đăng"
+              >
+                Chưa tải được thông tin công khai bổ sung của người đăng.
+              </Text>
+            ) : null}
+            <XStack
+              items="center"
+              gap="2"
+              p="3"
+              rounded="5"
+              borderWidth={1}
+              borderColor="border-color"
+              backgroundColor="background"
+              accessibilityLabel={`Địa điểm giao dịch: ${item.location?.trim() || 'Trong khuôn viên IUH'}`}
+            >
+              <MapPin size={18} color="#16815D" />
               <YStack flex={1} gap="1">
-                <Text color="secondary" fontSize="3" fontWeight="700">{item.ownerName ?? 'Sinh viên IUH'}</Text>
-                <Text color="color" opacity={0.65} fontSize="2">{item.ownerFaculty ?? 'Sinh viên IUH'}</Text>
+                <Text color="color" opacity={0.7} fontSize="2">Địa điểm giao dịch</Text>
+                <Text color="color" fontSize="3" fontWeight="600">
+                  {item.location?.trim() || 'Trong khuôn viên IUH'}
+                </Text>
               </YStack>
-              <XStack items="center" gap="1">
-                <MapPin size={17} color="#667085" />
-                <Text color="color" fontSize="2">{item.location ?? 'Trong khuôn viên IUH'}</Text>
-                <ChevronRight size={18} color="#16815D" />
-              </XStack>
             </XStack>
             <XStack items="center" gap="2" p="3" rounded="5" backgroundColor="#E4F6EA">
               <ShieldCheck size={21} color="#16815D" />

@@ -10,7 +10,7 @@
  * - Toàn bộ giao diện dùng Tamagui Tokens/Themes (CLO5), không chứa mã màu hex.
  */
 
-import React, { useCallback } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { FlatList, RefreshControl } from 'react-native';
 import { YStack } from 'tamagui';
 import type { Item } from '../../models/itemModel';
@@ -18,8 +18,10 @@ import { useItemController } from '../../controllers/useItemController';
 import { ItemFilterBar } from './ItemFilterBar';
 import { ItemListRow } from './ItemListRow';
 import { ListStateView } from './ListStateView';
+import { loadItemViewMode, saveItemViewMode, type ItemViewMode } from '../../utils/viewModePreference';
 
 export function ExploreScreen() {
+  const [viewMode, setViewMode] = useState<ItemViewMode>('list');
   const {
     items,
     total,
@@ -42,11 +44,25 @@ export function ExploreScreen() {
     openItem,
   } = useItemController();
 
+  useEffect(() => {
+    void loadItemViewMode().then(setViewMode);
+  }, []);
+
+  const toggleViewMode = useCallback(() => {
+    setViewMode((current) => {
+      const next = current === 'list' ? 'grid' : 'list';
+      void saveItemViewMode(next);
+      return next;
+    });
+  }, []);
+
   const renderItem = useCallback(
     ({ item }: { item: Item }) => (
-      <ItemListRow item={item} onPress={() => openItem(item.id)} />
+      <YStack flex={viewMode === 'grid' ? 0.5 : 1} p={viewMode === 'grid' ? 4 : undefined}>
+        <ItemListRow item={item} onPress={() => openItem(item.id)} compact={viewMode === 'grid'} />
+      </YStack>
     ),
-    [openItem]
+    [openItem, viewMode]
   );
 
   const keyExtractor = useCallback((item: Item) => item.id, []);
@@ -112,10 +128,14 @@ export function ExploreScreen() {
         hasActiveFilters={hasActiveFilters}
         onClearFilters={clearFilters}
         totalResults={total}
+        viewMode={viewMode}
+        onToggleViewMode={toggleViewMode}
       />
 
       {/* Danh sách phân trang bên dưới */}
       <FlatList
+        key={viewMode}
+        numColumns={viewMode === 'grid' ? 2 : 1}
         data={items}
         keyExtractor={keyExtractor}
         renderItem={renderItem}

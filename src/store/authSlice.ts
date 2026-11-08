@@ -6,7 +6,7 @@ interface AuthState {
   isRestoring: boolean;
 }
 
-const initialState: AuthState = { user: null, isRestoring: false };
+const initialState: AuthState = { user: null, isRestoring: true };
 
 const authSlice = createSlice({
   name: 'auth',

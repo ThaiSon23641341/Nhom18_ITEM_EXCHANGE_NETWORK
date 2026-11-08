@@ -1,4 +1,5 @@
 import { useCallback, useState } from 'react';
+import { useColorScheme } from 'react-native';
 import { Text, YStack } from 'tamagui';
 import Animated, {
   useAnimatedStyle,
@@ -25,6 +26,9 @@ export function ExpandableItemCard({
   expandedHeight = DEFAULT_EXPANDED_HEIGHT,
 }: ExpandableItemCardProps) {
   const [isExpanded, setIsExpanded] = useState(false);
+  const isDark = useColorScheme() === 'dark';
+  const foregroundColor = isDark ? '#F3F4F6' : '#172033';
+  const detailsColor = isDark ? '#D1D5DB' : '#475467';
   const animatedHeight = useSharedValue(0);
   const animatedOpacity = useSharedValue(0);
 
@@ -74,10 +78,10 @@ export function ExpandableItemCard({
           pb="3"
           gap="2"
         >
-          <Text color="color" fontWeight="700">
-            Details
+          <Text color={foregroundColor} fontWeight="700">
+            Chi tiết
           </Text>
-          <Text color="color" opacity={0.8}>
+          <Text color={detailsColor}>
             {details}
           </Text>
         </YStack>
