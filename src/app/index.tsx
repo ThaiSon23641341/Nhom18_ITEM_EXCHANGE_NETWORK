@@ -12,9 +12,12 @@ import { Redirect } from 'expo-router';
 import { useAuthController } from '../controllers/useAuthController';
 
 export default function IndexRoute() {
-  const { isAuthenticated } = useAuthController();
+  const { user } = useAuthController();
 
-  if (isAuthenticated) {
+  if (user?.role === 'moderator') {
+    return <Redirect href="/admin" />;
+  }
+  if (user) {
     return <Redirect href="/(tabs)" />;
   }
 

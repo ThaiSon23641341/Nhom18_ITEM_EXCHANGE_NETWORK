@@ -14,7 +14,9 @@ export default function LoginRoute() {
 
   const handleLogin = async (email: string, password: string) => {
     const result = await login(email, password);
-    if (result === 'success') {
+    if (result === 'moderator-success') {
+      router.replace('/admin');
+    } else if (result === 'success') {
       router.replace('/(tabs)');
     } else if (result === 'account-not-found') {
       router.push({ pathname: '/register', params: { email, notFound: '1' } });

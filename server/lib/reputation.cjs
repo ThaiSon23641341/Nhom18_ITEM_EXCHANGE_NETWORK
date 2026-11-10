@@ -9,7 +9,7 @@ function calculateCancellationPenalty(count) {
   return POINTS_PER_EXCHANGE * count * (count + 3) / 4;
 }
 
-// Stats are always derived from appointments and reports, never stored.
+// Exchange/report stats are derived; moderators may persist a manual adjustment.
 function computeUserStats(db, userId) {
   const ownedItemIds = new Set(
     db.get('items').filter({ ownerId: userId }).map('id').value(),
@@ -27,7 +27,8 @@ function computeUserStats(db, userId) {
     .value();
   const score = BASE_REPUTATION
     + POINTS_PER_EXCHANGE * successfulExchanges
-    - POINTS_PER_ACTIONED_REPORT * actionedReports;
+    - POINTS_PER_ACTIONED_REPORT * actionedReports
+    + (db.get('users').find({ id: userId }).value()?.reputationAdjustment ?? 0);
   return {
     successfulExchanges,
     reputation: Math.min(100, Math.max(0, score)),

@@ -11,6 +11,7 @@ const routeModules = [
   require('./routes/favorites.cjs'),
   require('./routes/uploads.cjs'),
   require('./routes/messages.cjs'),
+  require('./routes/admin.cjs'),
 ];
 
 function createServer(dbFile = path.join(__dirname, 'db.json'), options = {}) {

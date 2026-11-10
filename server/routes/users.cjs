@@ -58,12 +58,16 @@ function register({ app, router }) {
     if (existing) credentials().find({ userId }).assign({ passwordHash }).write();
     else credentials().push({ userId, passwordHash }).write();
   };
-  const toProfile = (user) => ({
-    ...user,
-    faculty: user.faculty ?? '',
-    className: user.className ?? '',
-    ...computeUserStats(router.db, user.id),
-  });
+  const toProfile = (user) => {
+    const { reputationAdjustment: _reputationAdjustment, ...profile } = user;
+    return {
+      ...profile,
+      faculty: user.faculty ?? '',
+      className: user.className ?? '',
+      isBanned: Boolean(user.isBanned),
+      ...computeUserStats(router.db, user.id),
+    };
+  };
   const startSession = (user) => ({ ...createSession(router.db, user.id), user: toProfile(user) });
   const readEmail = (body) => (
     isRecord(body) && typeof body.email === 'string' ? body.email.trim().toLowerCase() : ''
@@ -101,6 +105,10 @@ function register({ app, router }) {
       : password === DEMO_PASSWORD;
     if (!valid) {
       sendError(response, 401, 'INVALID_CREDENTIALS', 'Email hoặc mật khẩu không đúng.');
+      return;
+    }
+    if (user.isBanned) {
+      sendError(response, 403, 'ACCOUNT_BANNED', 'Tài khoản đã bị khóa. Vui lòng liên hệ quản trị viên.');
       return;
     }
     const { token, user: profile } = startSession(user);
@@ -189,7 +197,7 @@ function register({ app, router }) {
   app.get('/auth/session', (request, response) => {
     const userId = authenticate(router.db, request);
     const user = userId && router.db.get('users').find({ id: userId }).value();
-    if (!user) {
+    if (!user || user.isBanned) {
       sendError(response, 401, 'UNAUTHORIZED', 'Phiên đăng nhập đã hết hạn.');
       return;
     }

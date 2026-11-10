@@ -17,7 +17,7 @@ import { useAppDispatch, useAppSelector } from '../store/hooks';
 
 export { isValidPassword, isValidStudentEmail };
 
-export type LoginResult = 'success' | 'account-not-found' | 'failed';
+export type LoginResult = 'success' | 'moderator-success' | 'account-not-found' | 'failed';
 
 export interface AuthState {
   user: User | null;
@@ -83,8 +83,9 @@ export function useAuthController(): AuthState {
     const result = await submit<LoginResult>(
       validationError,
       async () => {
-        dispatch(setAuthenticatedUser(await signInWithPassword(email, password)));
-        return 'success';
+        const signedInUser = await signInWithPassword(email, password);
+        dispatch(setAuthenticatedUser(signedInUser));
+        return signedInUser.role === 'moderator' ? 'moderator-success' : 'success';
       },
       'Đăng nhập không thành công.',
       (error) => (
