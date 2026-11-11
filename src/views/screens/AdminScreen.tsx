@@ -5,7 +5,7 @@ import {
   CheckCircle, FileWarning, Filter, LockKeyhole, LogOut, PackageCheck, RefreshCw, Search,
   ShieldAlert, ShieldCheck, Trash2, UserRound, UserX, Users,
 } from 'lucide-react-native';
-import { Avatar, Button, Dialog, Input, ScrollView, Separator, Text, useTheme, XStack, YStack } from 'tamagui';
+import { Avatar, Button, Input, ScrollView, Separator, Text, useTheme, XStack, YStack } from 'tamagui';
 import type { AdminAction, AdminItemFilter, AdminTab } from '../../controllers/useAdminController';
 import { useAdminController } from '../../controllers/useAdminController';
 import type { ReportReason } from '../../models/reportModel';
@@ -274,20 +274,38 @@ export function AdminScreen() {
           ) : null}
         </YStack>
       </ScrollView>
-      <Dialog open={admin.pendingAction !== null} onOpenChange={(open) => { if (!open) admin.setPendingAction(null); }}>
-        <Dialog.Portal>
-          <Dialog.Overlay key="overlay" opacity={0.45} backgroundColor="black" />
-          <Dialog.Content bordered elevate width="90%" maxWidth={420} p="4" gap="3" backgroundColor={colors.background} borderColor={colors.border}>
-            <Dialog.Title color={colors.text} fontSize="5" fontWeight="800">{confirm.title}</Dialog.Title>
-            <Dialog.Description color={colors.muted} fontSize="3">{confirm.body}</Dialog.Description>
+      {admin.pendingAction ? (
+        <YStack
+          position="absolute"
+          t={0}
+          l={0}
+          r={0}
+          b={0}
+          backgroundColor="rgba(0,0,0,0.45)"
+          items="center"
+          justify="center"
+          px="5"
+        >
+          <YStack
+            w="100%"
+            maxW={420}
+            p="4"
+            gap="3"
+            rounded={16}
+            borderWidth={1}
+            borderColor={colors.border}
+            backgroundColor={colors.background}
+          >
+            <Text color={colors.text} fontSize="5" fontWeight="800">{confirm.title}</Text>
+            <Text color={colors.muted} fontSize="3">{confirm.body}</Text>
             <XStack justify="flex-end" gap="2" mt="2">
-              <Dialog.Close asChild><Button onPress={() => admin.setPendingAction(null)}>Hủy</Button></Dialog.Close>
-              <Button backgroundColor={admin.pendingAction?.kind === 'remove-item' || admin.pendingAction?.kind === 'delete-item' || admin.pendingAction?.kind === 'ban-user' ? colors.danger : colors.primary}
+              <Button onPress={() => admin.setPendingAction(null)}>Hủy</Button>
+              <Button backgroundColor={admin.pendingAction.kind === 'remove-item' || admin.pendingAction.kind === 'delete-item' || admin.pendingAction.kind === 'ban-user' ? colors.danger : colors.primary}
                 color={colors.primaryForeground} disabled={admin.isActing} onPress={admin.confirmAction}>{admin.isActing ? 'Đang xử lý…' : confirm.submit}</Button>
             </XStack>
-          </Dialog.Content>
-        </Dialog.Portal>
-      </Dialog>
+          </YStack>
+        </YStack>
+      ) : null}
     </SafeAreaView>
   );
 }

@@ -743,16 +743,16 @@
   ],
   "sessions": [
     {
-      "tokenHash": "3ef91600bf95aaacb7d88e62b02c3f88f8b5c732e22317260e0c27fad12f158a",
-      "userId": "student-23636991",
-      "createdAt": "2026-11-10T17:13:10.200Z",
-      "expiresAt": "2026-12-10T17:13:10.200Z"
+      "tokenHash": "857b3fe1cc08c4f95b13a059f56e378672ea31f122b921449757653a44a54a68",
+      "userId": "user-003",
+      "createdAt": "2026-11-11T12:05:36.171Z",
+      "expiresAt": "2026-12-11T12:05:36.171Z"
     },
     {
-      "tokenHash": "76cd68feabb75de9ecd9627f5ea3c057fcb9583615158ae3cec40a0ee8ca1160",
+      "tokenHash": "061ced96726be30c30f004d3743c53cc3e65df835abddc1eebac69349f3cc35c",
       "userId": "user-003",
-      "createdAt": "2026-11-10T17:48:50.680Z",
-      "expiresAt": "2026-12-10T17:48:50.680Z"
+      "createdAt": "2026-11-11T12:21:06.158Z",
+      "expiresAt": "2026-12-11T12:21:06.158Z"
     }
   ],
   "messages": [],
