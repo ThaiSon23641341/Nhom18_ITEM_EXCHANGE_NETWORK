@@ -8,9 +8,10 @@
       "avatarUrl": "",
       "role": "student",
       "createdAt": "2026-10-01T08:00:00.000Z",
-      "updatedAt": "2026-10-01T08:00:00.000Z",
+      "updatedAt": "2026-11-10T17:29:34.966Z",
       "faculty": "Khoa Công nghệ thông tin",
-      "className": ""
+      "className": "",
+      "reputationAdjustment": 10
     },
     {
       "id": "user-002",
@@ -127,6 +128,94 @@
       "updatedAt": "2026-10-31T08:00:00.000Z",
       "faculty": "",
       "className": ""
+    },
+    {
+      "id": "student-23636991",
+      "email": "23636991.phuc@student.iuh.edu.vn",
+      "studentId": "23636991",
+      "fullName": "Phuc",
+      "avatarUrl": "",
+      "role": "student",
+      "createdAt": "2026-11-10T17:13:10.165Z",
+      "updatedAt": "2026-11-10T17:13:10.165Z"
+    },
+    {
+      "id": "admin-demo-student-01",
+      "email": "21036101.mai@student.iuh.edu.vn",
+      "studentId": "21036101",
+      "fullName": "Nguyễn Ngọc Mai",
+      "avatarUrl": "",
+      "role": "student",
+      "faculty": "Khoa Công nghệ thông tin",
+      "className": "DHTH19A",
+      "reputationAdjustment": -50,
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-student-02",
+      "email": "21036102.bao@student.iuh.edu.vn",
+      "studentId": "21036102",
+      "fullName": "Trần Gia Bảo",
+      "avatarUrl": "",
+      "role": "student",
+      "faculty": "Khoa Điện - Điện tử",
+      "className": "DHDI19B",
+      "reputationAdjustment": 0,
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-student-03",
+      "email": "21036103.lan@student.iuh.edu.vn",
+      "studentId": "21036103",
+      "fullName": "Lê Hoàng Lan",
+      "avatarUrl": "",
+      "role": "student",
+      "faculty": "Khoa Kế toán",
+      "className": "DHKTO19A",
+      "reputationAdjustment": 40,
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-student-04",
+      "email": "21036104.khoa@student.iuh.edu.vn",
+      "studentId": "21036104",
+      "fullName": "Phạm Minh Khoa",
+      "avatarUrl": "",
+      "role": "student",
+      "faculty": "Khoa Công nghệ thông tin",
+      "className": "DHTH19C",
+      "reputationAdjustment": 100,
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-student-05",
+      "email": "21036105.ha@student.iuh.edu.vn",
+      "studentId": "21036105",
+      "fullName": "Võ Ngọc Hà",
+      "avatarUrl": "",
+      "role": "student",
+      "faculty": "Khoa Ngoại ngữ",
+      "className": "DHAV19A",
+      "reputationAdjustment": -15,
+      "isBanned": true,
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-student-06",
+      "email": "21036106.minh@student.iuh.edu.vn",
+      "studentId": "21036106",
+      "fullName": "Đặng Quốc Minh",
+      "avatarUrl": "",
+      "role": "student",
+      "faculty": "",
+      "className": "",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
     }
   ],
   "items": [
@@ -137,7 +226,7 @@
       "category": "Đồ gia dụng",
       "condition": "good",
       "imageUrl": "https://images.unsplash.com/photo-1543198126-a8ad8e47fb22?auto=format&fit=crop&w=900&q=85",
-      "status": "available",
+      "status": "reserved",
       "ownerId": "user-001",
       "priceVnd": 150000,
       "location": "KTX khu B",
@@ -145,7 +234,7 @@
       "ownerName": "Nguyễn Văn An",
       "ownerFaculty": "Khoa Công nghệ thông tin",
       "createdAt": "2026-09-01T08:00:00.000Z",
-      "updatedAt": "2026-09-01T08:00:00.000Z",
+      "updatedAt": "2026-11-10T17:29:13.941Z",
       "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
@@ -366,10 +455,10 @@
       "category": "Thiết bị điện tử",
       "condition": "good",
       "imageUrl": "",
-      "status": "available",
+      "status": "reserved",
       "ownerId": "user-006",
       "createdAt": "2026-09-16T08:00:00.000Z",
-      "updatedAt": "2026-09-16T08:00:00.000Z",
+      "updatedAt": "2026-11-10T17:29:09.329Z",
       "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
@@ -379,10 +468,10 @@
       "category": "Dụng cụ học tập",
       "condition": "good",
       "imageUrl": "",
-      "status": "available",
+      "status": "reserved",
       "ownerId": "user-007",
       "createdAt": "2026-09-17T08:00:00.000Z",
-      "updatedAt": "2026-09-17T08:00:00.000Z",
+      "updatedAt": "2026-11-10T17:29:05.068Z",
       "availableUntil": "2027-02-05T16:59:59.000Z"
     },
     {
@@ -395,11 +484,170 @@
       "status": "reserved",
       "ownerId": "user-008",
       "createdAt": "2026-09-18T08:00:00.000Z",
-      "updatedAt": "2026-09-18T08:00:00.000Z",
+      "updatedAt": "2026-11-10T17:42:23.653Z",
       "availableUntil": "2027-02-05T16:59:59.000Z"
+    },
+    {
+      "id": "admin-demo-item-available",
+      "ownerId": "admin-demo-student-02",
+      "ownerName": "Trần Gia Bảo",
+      "ownerFaculty": "Khoa Điện - Điện tử",
+      "title": "Giáo trình Kinh tế vi mô",
+      "description": "Sách còn tốt, có ghi chú ở một số trang.",
+      "category": "Giáo trình",
+      "condition": "good",
+      "imageUrl": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=900&q=85",
+      "status": "available",
+      "priceVnd": 0,
+      "location": "Thư viện IUH",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-item-report-scam",
+      "ownerId": "admin-demo-student-03",
+      "ownerName": "Lê Hoàng Lan",
+      "ownerFaculty": "Khoa Kế toán",
+      "title": "Máy tính cầm tay Casio",
+      "description": "Máy hoạt động bình thường, có hộp.",
+      "category": "Dụng cụ học tập",
+      "condition": "good",
+      "imageUrl": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=900&q=85",
+      "status": "available",
+      "priceVnd": 120000,
+      "location": "KTX khu B",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-item-reserved",
+      "ownerId": "admin-demo-student-04",
+      "ownerName": "Phạm Minh Khoa",
+      "ownerFaculty": "Khoa Công nghệ thông tin",
+      "title": "Balo laptop 15 inch",
+      "description": "Balo chống nước, nhiều ngăn.",
+      "category": "Phụ kiện",
+      "condition": "good",
+      "imageUrl": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=900&q=85",
+      "status": "reserved",
+      "priceVnd": 80000,
+      "location": "Nhà H IUH",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-item-exchanged",
+      "ownerId": "admin-demo-student-01",
+      "ownerName": "Nguyễn Ngọc Mai",
+      "ownerFaculty": "Khoa Công nghệ thông tin",
+      "title": "Đèn bàn học LED",
+      "description": "Đèn LED ba mức sáng, dùng tốt.",
+      "category": "Đồ gia dụng",
+      "condition": "good",
+      "imageUrl": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=900&q=85",
+      "status": "exchanged",
+      "priceVnd": 0,
+      "location": "KTX khu A",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-item-actioned",
+      "ownerId": "admin-demo-student-05",
+      "ownerName": "Võ Ngọc Hà",
+      "ownerFaculty": "Khoa Ngoại ngữ",
+      "title": "Tai nghe không dây",
+      "description": "Bài đăng đã được moderator xử lý.",
+      "category": "Phụ kiện",
+      "condition": "fair",
+      "imageUrl": "https://images.unsplash.com/photo-1544947950-fa07a98d237f?auto=format&fit=crop&w=900&q=85",
+      "status": "available",
+      "priceVnd": 50000,
+      "location": "Cổng 1 IUH",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-item-no-image",
+      "ownerId": "admin-demo-student-06",
+      "ownerName": "Đặng Quốc Minh",
+      "ownerFaculty": "",
+      "title": "Tập giấy A4",
+      "description": "Tập giấy mới, chưa sử dụng.",
+      "category": "Dụng cụ học tập",
+      "condition": "new",
+      "imageUrl": "",
+      "status": "available",
+      "priceVnd": 0,
+      "location": "KTX khu B",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
     }
   ],
-  "appointments": [],
+  "appointments": [
+    {
+      "id": "admin-demo-appointment-pending",
+      "itemId": "admin-demo-item-available",
+      "requesterId": "admin-demo-student-01",
+      "date": "2026-11-20",
+      "time": "09:00",
+      "scheduledAt": "2026-11-20T09:00:00.000Z",
+      "location": "Thư viện IUH",
+      "status": "pending",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-appointment-confirmed",
+      "itemId": "admin-demo-item-reserved",
+      "requesterId": "admin-demo-student-02",
+      "date": "2026-11-21",
+      "time": "13:30",
+      "scheduledAt": "2026-11-21T13:30:00.000Z",
+      "location": "Sảnh nhà A",
+      "confirmedBy": [
+        "admin-demo-student-02",
+        "admin-demo-student-04"
+      ],
+      "status": "confirmed",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-appointment-completed",
+      "itemId": "admin-demo-item-exchanged",
+      "requesterId": "admin-demo-student-03",
+      "date": "2026-11-05",
+      "time": "10:00",
+      "scheduledAt": "2026-11-05T10:00:00.000Z",
+      "location": "Nhà H IUH",
+      "confirmedBy": [
+        "admin-demo-student-03",
+        "admin-demo-student-01"
+      ],
+      "completionConfirmedBy": [
+        "admin-demo-student-03",
+        "admin-demo-student-01"
+      ],
+      "status": "completed",
+      "createdAt": "2026-11-01T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-appointment-cancelled",
+      "itemId": "admin-demo-item-report-scam",
+      "requesterId": "admin-demo-student-06",
+      "date": "2026-11-08",
+      "time": "14:00",
+      "scheduledAt": "2026-11-08T14:00:00.000Z",
+      "location": "Cổng 1 IUH",
+      "cancelledBy": "admin-demo-student-06",
+      "cancellationReason": "Không còn nhu cầu.",
+      "status": "cancelled",
+      "createdAt": "2026-11-07T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    }
+  ],
   "favorites": [],
   "reports": [
     {
@@ -408,11 +656,110 @@
       "reporterId": "user-002",
       "reason": "misleading_information",
       "details": "Thông tin tình trạng cần được kiểm tra.",
-      "status": "pending",
+      "status": "dismissed",
       "createdAt": "2026-10-14T08:00:00.000Z",
-      "updatedAt": "2026-10-14T08:00:00.000Z"
+      "updatedAt": "2026-11-10T17:31:34.836Z"
+    },
+    {
+      "id": "admin-demo-report-scam",
+      "itemId": "admin-demo-item-report-scam",
+      "reporterId": "admin-demo-student-01",
+      "reason": "suspected_scam",
+      "details": "Thông tin người bán và mô tả có dấu hiệu không khớp.",
+      "status": "pending",
+      "createdAt": "2026-11-11T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-report-prohibited",
+      "itemId": "admin-demo-item-available",
+      "reporterId": "admin-demo-student-02",
+      "reason": "prohibited_item",
+      "details": "Vui lòng kiểm tra mặt hàng trong bài đăng.",
+      "status": "pending",
+      "createdAt": "2026-11-11T07:45:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-report-misleading",
+      "itemId": "admin-demo-item-reserved",
+      "reporterId": "admin-demo-student-03",
+      "reason": "misleading_information",
+      "details": "",
+      "status": "pending",
+      "createdAt": "2026-11-11T07:30:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-report-inappropriate",
+      "itemId": "admin-demo-item-no-image",
+      "reporterId": "admin-demo-student-04",
+      "reason": "inappropriate_content",
+      "details": "Nội dung có thể không phù hợp với quy định.",
+      "status": "pending",
+      "createdAt": "2026-11-11T07:15:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-report-other",
+      "itemId": "admin-demo-item-actioned",
+      "reporterId": "admin-demo-student-05",
+      "reason": "other",
+      "details": "Báo cáo mẫu đã được xử lý.",
+      "status": "actioned",
+      "createdAt": "2026-11-10T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-report-other-pending",
+      "itemId": "admin-demo-item-available",
+      "reporterId": "admin-demo-student-06",
+      "reason": "other",
+      "details": "Báo cáo khác để kiểm tra nhãn lý do.",
+      "status": "pending",
+      "createdAt": "2026-11-11T07:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "admin-demo-report-dismissed",
+      "itemId": "admin-demo-item-available",
+      "reporterId": "admin-demo-student-06",
+      "reason": "other",
+      "details": "Báo cáo mẫu đã được bỏ qua.",
+      "status": "dismissed",
+      "createdAt": "2026-11-09T08:00:00.000Z",
+      "updatedAt": "2026-11-11T08:00:00.000Z"
+    },
+    {
+      "id": "report-1794332831712-ffzpe1",
+      "itemId": "item-012",
+      "reporterId": "student-23636991",
+      "reason": "suspected_scam",
+      "details": "",
+      "status": "pending",
+      "createdAt": "2026-11-10T17:47:11.717Z",
+      "updatedAt": "2026-11-10T17:47:11.717Z"
     }
   ],
-  "sessions": [],
-  "messages": []
+  "sessions": [
+    {
+      "tokenHash": "857b3fe1cc08c4f95b13a059f56e378672ea31f122b921449757653a44a54a68",
+      "userId": "user-003",
+      "createdAt": "2026-11-11T12:05:36.171Z",
+      "expiresAt": "2026-12-11T12:05:36.171Z"
+    },
+    {
+      "tokenHash": "061ced96726be30c30f004d3743c53cc3e65df835abddc1eebac69349f3cc35c",
+      "userId": "user-003",
+      "createdAt": "2026-11-11T12:21:06.158Z",
+      "expiresAt": "2026-12-11T12:21:06.158Z"
+    }
+  ],
+  "messages": [],
+  "credentials": [
+    {
+      "userId": "student-23636991",
+      "passwordHash": "b4ada6bdb3f227617bbf00bab39f5608:cd6cc830befe066263a6c995a047336716dabd5da09b65034262dd1f171f8b6f"
+    }
+  ]
 }

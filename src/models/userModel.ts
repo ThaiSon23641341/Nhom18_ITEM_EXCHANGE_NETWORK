@@ -11,6 +11,8 @@ export interface User {
   className?: string;
   successfulExchanges?: number;
   reputation?: number;
+  isBanned?: boolean;
+  reputationAdjustment?: number;
   role: UserRole;
   createdAt: string;
   updatedAt: string;
