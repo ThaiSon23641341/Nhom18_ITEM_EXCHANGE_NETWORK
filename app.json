@@ -1,6 +1,6 @@
 {
   "expo": {
-    "name": "Nhom18_ITEM_EXCHANGE_NETWORK",
+    "name": "Trao Đổi IUH",
     "slug": "Nhom18_ITEM_EXCHANGE_NETWORK",
     "version": "1.0.0",
     "orientation": "portrait",
@@ -12,10 +12,8 @@
     },
     "android": {
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#F5FAF7",
+        "foregroundImage": "./assets/android-icon-foreground.png"
       },
       "predictiveBackGestureEnabled": false,
       "permissions": [
@@ -60,7 +58,9 @@
       ],
       "expo-notifications",
       "expo-secure-store",
-      "@react-native-community/datetimepicker"
+      "@react-native-community/datetimepicker",
+      "expo-status-bar",
+      "./plugins/withCleartextTraffic"
     ],
     "experiments": {
       "typedRoutes": true
